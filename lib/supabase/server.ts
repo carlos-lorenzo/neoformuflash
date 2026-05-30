@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import type { Database } from "./types";
 
@@ -20,29 +20,42 @@ export async function createClient() {
   const cookieStore = await cookies();
   const { url, anonKey } = getSupabaseEnv();
 
+  const readAllCookies = async () => {
+    if (typeof cookieStore.getAll === "function") {
+      return cookieStore.getAll();
+    }
+
+    const headerStore = await headers();
+    const cookieHeader = headerStore.get("cookie");
+
+    if (!cookieHeader) {
+      return [] as { name: string; value: string }[];
+    }
+
+    return cookieHeader.split(";").map((chunk) => {
+      const [rawName, ...rawValue] = chunk.trim().split("=");
+      const name = rawName?.trim() ?? "";
+      const value = rawValue.join("=");
+
+      return {
+        name,
+        value: value ? decodeURIComponent(value) : "",
+      };
+    });
+  };
+
   return createServerClient<Database>(url, anonKey, {
     cookies: {
-      get(name) {
-        if (typeof cookieStore.get === "function") {
-          return cookieStore.get(name)?.value;
-        }
-
-        return undefined;
+      async getAll() {
+        return readAllCookies();
       },
-      set(name, value, options) {
+      setAll(cookiesToSet) {
         try {
-          if (typeof cookieStore.set === "function") {
-            cookieStore.set(name, value, options);
-          }
-        } catch {
-          // Ignore if running in a server component without mutable cookies.
-        }
-      },
-      remove(name, options) {
-        try {
-          if (typeof cookieStore.set === "function") {
-            cookieStore.set(name, "", { ...options, maxAge: 0 });
-          }
+          cookiesToSet.forEach(({ name, value, options }) => {
+            if (typeof cookieStore.set === "function") {
+              cookieStore.set(name, value, options);
+            }
+          });
         } catch {
           // Ignore if running in a server component without mutable cookies.
         }
