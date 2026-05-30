@@ -20,34 +20,29 @@ export async function createClient() {
   const cookieStore = await cookies();
   const { url, anonKey } = getSupabaseEnv();
 
-  const getAll = () => {
-    if (typeof cookieStore.getAll === "function") {
-      return cookieStore.getAll();
-    }
-
-    if (typeof (cookieStore as Iterable<{ name: string; value: string }>)[
-      Symbol.iterator
-    ] === "function") {
-      return Array.from(
-        cookieStore as Iterable<{ name: string; value: string }>,
-      ).map((cookie) => ({ name: cookie.name, value: cookie.value }));
-    }
-
-    return [] as { name: string; value: string }[];
-  };
-
   return createServerClient<Database>(url, anonKey, {
     cookies: {
-      getAll() {
-        return getAll();
+      get(name) {
+        if (typeof cookieStore.get === "function") {
+          return cookieStore.get(name)?.value;
+        }
+
+        return undefined;
       },
-      setAll(cookiesToSet) {
+      set(name, value, options) {
         try {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            if (typeof cookieStore.set === "function") {
-              cookieStore.set(name, value, options);
-            }
-          });
+          if (typeof cookieStore.set === "function") {
+            cookieStore.set(name, value, options);
+          }
+        } catch {
+          // Ignore if running in a server component without mutable cookies.
+        }
+      },
+      remove(name, options) {
+        try {
+          if (typeof cookieStore.set === "function") {
+            cookieStore.set(name, "", { ...options, maxAge: 0 });
+          }
         } catch {
           // Ignore if running in a server component without mutable cookies.
         }
