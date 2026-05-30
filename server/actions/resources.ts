@@ -56,11 +56,14 @@ export async function createResource(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getSession();
 
-  if (userError || !userData.user) {
+  if (sessionError || !sessionData.session?.user) {
     throw new Error("You must be signed in to create a resource.");
   }
+
+  const userId = sessionData.session.user.id;
 
   const baseSlug = slugify(title) || "resource";
   let slug = baseSlug;
@@ -90,7 +93,7 @@ export async function createResource(formData: FormData) {
     .from("resources")
     .insert({
       topic_id: topicId,
-      owner_id: userData.user.id,
+      owner_id: userId,
       resource_type: resourceType,
       title,
       slug,

@@ -27,11 +27,14 @@ export async function createInstitution(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getSession();
 
-  if (userError || !userData.user) {
+  if (sessionError || !sessionData.session?.user) {
     throw new Error("You must be signed in to create an institution.");
   }
+
+  const userId = sessionData.session.user.id;
 
   const baseSlug = slugify(name) || "institution";
   let slug = baseSlug;
@@ -59,7 +62,7 @@ export async function createInstitution(formData: FormData) {
   const { data, error } = await supabase
     .from("institutions")
     .insert({
-      owner_id: userData.user.id,
+      owner_id: userId,
       name,
       slug,
       description: description || null,
