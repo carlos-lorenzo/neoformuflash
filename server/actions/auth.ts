@@ -1,14 +1,15 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 function getBaseUrl() {
-  const origin = headers().get("origin");
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const vercelUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : null;
 
-  return origin ?? siteUrl ?? "http://localhost:3000";
+  return siteUrl ?? vercelUrl ?? "http://localhost:3000";
 }
 
 export async function signInWithGoogle() {
