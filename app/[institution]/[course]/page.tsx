@@ -9,7 +9,7 @@ type CoursePageProps = {
 };
 
 export default async function CoursePage({ params }: CoursePageProps) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: institution } = await supabase
     .from("institutions")
     .select("id, name, slug")

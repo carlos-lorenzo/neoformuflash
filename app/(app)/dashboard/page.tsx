@@ -11,7 +11,7 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: institutions } = await supabase
     .from("institutions")
     .select("id, name, slug, description, visibility, created_at")

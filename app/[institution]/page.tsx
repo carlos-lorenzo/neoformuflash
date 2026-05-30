@@ -11,7 +11,7 @@ type InstitutionPageProps = {
 export default async function InstitutionPage({
   params,
 }: InstitutionPageProps) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: institution } = await supabase
     .from("institutions")
     .select("id, name, description, slug, owner_id")

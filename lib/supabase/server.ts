@@ -16,19 +16,37 @@ function getSupabaseEnv() {
   return { url, anonKey };
 }
 
-export function createClient() {
-  const cookieStore = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
   const { url, anonKey } = getSupabaseEnv();
+
+  const getAll = () => {
+    if (typeof cookieStore.getAll === "function") {
+      return cookieStore.getAll();
+    }
+
+    if (typeof (cookieStore as Iterable<{ name: string; value: string }>)[
+      Symbol.iterator
+    ] === "function") {
+      return Array.from(
+        cookieStore as Iterable<{ name: string; value: string }>,
+      ).map((cookie) => ({ name: cookie.name, value: cookie.value }));
+    }
+
+    return [] as { name: string; value: string }[];
+  };
 
   return createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
-        return cookieStore.getAll();
+        return getAll();
       },
       setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
+            if (typeof cookieStore.set === "function") {
+              cookieStore.set(name, value, options);
+            }
           });
         } catch {
           // Ignore if running in a server component without mutable cookies.

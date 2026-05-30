@@ -26,7 +26,7 @@ export async function createInstitution(formData: FormData) {
     throw new Error("Institution name is required.");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData.user) {

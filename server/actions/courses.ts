@@ -32,7 +32,7 @@ export async function createCourse(formData: FormData) {
     throw new Error("Course name is required.");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData.user) {

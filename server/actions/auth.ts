@@ -13,7 +13,7 @@ function getBaseUrl() {
 }
 
 export async function signInWithGoogle() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const redirectTo = `${getBaseUrl()}/auth/callback`;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -28,7 +28,7 @@ export async function signInWithGoogle() {
 }
 
 export async function signOut() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.signOut();
 
   if (error) {

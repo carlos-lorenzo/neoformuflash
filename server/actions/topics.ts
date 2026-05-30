@@ -33,7 +33,7 @@ export async function createTopic(formData: FormData) {
     throw new Error("Topic name is required.");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData.user) {
