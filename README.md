@@ -10,3 +10,4 @@ Formuflash is an AI-powered study platform with Markdown/LaTeX notes, spaced rep
 - [docs/llm-deliverables.md](docs/llm-deliverables.md)
 - [docs/billing.md](docs/billing.md)
 - [docs/entitlements.md](docs/entitlements.md)
+- [docs/github-setup.md](docs/github-setup.md)
