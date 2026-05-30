@@ -19,6 +19,9 @@ export async function GET(request: Request) {
 
     if (data.user) {
       await ensureProfile(supabase, data.user);
+      return NextResponse.redirect(
+        new URL("/dashboard", requestUrl.origin),
+      );
     }
   }
 

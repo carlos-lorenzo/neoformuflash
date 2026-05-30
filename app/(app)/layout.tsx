@@ -19,7 +19,10 @@ export default async function AppLayout({
     <div className="min-h-screen bg-white text-zinc-950">
       <header className="border-b border-zinc-200/80 bg-white/70 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-sm font-semibold uppercase tracking-[0.2em]">
+          <Link
+            href="/dashboard"
+            className="text-sm font-semibold uppercase tracking-[0.2em]"
+          >
             Formuflash
           </Link>
           <form action={signOut}>

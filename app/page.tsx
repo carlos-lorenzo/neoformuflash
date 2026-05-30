@@ -24,12 +24,12 @@ export default function Home() {
           >
             Sign in
           </Link>
-          <a
+          <Link
             href="/docs"
             className="inline-flex h-12 items-center justify-center rounded-full border border-zinc-200 bg-white/70 px-6 text-sm font-semibold uppercase tracking-[0.2em] text-zinc-700 transition hover:border-zinc-300"
           >
             Explore docs
-          </a>
+          </Link>
         </div>
       </main>
     </div>
