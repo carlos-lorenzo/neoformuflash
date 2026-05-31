@@ -1,14 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { ensureProfile } from "@/lib/auth/ensure-profile";
-import { createClient } from "@/lib/supabase/server";
+import { createRouteHandlerClient } from "@/lib/supabase/route-handler";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
 
   if (code) {
-    const supabase = await createClient();
+    const response = NextResponse.redirect(
+      new URL("/dashboard", requestUrl.origin),
+    );
+    const { supabase } = createRouteHandlerClient(request, response);
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
@@ -19,9 +22,7 @@ export async function GET(request: Request) {
 
     if (data.user) {
       await ensureProfile(supabase, data.user);
-      return NextResponse.redirect(
-        new URL("/dashboard", requestUrl.origin),
-      );
+      return response;
     }
   }
 
