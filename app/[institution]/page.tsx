@@ -11,11 +11,12 @@ type InstitutionPageProps = {
 export default async function InstitutionPage({
   params,
 }: InstitutionPageProps) {
+  const p = (await params) as { institution: string };
   const supabase = await createClient();
   const { data: institution } = await supabase
     .from("institutions")
     .select("id, name, description, slug, owner_id")
-    .eq("slug", params.institution)
+    .eq("slug", p.institution)
     .maybeSingle();
 
   if (!institution) {

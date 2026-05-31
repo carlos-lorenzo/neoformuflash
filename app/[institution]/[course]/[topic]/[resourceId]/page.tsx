@@ -8,11 +8,12 @@ type ResourcePageProps = {
 };
 
 export default async function ResourcePage({ params }: ResourcePageProps) {
+  const p = (await params) as { institution: string; course: string; topic: string; resourceId: string };
   const supabase = await createClient();
   const { data: institution } = await supabase
     .from("institutions")
     .select("id, name, slug")
-    .eq("slug", params.institution)
+    .eq("slug", p.institution)
     .maybeSingle();
 
   if (!institution) {
@@ -23,7 +24,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     .from("courses")
     .select("id, name, slug")
     .eq("institution_id", institution.id)
-    .eq("slug", params.course)
+    .eq("slug", p.course)
     .maybeSingle();
 
   if (!course) {
@@ -34,7 +35,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
     .from("topics")
     .select("id, name, slug")
     .eq("course_id", course.id)
-    .eq("slug", params.topic)
+    .eq("slug", p.topic)
     .maybeSingle();
 
   if (!topic) {
@@ -44,7 +45,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
   const { data: resource } = await supabase
     .from("resources")
     .select("id, title, resource_type, visibility")
-    .eq("id", params.resourceId)
+    .eq("id", p.resourceId)
     .eq("topic_id", topic.id)
     .maybeSingle();
 

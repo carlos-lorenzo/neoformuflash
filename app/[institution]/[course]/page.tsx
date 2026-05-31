@@ -9,11 +9,12 @@ type CoursePageProps = {
 };
 
 export default async function CoursePage({ params }: CoursePageProps) {
+  const p = (await params) as { institution: string; course: string };
   const supabase = await createClient();
   const { data: institution } = await supabase
     .from("institutions")
     .select("id, name, slug")
-    .eq("slug", params.institution)
+    .eq("slug", p.institution)
     .maybeSingle();
 
   if (!institution) {
@@ -24,7 +25,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
     .from("courses")
     .select("id, name, description, slug")
     .eq("institution_id", institution.id)
-    .eq("slug", params.course)
+    .eq("slug", p.course)
     .maybeSingle();
 
   if (!course) {

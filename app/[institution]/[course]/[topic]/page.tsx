@@ -9,11 +9,12 @@ type TopicPageProps = {
 };
 
 export default async function TopicPage({ params }: TopicPageProps) {
+  const p = (await params) as { institution: string; course: string; topic: string };
   const supabase = await createClient();
   const { data: institution } = await supabase
     .from("institutions")
     .select("id, name, slug")
-    .eq("slug", params.institution)
+    .eq("slug", p.institution)
     .maybeSingle();
 
   if (!institution) {
@@ -24,7 +25,7 @@ export default async function TopicPage({ params }: TopicPageProps) {
     .from("courses")
     .select("id, name, slug")
     .eq("institution_id", institution.id)
-    .eq("slug", params.course)
+    .eq("slug", p.course)
     .maybeSingle();
 
   if (!course) {
@@ -35,7 +36,7 @@ export default async function TopicPage({ params }: TopicPageProps) {
     .from("topics")
     .select("id, name, description, slug")
     .eq("course_id", course.id)
-    .eq("slug", params.topic)
+    .eq("slug", p.topic)
     .maybeSingle();
 
   if (!topic) {
