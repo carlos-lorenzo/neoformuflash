@@ -1,0 +1,10 @@
+# 06 Authentication & Onboarding
+
+This folder defines the mechanical rules for login and signup flows, prioritizing a high-trust, frictionless experience through strict centering, constrained widths, and clear visual hierarchies between different authentication methods.
+
+*   **Standardized Container (`vercel_login.jpg`, `vercel_signup.jpg`):** Authentication forms strictly utilize a horizontally and vertically centered layout. The central column is constrained to a precise maximum width (approx. 380px–420px) to ensure button text and input fields do not stretch awkwardly. The background relies on a flat, neutral color (like `#FAFAFA` or `#FFFFFF`) with minimal chrome, keeping the user's focus entirely on the auth mechanisms.
+*   **Login vs. Signup Hierarchy (`vercel_login.jpg`, `vercel_signup.jpg`):** 
+    *   **Login:** Designed for returning users. The layout is typically borderless (no card). The primary path (e.g., Email input and a high-contrast submit button) sits at the top, followed by secondary OAuth options.
+    *   **Signup:** Designed for conversion. Often utilizes a subtle card container (1px border, soft shadow) to frame the value proposition (a prominent 24px–32px header). It flips the hierarchy by prioritizing low-friction OAuth buttons first, pushing the manual email flow to a secondary text link at the bottom.
+*   **OAuth Button Mechanics:** Third-party login buttons stack vertically with uniform heights (approx. 40px–48px) and a standard gap (8px–12px). They utilize a white background, a subtle 1px border, and place the brand icon strictly on the left axis while keeping the button text ("Continue with...") centered. 
+*   **Peripheral Navigation:** Global navigation is stripped away. The only structural elements outside the central auth column are the brand logo (top left), a secondary toggle to switch between Login/Signup (top right), and legal/cookie consent modals anchored to the absolute bottom edges.

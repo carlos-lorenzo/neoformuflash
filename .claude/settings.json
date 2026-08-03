@@ -1,0 +1,35 @@
+{
+  "$comment": "Project-scoped, committed to git. Personal overrides go in .claude/settings.local.json (gitignored).",
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "haiku"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(npx playwright:*)",
+      "Bash(supabase:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.pem)",
+      "Bash(git push --force:*)",
+      "Bash(rm -rf:*)",
+      "Bash(supabase db reset:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": ".claude/hooks/secret-guard.sh" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": ".claude/hooks/notify.sh" }] }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "command": ".claude/hooks/cost-log.sh" }] }
+    ]
+  }
+}

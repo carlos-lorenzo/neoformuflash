@@ -1,0 +1,14 @@
+# 04 Empty States & First-Run Contexts
+
+This folder proves that empty states should prioritize spatial balance and immediate next actions over large, full-color illustrations. The goal is to keep the UI feeling fast and functional, even when devoid of user data.
+
+*   **First-Run Editor / Blank Canvas (`empty_editor.png`):** When the primary action is text input, the empty state is purely typographic. The placeholder title ("New page") uses a massive font size (approx. 32px–40px) but drops the opacity significantly (e.g., 20%–30% contrast against the background) so it does not feel like committed text. Secondary setup actions (like templates or AI tools) are anchored near the bottom of the viewport to keep the top-left writing origin completely unobstructed.
+*   **First-Run Structural / Project Empty State (`empty_projects_with_hint.png`):** Structural empty states center their content both vertically and horizontally within the parent container. The layout relies on strict max-widths (approx. 300px–350px) for the descriptive body text to prevent awkward, long single lines. Visuals are restricted to subdued, monochromatic wireframe icons rather than heavy illustrations. The primary Call-to-Action button is highly prominent and embeds the keyboard shortcut mechanically within the button itself to immediately train the user.
+
+**Action-Oriented Empty States (`empty_projects_with_hint_2.png`):** When a user encounters a view with no data (e.g., a new user opening their flashcard decks or notes after Google Auth), the interface must serve as an activation point.
+    *   **Layout:** Strictly centered vertically and horizontally to command focus.
+    *   **Visuals:** Use a subdued, monochromatic, or wireframe icon that hints at the missing content without overwhelming the screen.
+    *   **Copy:** A clear header (e.g., "Decks" or "Notes") followed by a brief, low-contrast paragraph explaining the value of the feature (e.g., "Decks are collections of structured notes and flashcards...").
+    *   **CTAs & Power User Hooks:** The primary action (e.g., "Create new deck") must be highly visible. Crucially, embed keyboard shortcuts directly into the primary CTA (e.g., `N` then `D`) to immediately signal to power users that the platform is optimized for fast, keyboard-driven workflows. Include a secondary, low-prominence link to documentation (e.g., formatting guides for KaTeX/Markdown).
+
+*   **No-Results State (`empty_search.png`):** A "no-results" state is mechanically distinct from a "first-run" state. It strips away all iconography to minimize visual noise. The feedback is purely typographic and centered, utilizing standard 14px text. Crucially, it always provides an actionable fallback directly below the primary message (e.g., a blue text link to "Search deleted pages") so the user is never left at a dead end.
