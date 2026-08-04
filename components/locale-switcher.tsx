@@ -4,8 +4,9 @@
 
 import { useTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { LOCALES, type Locale } from '@neoformuflash/contracts';
+import type { Locale } from '@neoformuflash/contracts';
 import { setLocale } from '@/app/actions/preferences';
+import { SHIPPED_LOCALES } from '@/lib/i18n/shipped';
 import { Select } from '@/components/ui/select';
 
 /*
@@ -27,7 +28,10 @@ export function LocaleSwitcher({ value }: { value: Locale }) {
       emptyLabel={t('label')}
       value={value}
       disabled={pending}
-      options={LOCALES.map((locale) => ({ value: locale, label: t(locale) }))}
+      // Only locales with a catalog on disk (see lib/i18n/shipped.ts). Offering
+      // Catalan here while its catalog was missing crashed the next render and
+      // locked the user out — a broken option is worse than no option.
+      options={SHIPPED_LOCALES.map((locale) => ({ value: locale, label: t(locale) }))}
       onValueChange={(next) => {
         startTransition(async () => {
           await setLocale(next);

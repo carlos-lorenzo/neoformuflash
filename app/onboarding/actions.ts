@@ -2,8 +2,9 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { SignupProfileInput, isLocale, DEFAULT_LOCALE } from '@neoformuflash/contracts';
+import { SignupProfileInput, DEFAULT_LOCALE } from '@neoformuflash/contracts';
 import { LOCALE_COOKIE } from '@/lib/i18n/locale';
+import { isShippedLocale } from '@/lib/i18n/shipped';
 import { createProfile, hasProfile } from '@/lib/db/profiles';
 import { getSessionUser } from '@/lib/supabase/session';
 
@@ -37,7 +38,10 @@ export async function submitOnboarding(
     // must be null, not an empty string, or both refinements misfire.
     institutionOther: institutionId ? null : institutionOther,
     degreeId: institutionId ? asString(formData.get('degreeId')) : null,
-    locale: isLocale(localeValue) ? localeValue : DEFAULT_LOCALE,
+    // Only locales with a catalog on disk; a stray `ca` from a hidden field or
+    // stale cookie must fall back to the default rather than persist to the
+    // profile and crash the student's next render.
+    locale: isShippedLocale(localeValue) ? localeValue : DEFAULT_LOCALE,
   });
 
   if (!parsed.success) {

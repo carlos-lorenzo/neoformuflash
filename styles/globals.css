@@ -201,7 +201,12 @@
  * Overlay motion, hand-rolled rather than pulled from an animation plugin, so
  * every duration and curve traces to a token and lint:tokens can see it.
  *
- * transform and opacity only (§5). Nothing bounces, nothing springs.
+ * `scale` and `opacity` only (§5) — never a layout property. `scale` is
+ * animated as its own CSS property (not via the `transform` shorthand) so it
+ * composes with the panel's Tailwind `-translate-x/y-1/2` centring instead of
+ * fighting it: those utilities compile to the `translate` shorthand in
+ * Tailwind v4, and a keyframe that also drove `transform` would stack on top
+ * of the centring translate and then snap out of it when the animation ended.
  */
 @keyframes overlay-fade-in {
   from {
@@ -215,11 +220,11 @@
 @keyframes dialog-enter {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.97);
+    scale: 0.97;
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    scale: 1;
   }
 }
 

@@ -1,5 +1,6 @@
 import { cookies, headers } from 'next/headers';
 import { DEFAULT_LOCALE, isLocale, resolveLocale, type Locale } from '@neoformuflash/contracts';
+import { isShippedLocale } from './shipped';
 
 /**
  * The cookie is a per-request cache of the resolved locale, not the source of
@@ -31,6 +32,14 @@ function pseudoLocaleEnabled(): boolean {
  * Because this happens during render, the correct catalog is chosen before any
  * HTML exists. There is no client-side detection anywhere, so "no flash of the
  * wrong language" (AC 1c) holds by construction rather than by winning a race.
+ *
+ * Every branch is filtered through `isShippedLocale`. A stored `profiles.locale`
+ * or an `Accept-Language` header may legitimately name a `Locale` the app does
+ * not yet have a catalog for (Catalan pre-phase-04), and returning one would
+ * make the next-intl request config throw on the very next line it runs —
+ * which crashes the whole render, with no in-app way to recover. Falling back
+ * to `DEFAULT_LOCALE` instead is the difference between a wrong language and
+ * no page at all.
  */
 export async function getActiveLocale(): Promise<Locale | typeof PSEUDO_LOCALE> {
   const cookieStore = await cookies();
@@ -40,10 +49,11 @@ export async function getActiveLocale(): Promise<Locale | typeof PSEUDO_LOCALE> 
     return PSEUDO_LOCALE;
   }
 
-  if (isLocale(cookieValue)) return cookieValue;
+  if (isShippedLocale(cookieValue)) return cookieValue;
 
   const headerList = await headers();
-  return resolveLocale(null, headerList.get('accept-language'));
+  const resolved = resolveLocale(null, headerList.get('accept-language'));
+  return isShippedLocale(resolved) ? resolved : DEFAULT_LOCALE;
 }
 
 export { DEFAULT_LOCALE, isLocale, resolveLocale };

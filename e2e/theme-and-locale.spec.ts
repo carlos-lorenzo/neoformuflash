@@ -102,6 +102,50 @@ test.describe('locale', () => {
     await context.close();
   });
 
+  test('a Catalan browser gets English rather than crashing (unshipped catalog)', async ({
+    browser,
+  }) => {
+    /*
+     * The bug this closes: `LOCALES` contains `'ca'` but `messages/ca.json`
+     * does not exist yet, so the next-intl request config's dynamic import
+     * threw on every render for any visitor whose Accept-Language resolved
+     * to Catalan — with no in-app way back, because the settings page was
+     * the crashing page. First-visit lockout, no UI interaction required.
+     *
+     * The resolver now falls back to the default when the resolved locale
+     * has no catalog on disk. `ca-ES-valencia` is the fussiest tag in
+     * packages/contracts/src/i18n.test.ts and the one that catches the
+     * "resolveLocale returned ca correctly, then we crashed" path.
+     */
+    const context = await browser.newContext({ locale: 'ca-ES-valencia' });
+    const page = await context.newPage();
+
+    const response = await page.goto('/login');
+    expect(response?.status(), 'the response is not a 500').toBeLessThan(500);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+
+    await context.close();
+  });
+
+  test('a stale locale=ca cookie does not lock the user out (unshipped catalog)', async ({
+    browser,
+  }) => {
+    /*
+     * The recovery case. Before this fix, the only way out of a stuck
+     * `locale=ca` cookie was hand-editing devtools — which is not a recovery
+     * path. Now the cookie is treated as noise and the page still renders.
+     */
+    const context = await browser.newContext({ locale: 'en-US' });
+    await context.addCookies([{ name: 'locale', value: 'ca', domain: '127.0.0.1', path: '/' }]);
+    const page = await context.newPage();
+
+    const response = await page.goto('/login');
+    expect(response?.status()).toBeLessThan(500);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+
+    await context.close();
+  });
+
   test('public URLs are never locale-prefixed (decision 7)', async ({ browser }) => {
     // Switching interface language must not change the address of a page.
     // A /es/ prefix appearing here is an SEO regression that is hard to undo

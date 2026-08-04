@@ -122,6 +122,66 @@ test.describe('390px authed layout', () => {
     await user.cleanup();
   });
 
+  test('the settings dialog is centred while animating, not only after', async ({
+    page,
+    context,
+  }) => {
+    /*
+     * The teleport bug: the panel opened at roughly −100%/−100% (one full
+     * width left and one full height up from centre) and snapped into place
+     * when the 200ms animation ended.
+     *
+     * Root cause: Tailwind v4 compiles `-translate-x/y-1/2` to the `translate`
+     * shorthand, while the keyframe animated `transform: translate(-50%,-50%)`.
+     * Those are separate CSS properties that compose — during the animation
+     * both applied, so the total offset was double what it should have been.
+     *
+     * This test catches that specific failure by sampling the panel's position
+     * *mid-animation*. A test that only asserts the final position passes
+     * against the bug — the panel does end up centred, just not until it jumps.
+     *
+     * Reduced motion is explicitly NOT emulated here; the whole point is that
+     * the animation's mid-state is correct. Under reduced motion, --dur-base
+     * collapses to 1ms and the panel would settle instantly, certifying
+     * nothing about the actual animation.
+     */
+    const user = await seedUserWithProfile('dialog-centre');
+    await signIn(context, user);
+    await page.goto('/app');
+
+    // Open the dialog and grab its position immediately, before the animation
+    // has time to settle. The 200ms duration is long enough that a single
+    // rAF-level check catches it mid-flight; polling would be flakier.
+    await page.getByRole('button', { name: /settings/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    await dialog.waitFor({ state: 'visible' });
+
+    // Sample mid-animation: the panel should already be centred. The viewport
+    // is 390×844, so centre is (195, 422). Allow 20px tolerance for subpixel
+    // rounding and timing — the bug manifested as a ~200px+ offset, not noise.
+    const box = await dialog.boundingBox();
+    expect(box, 'dialog bounding box while animating').not.toBeNull();
+
+    const viewport = page.viewportSize()!;
+    const centreX = viewport.width / 2;
+    const centreY = viewport.height / 2;
+    // The dialog's centre, not its top-left corner.
+    const dialogCentreX = box!.x + box!.width / 2;
+    const dialogCentreY = box!.y + box!.height / 2;
+
+    expect(
+      Math.abs(dialogCentreX - centreX),
+      `dialog x-centre (${dialogCentreX.toFixed(0)}) should match viewport centre (${centreX})`
+    ).toBeLessThan(20);
+    expect(
+      Math.abs(dialogCentreY - centreY),
+      `dialog y-centre (${dialogCentreY.toFixed(0)}) should match viewport centre (${centreY})`
+    ).toBeLessThan(20);
+
+    await user.cleanup();
+  });
+
   for (const surface of SURFACES) {
     test(`${surface.name}: no horizontal scroll, no target under 44px (AC 6)`, async ({
       page,
