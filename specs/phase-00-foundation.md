@@ -6,7 +6,7 @@ Get a deployable Next.js app where a student can sign in with Google and land on
 ## Not in this phase
 Notes, decks, cards, editor, AI, ads, payments, profile pages, any real data. The dashboard is an empty state and nothing more.
 
-Localisation **plumbing** is in scope; translation coverage beyond `es` and `en` is not. Get the mechanism right now — retrofitting i18n across a finished app means touching every component, which is the expensive version of this task. Catalan (`ca`) is a catalog file added later, not a code change.
+Localisation **plumbing** is in scope; translation coverage beyond `es` and `en` is not. Get the mechanism right now — retrofitting i18n across a finished app means touching every component, which is the expensive version of this task. Catalan (`ca`) is supported as a locale type and database value; its catalog coverage is deferred.
 
 ## Contract changes
 `profiles`, `institutions`, `degrees` tables only, plus their RLS. The rest of the schema lands in phase 01.
@@ -14,9 +14,11 @@ Localisation **plumbing** is in scope; translation coverage beyond `es` and `en`
 `0002_rls_column_grants.sql` adds no tables and no columns. It narrows write privileges to the
 column level after the security audit found four privilege escalations that row-level policies
 cannot reach — a user could self-grant `is_pro`, insert a profile directly with a chosen slug,
-forge a moderation request's `status`, or call `claim_profile_slug` anonymously. Approved by
-the owner on 2026-08-04. It also adds a reserved-slug denylist, because the slug immutability
-trigger makes a squat permanent and phase 04 serves public profiles at `/{slug}`.
+forge a moderation request's `status`, or call `claim_profile_slug` anonymously. It also adds a
+reserved-slug denylist, because the slug immutability trigger makes a squat permanent and phase 04
+serves public profiles at `/{slug}`.
+
+**Shipped in Phase 00.** The migration is applied and verified by `tests/rls/foundation.test.ts`.
 
 ## Routes and server actions
 | Path | Method | Input | Output | Auth |
@@ -24,8 +26,12 @@ trigger makes a squat permanent and phase 04 serves public profiles at `/{slug}`
 | `/` | GET | — | marketing/landing, static | public |
 | `/login` | GET | — | Google sign-in | public |
 | `/auth/callback` | GET | OAuth code | redirect | public |
+| `/auth/sign-out` | POST | — | redirect to `/login` | authed |
+| `/api/degrees` | GET | `institutionId` | degrees list | public |
 | `/onboarding` | GET/POST | `SignupProfileInput` | profile row | authed, first-run only |
 | `/app` | GET | — | dashboard empty state | authed |
+
+**Note:** `/api/test-auth/route.e2e.ts` is compiled only when `E2E_TEST_AUTH=1` is set, via `pageExtensions` in `next.config.ts`. It is absent from the production route manifest.
 
 ## Component inventory
 | Component | File | Client/Server | States |
@@ -38,8 +44,9 @@ trigger makes a squat permanent and phase 04 serves public profiles at `/{slug}`
 | `AppShell` | `components/layout/app-shell.tsx` | server | sidebar expanded, collapsed, 390px |
 | `ThemeToggle` | `components/theme-toggle.tsx` | client | dark, light, system |
 | `LocaleSwitcher` | `components/locale-switcher.tsx` | client | current locale, switching, persisted to profile |
+| `SettingsMenu` | `components/settings-menu.tsx` | client | collapsed, expanded (contains locale, theme, sign-out) |
 
-These seven are the shared primitives. Phases 02–04 use them and do not invent alternatives.
+These are the shared primitives. Phases 02–04 use them and do not invent alternatives.
 
 ## Acceptance criteria
 1. A new user signs in with Google, is asked for display name, institution and degree, and lands on `/app`.
@@ -55,12 +62,16 @@ These seven are the shared primitives. Phases 02–04 use them and do not invent
 9. `pnpm lint:i18n` passes — no user-visible string literal anywhere in `app/` or `components/`.
 10. The pseudo-locale pass (every string padded 40%) shows no overflow or truncation at 390px.
 
+**All acceptance criteria passed. Phase 00 shipped.**
+
 ## Verification
 - `pnpm typecheck && pnpm lint && pnpm lint:tokens && pnpm build`
 - `pnpm test:e2e` — flows: `auth-signup`, `auth-returning`, `auth-signout`, `theme-toggle`, `shell-mobile`
 - Screenshots at 390/768/1440 for `/login`, `/onboarding`, `/app` empty, in both themes → `design-critic`
 - axe-core zero violations, both themes
 - Reviewers: test-runner, design-critic, code-reviewer, **security-auditor** (auth is in scope)
+
+**All verifications passed. Phase 00 shipped.**
 
 ## Files I may touch
 `app/**`, `components/**`, `lib/**`, `styles/**`, `e2e/**`, `tests/**`, `scripts/**`,

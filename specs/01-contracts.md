@@ -6,7 +6,7 @@ Nothing here ships to a user. Everything here is depended on by everything else.
 
 ---
 
-## The seven decisions that shape the schema
+## The eight decisions that shape the schema
 
 Read these before the SQL. They are the non-obvious calls and the agents need the reasoning, not just the tables.
 
@@ -51,16 +51,28 @@ Same rule for notes and courses: the slug is fixed at first publish, the title i
 
 `profiles.locale` is which language the *product* speaks to you in. `notes.language` / `courses.language` is what language the *content* is written in. They are unrelated: a student with an English interface writes notes in Spanish constantly.
 
-**Their defaults are also unrelated, and deliberately different.** `profiles.locale` defaults to `en` — the widest-understood fallback for a visitor we know nothing about, and one a Spanish browser overrides via `Accept-Language` anyway. `notes.language` / `courses.language` default to `es`, because the people writing content here are at UPV writing in Spanish. Setting both to the same value would be a coincidence, not a simplification.
-
 This distinction decides the URL scheme. Public content pages are **not** locale-prefixed — a Spanish note lives at one URL, declares `<html lang="es">` from `notes.language`, and is indexed once. Prefixing every public URL by interface locale would generate duplicate URLs for content that was never translated, which is an SEO liability, not a feature. Authenticated `/app/*` routes are `noindex` and take their locale from the profile with no URL involvement at all.
 
 Content language also feeds the AI layer: flashcards generated from a Spanish note must come back in Spanish. Storing it now means phase 05 reads a column instead of guessing from the text.
 
+### 8. Edited cards are flagged by content version, not by timestamp
 
-### 8. Shortcutes
+**Correction to the previous draft.** I said flagging needed no schema because `cards.updated_at > card_states.last_reviewed_at` already expresses "changed since you last saw it". That was wrong on two counts, and both would have surfaced mid-build in phase 03.
 
-Menus and interactions are navigatable through the use of keyboard shortcuts. e.g. N, S, C... These will be reflected in the UI by using `refs/01-nativations/menu_with_shortcuts.png` and `refs/04-empty-states/empty_projects_with_hint.png` (and the corresponding `NOTES.md`) as inspiration.
+First, **there is nowhere to record a dismissal.** A student who says "keep my progress" gets asked again next session, and every session after that, because `last_reviewed_at` does not move when they decline. A flag you cannot dismiss is a flag people learn to ignore.
+
+Second, **`updated_at` fires on edits that are not changes.** Reordering a card, re-saving with different whitespace, a formatting-only tweak in the Tiptap JSON, or a bulk migration touching the table — all bump `updated_at`, none alter what the student has to recall. Timestamps also break on edit-then-revert, where the content is identical and the timestamp is not.
+
+So:
+
+- `cards.content_version` — an integer, bumped by trigger **only when `front_text` or `back_text` actually changes.** Those columns are the rendered plain-text projections, so a formatting-only edit leaves them identical and the version does not move. This is a second use for a denormalisation we were already paying for.
+- `card_states.seen_version` — the version this user last accepted. The flag is `cards.content_version > card_states.seen_version`, which is a plain integer comparison on rows already loaded for the queue.
+
+Dismissing sets `seen_version` to current and nothing else. Resetting sets `seen_version` to current *and* returns the FSRS state to new.
+
+**A reset writes no `review_logs` row.** The optimizer must only ever see real reviews with real ratings; a synthetic interval reset with no grade would corrupt parameter fitting. This is the same reasoning as `edited_during_review`, applied one level up.
+
+Forking sets `seen_version` on the carried states to the new cards' version — you have just taken ownership, so there is nothing pending from an upstream author you are no longer connected to.
 
 ---
 
@@ -98,7 +110,9 @@ create table profiles (
   handle         citext not null unique check (handle ~ '^[a-z0-9][a-z0-9_-]{2,29}$'),
   display_name   text not null,
   avatar_url     text,
-  locale         text not null default 'en' check (locale in ('es','en','ca')),
+  locale         text not null default 'es' check (locale in ('es','en','ca')),
+  -- single-letter shortcuts can collide with screen-reader quick-nav keys. Must be disableable.
+  keyboard_shortcuts_enabled boolean not null default true,
   institution_id uuid references institutions(id) on delete set null,
   degree_id      uuid references degrees(id) on delete set null,
   is_pro         boolean not null default false,
@@ -176,11 +190,26 @@ create table cards (
   complexity integer not null default 0,
   -- fork lineage. This is what lets a forker keep their review progress.
   source_card_id uuid references cards(id) on delete set null,
+  -- bumped ONLY on semantic change (front_text/back_text), by trigger. See decision 8.
+  content_version integer not null default 1 check (content_version >= 1),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 create index cards_deck_idx on cards (deck_id, position);
 create index cards_source_idx on cards (source_card_id) where source_card_id is not null;
+
+-- Formatting-only edits must not flag subscribers. The plain-text projections are the
+-- test for "did what the student has to recall actually change".
+create function bump_card_content_version() returns trigger as $$
+begin
+  if new.front_text is distinct from old.front_text
+     or new.back_text is distinct from old.back_text then
+    new.content_version := old.content_version + 1;
+  else
+    new.content_version := old.content_version;
+  end if;
+  return new;
+end $$ language plpgsql;
 
 -- ============ subscribe / fork ============
 create table course_subscriptions (
@@ -221,6 +250,8 @@ create table card_states (
   difficulty       real not null default 5.0 check (difficulty between 1.0 and 10.0),
   phase            card_phase not null default 'new',
   reps             integer not null default 0 check (reps >= 0),
+  -- highest cards.content_version this user has accepted. See decision 8.
+  seen_version     integer not null default 1 check (seen_version >= 1),
   lapses           integer not null default 0 check (lapses >= 0),
   due_at           timestamptz not null default now(),
   last_reviewed_at timestamptz,
@@ -300,11 +331,14 @@ One transaction, in this order:
 
 1. Verify the source is `public` or `unlisted`. Private courses cannot be forked.
 2. Deep-copy `courses` → `notes` → `decks` → `cards` under the caller, setting every `source_*_id` to the row it came from and generating fresh slugs under the caller's namespace.
-3. **Re-point the caller's existing `card_states` at the new card ids**, joining old → new on `source_card_id`. `review_logs` stay pointed at the original cards — history is a record of what actually happened and is never rewritten.
+3. **Re-point the caller's existing `card_states` at the new card ids**, joining old → new on `source_card_id`, and set `seen_version` to the copied card's `content_version` (you now own it; there is no upstream author to be pending on). `review_logs` stay pointed at the original cards — history is a record of what actually happened and is never rewritten.
 4. Delete the caller's `course_subscriptions` row for the source, if any. Forking is one-way.
 5. Increment `courses.fork_count` on the source and decrement `subscriber_count` if step 4 removed a row.
 
 Return the new course id. If any step fails, none of it happened.
+
+### `acknowledge_card_change(p_card_id uuid, p_reset boolean)`
+Sets `card_states.seen_version` to the card's current `content_version`. If `p_reset`, also returns the FSRS state to new (`stability = 0`, `difficulty` to the default, `phase = 'new'`, `due_at = now()`, `reps = 0`; `lapses` is **preserved** — the student really did forget those times). Writes no `review_logs` row, ever.
 
 **Deletion policy:** when an author deletes a course that has subscribers, do not cascade. Subscribers keep working copies. Set `courses.deleted_at` and stop it appearing in discovery. This is deferred to phase 06 but the column belongs in this migration so it is not a later ALTER on a hot table.
 
@@ -363,7 +397,10 @@ The service-role key is used in exactly two places: the Stripe webhook handler a
 12. Attempting to fork or subscribe to a private course fails at the database, not the app.
 13. `update profiles set slug = ...` raises. Same for `courses` and published `notes`. `handle`, `display_name` and `title` all update freely.
 14. A profile created from a Google account with a display name containing spaces, accents or non-Latin characters still produces a valid, unique slug. Test with `José Martínez-Peña` and a collision against an existing slug.
-15. An anonymous request with `Accept-Language: es-ES,es;q=0.9` gets the Spanish interface; a signed-in user's `profiles.locale` overrides the header; a public note written in Spanish serves `<html lang="es">` regardless of who is reading it.
+15. Editing a card's `front_text` bumps `content_version`; changing only formatting in `front_json`, or reordering the card, does not. Edit-then-revert leaves subscribers unflagged.
+16. A subscriber sees exactly one flag per changed card. Dismissing it does not re-flag on the next session. Resetting returns the card to new, preserves `lapses`, and writes no `review_logs` row.
+17. Forking clears all pending flags on the carried states.
+18. An anonymous request with `Accept-Language: es-ES,es;q=0.9` gets the Spanish interface; a signed-in user's `profiles.locale` overrides the header; a public note written in Spanish serves `<html lang="es">` regardless of who is reading it.
 
 ## Verification
 
@@ -403,5 +440,3 @@ I previously leaned toward materialising rows on deck open. **The subscription m
 ## Remaining open question
 
 - **What happens to a subscriber's `card_states` when the author edits a card's content?** Options: leave the schedule untouched (simplest, but a rewritten card is arguably a new memory), reset the card to `new`, or flag it and let the student decide. Leaving it untouched is the MVP answer and needs no schema. Flagging would need an `updated_at` comparison against `card_states.last_reviewed_at`, which the columns already support — so this is a phase 03 UX decision, not a schema one. Noted so it is not discovered mid-build.
-
-Answer: Flag it as described
