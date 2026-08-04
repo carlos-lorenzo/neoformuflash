@@ -19,7 +19,11 @@ export function SidebarToggle({ collapsed }: { collapsed: boolean }) {
       onClick={() => {
         startTransition(async () => {
           await setSidebarCollapsed(!collapsed);
-          window.location.reload();
+          // Manually removed the reload since it didn't make any sense. 
+          // Even though a cookie is being set to save the user preference
+          // Makes site unresponsive
+          // If you're reading this and believe the change should be revoked, do so but argument it
+          //window.location.reload();
         });
       }}
       className="duration-instant flex h-8 w-full items-center justify-center rounded-sm text-tertiary transition-colors ease-out hover:bg-inset hover:text-primary"
