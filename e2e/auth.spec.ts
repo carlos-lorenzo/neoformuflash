@@ -99,6 +99,35 @@ test.describe('auth-signout', () => {
   });
 });
 
+test.describe('dashboard empty state', () => {
+  test('names what goes there and offers exactly one action (AC 8)', async ({ page, context }) => {
+    /*
+     * AC 8 was the only acceptance criterion with no mechanical check — it was
+     * covered by a screenshot and the design-critic's reading of it. A
+     * screenshot proves what it looked like on one run; it does not stop a
+     * second button appearing here in phase 02.
+     *
+     * "Exactly one action" is the part worth guarding. §7 rejects the empty
+     * state that turns into a menu, and that regression arrives by addition,
+     * which is precisely what a count catches and a picture does not.
+     */
+    const user = await seedUserWithProfile('empty-state');
+    await signIn(context, user);
+    await page.goto('/app');
+
+    const heading = page.getByRole('heading', { level: 2 });
+    await expect(heading).toBeVisible();
+    // Names what goes here, rather than reporting an absence ("No notes yet").
+    await expect(heading).not.toHaveText(/^no\s/i);
+
+    const actions = page.getByRole('main').getByRole('button');
+    await expect(actions).toHaveCount(1);
+    await expect(actions.first()).toBeEnabled();
+
+    await user.cleanup();
+  });
+});
+
 test.describe('guards', () => {
   test('an anonymous visitor cannot reach /app or /onboarding', async ({ page }) => {
     await page.goto('/app');
@@ -106,6 +135,26 @@ test.describe('guards', () => {
 
     await page.goto('/onboarding');
     await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test('an anonymous visitor cannot bypass the guard with an asset extension', async ({
+    request,
+  }) => {
+    /*
+     * The proxy matcher used to exclude every path ending in an image or font
+     * extension, so `/app/x.png` never reached `updateSession`. Nothing under
+     * `/app/` renders today without the layout's own check, so this was not
+     * exploitable — but phase 01 adds routes there, and a matcher hole is not
+     * something to rediscover later.
+     *
+     * Asserted at the HTTP layer rather than via page.goto: the point is the
+     * response the middleware produces, and a 404 would also "not be /app".
+     */
+    for (const path of ['/app/x.png', '/app/nested/y.woff2', '/onboarding/z.svg']) {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(response.status(), `${path} should be redirected by the middleware`).toBe(307);
+      expect(response.headers()['location']).toContain('/login');
+    }
   });
 
   test('the landing page and sign-in page are public', async ({ page }) => {

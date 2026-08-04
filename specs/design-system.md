@@ -252,7 +252,10 @@ One memorable element, used sparingly, that says *engineering notebook*:
 **The ruled grid.** A 24px square grid drawn in `--border-subtle` at 40% opacity, appearing in exactly three places:
 1. Behind empty states
 2. In the editor canvas margin (a single vertical hairline rule at the 68ch measure edge, like a notebook's margin line)
-3. Behind the auth screen
+3. Behind the auth and onboarding screens — the full-screen, pre-app moment, `/login` and
+   `/onboarding` alike. Written as "the auth screen" until the phase 00 review, where a critic
+   read that strictly and flagged `/onboarding` as a fourth surface. It is one moment in the
+   product, so it is one entry here.
 
 It never appears behind live content, never animates, and never uses the accent colour. That restraint is what stops it becoming a texture and keeps it a signature.
 

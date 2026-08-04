@@ -99,10 +99,19 @@ function collectFindings(file, source) {
   return findings;
 }
 
+/*
+ * Test files are skipped. The rule is "no user-visible literal reaches a
+ * screen", and a `*.test.tsx` never renders to a person — its strings are
+ * fixtures. The alternative is an `i18n-exempt` comment on every line of every
+ * component test, which is the silenced-linter failure described above.
+ */
+const isTestFile = (file) => /\.test\.tsx$/.test(file);
+
 async function collectFiles() {
   const files = [];
   for (const root of ROOTS) {
     for await (const entry of glob(`${root}/**/*.tsx`)) {
+      if (isTestFile(entry)) continue;
       files.push(entry);
     }
   }

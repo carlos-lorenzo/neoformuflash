@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   expectNoHorizontalScroll,
   seedUserWithProfile,
@@ -22,6 +22,33 @@ const SURFACES = [
   { name: 'onboarding', path: '/onboarding', seed: seedUserWithoutProfile },
   { name: 'app', path: '/app', seed: seedUserWithProfile },
 ] as const;
+
+/*
+ * AC 6: at 390px every target is at least 44px. Both dimensions, not just
+ * height — the first version of this check measured height alone, which a
+ * 20px-wide icon button passes while being unusable with a thumb.
+ */
+async function expectTargetsAtLeast44(page: Page, label: string): Promise<void> {
+  const targets = page.locator('a[href], button');
+  const count = await targets.count();
+
+  const undersized: string[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const target = targets.nth(index);
+    if (!(await target.isVisible())) continue;
+
+    const box = await target.boundingBox();
+    if (!box) continue;
+
+    if (Math.round(box.width) < 44 || Math.round(box.height) < 44) {
+      const name =
+        (await target.textContent())?.trim() || (await target.getAttribute('aria-label')) || 'icon';
+      undersized.push(`${name}: ${Math.round(box.width)}×${Math.round(box.height)}`);
+    }
+  }
+
+  expect(undersized, `undersized targets on ${label}:\n${undersized.join('\n')}`).toEqual([]);
+}
 
 for (const theme of ['dark', 'light'] as const) {
   for (const surface of SURFACES) {
@@ -69,6 +96,32 @@ for (const surface of SURFACES) {
 test.describe('390px authed layout', () => {
   test.skip(({ viewport }) => (viewport?.width ?? 0) !== 390, 'mobile width only');
 
+  test('the settings dialog has no target under 44px (AC 6)', async ({ page, context }) => {
+    /*
+     * The open state, which nothing measured until now.
+     *
+     * AC 6 covers the shell at 390px, and the settings dialog is part of it —
+     * but every check ran against the closed page, where the dialog's controls
+     * are not in the DOM. The theme segmented control was 54×32 and the close
+     * button 32×32 the whole time, and the suite could not see either, because
+     * it only ever looked at the state that happened to be rendered.
+     *
+     * The lesson is about coverage, not about these two controls: a state that
+     * no test opens is a state no test checks.
+     */
+    const user = await seedUserWithProfile('mobile-settings');
+    await signIn(context, user);
+    await page.goto('/app');
+
+    await page.getByRole('button', { name: /settings/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    await expectTargetsAtLeast44(page, '/app with the settings dialog open');
+    await expectNoHorizontalScroll(page);
+
+    await user.cleanup();
+  });
+
   for (const surface of SURFACES) {
     test(`${surface.name}: no horizontal scroll, no target under 44px (AC 6)`, async ({
       page,
@@ -79,22 +132,7 @@ test.describe('390px authed layout', () => {
       await page.goto(surface.path);
 
       await expectNoHorizontalScroll(page);
-
-      const targets = page.locator('a[href], button');
-      const count = await targets.count();
-
-      for (let index = 0; index < count; index += 1) {
-        const target = targets.nth(index);
-        if (!(await target.isVisible())) continue;
-
-        const box = await target.boundingBox();
-        if (!box) continue;
-
-        expect(
-          Math.round(box.height),
-          `target ${index} on ${surface.path} is ${Math.round(box.height)}px tall`
-        ).toBeGreaterThanOrEqual(44);
-      }
+      await expectTargetsAtLeast44(page, surface.path);
 
       await user.cleanup();
     });

@@ -46,7 +46,12 @@ export function ThemeToggle({ value }: { value: ThemeChoice }) {
               });
             }}
             className={cn(
-              'duration-instant h-8 rounded-sm px-3 text-ui-sm transition-colors ease-out',
+              // h-11 (44px) at every width, not h-8. AC 6 requires ≥44px
+              // targets at 390px and this control lives in the settings dialog,
+              // which is part of the shell there. One height rather than a
+              // responsive pair, for the reason settings-menu.tsx gives: the
+              // same affordance everywhere is one layout to verify.
+              'duration-instant h-11 rounded-sm px-3 text-ui-sm transition-colors ease-out',
               selected
                 ? 'bg-accent-quiet font-medium text-primary'
                 : 'text-secondary hover:text-primary'

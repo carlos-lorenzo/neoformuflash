@@ -48,6 +48,13 @@ describe('lint:i18n', () => {
     expect(fixture.output).not.toContain(notExpected);
   });
 
+  it.each([
+    ['literal text in a test file', 'Ignored fixture copy'],
+    ['a user-visible attribute in a test file', 'A label that should never be reported'],
+  ])('skips %s', (_label, notExpected) => {
+    expect(fixture.output).not.toContain(notExpected);
+  });
+
   it('reports one finding per violation, and no more', () => {
     const findingLines = fixture.output
       .split('\n')

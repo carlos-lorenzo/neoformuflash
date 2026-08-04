@@ -17,6 +17,7 @@ export async function createSupabaseServerClient() {
     requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
     requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     {
+      cookieOptions: COOKIE_OPTIONS,
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -36,6 +37,23 @@ export async function createSupabaseServerClient() {
     }
   );
 }
+
+/*
+ * @supabase/ssr defaults to `{ sameSite: 'lax', httpOnly: false }` with no
+ * `secure` flag at all, so the access AND refresh tokens travel over plain http
+ * if the origin is ever reachable that way. `secure` is set here rather than
+ * left to the platform, because "Vercel probably adds it at the edge" is an
+ * assumption, not a guarantee, and it costs nothing to be certain.
+ *
+ * `httpOnly: true` protects the refresh token from XSS. The browser client
+ * does not read cookies via document.cookie — it relies on the browser's
+ * automatic cookie handling via HTTP requests. This is the secure default.
+ */
+const COOKIE_OPTIONS = {
+  secure: process.env.NODE_ENV === 'production',
+  httpOnly: true,
+  sameSite: 'lax',
+} as const;
 
 function requireEnv(name: string): string {
   const value = process.env[name];

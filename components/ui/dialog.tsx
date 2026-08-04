@@ -57,7 +57,11 @@ export function Dialog({
 
             <RadixDialog.Close
               aria-label={closeLabel}
-              className="duration-instant -mt-1 -mr-1 flex size-8 shrink-0 items-center justify-center rounded-sm text-tertiary transition-colors ease-out hover:bg-raised hover:text-primary"
+              // size-11 (44px), not size-8: AC 6 requires every target at 390px
+              // to be at least 44px, and this close button sits inside the
+              // settings dialog, which is part of the shell at that width. The
+              // negative margins keep the icon optically where size-8 put it.
+              className="duration-instant -mt-3 -mr-3 flex size-11 shrink-0 items-center justify-center rounded-sm text-tertiary transition-colors ease-out hover:bg-raised hover:text-primary"
             >
               <CloseIcon />
             </RadixDialog.Close>

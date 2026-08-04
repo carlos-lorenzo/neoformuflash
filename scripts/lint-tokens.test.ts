@@ -41,11 +41,32 @@ describe('lint:tokens', () => {
     'numeric-duration',
     'animated-layout-property',
     'off-grid-spacing',
+    // These two were missing from this list, and were also the only two checks
+    // that ran on `.css` files and nothing else. A rule with no entry here is a
+    // rule that can stop matching without anyone noticing — which is what
+    // happened: `style={{ gap: '13px' }}` was unguarded for the whole of phase 00.
+    'off-grid-px',
+    'raw-duration',
   ];
 
   it.each(expectedRules)('catches a planted %s violation', (rule) => {
     const { status, output } = runLinter('scripts/__fixtures__');
     expect(status).toBe(1);
+    expect(output).toContain(`${rule}:`);
+  });
+
+  /*
+   * The design-critic calibration in docs/MEASUREMENT.md plants exactly these
+   * three. They must be caught in either syntax — a developer reaches for an
+   * inline style at least as readily as an arbitrary Tailwind value.
+   */
+  it.each([
+    ['a hardcoded hex', "style={{ color: '#ff0000' }}", 'raw-colour'],
+    ['a 13px gap, inline', "style={{ gap: '13px' }}", 'off-grid-px'],
+    ['a 300ms transition, inline', "style={{ transitionDuration: '300ms' }}", 'raw-duration'],
+    ['an off-grid length reached through a variable', "'18px'", 'off-grid-px'],
+  ])('catches %s', (_label, _syntax, rule) => {
+    const { output } = runLinter('scripts/__fixtures__');
     expect(output).toContain(`${rule}:`);
   });
 

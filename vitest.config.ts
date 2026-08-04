@@ -1,4 +1,9 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+
+// Next resolves `@/*` from tsconfig; Vite does not read tsconfig paths, so the
+// component tests need it spelled out or every `@/lib/...` import fails to resolve.
+const alias = { '@': fileURLToPath(new URL('.', import.meta.url).href).replace(/\/$/, '') };
 
 /*
  * Two projects, because they have different prerequisites.
@@ -12,9 +17,18 @@ export default defineConfig({
   test: {
     projects: [
       {
+        resolve: { alias },
         test: {
           name: 'unit',
-          include: ['scripts/**/*.test.ts', 'lib/**/*.test.ts', 'packages/**/*.test.ts'],
+          include: [
+            'scripts/**/*.test.ts',
+            'lib/**/*.test.ts',
+            'packages/**/*.test.ts',
+            // Component tests belong here by the same rule: no services needed.
+            // They opt into jsdom per file with a `@vitest-environment` docblock
+            // rather than paying for a DOM in every node test.
+            'components/**/*.test.tsx',
+          ],
           environment: 'node',
         },
       },

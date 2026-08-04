@@ -51,6 +51,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     className,
     children,
     type = 'button',
+    // Pulled out of the spread on purpose. Left in `...props` it is re-applied
+    // after the guard below and the guard becomes dead code — which it was.
+    onClick,
     ...props
   },
   ref
@@ -73,8 +76,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         SIZES[size],
         className
       )}
-      onClick={loading ? undefined : props.onClick}
       {...props}
+      // After the spread, so nothing can put the handler back. `pointer-events-none`
+      // already blocks the click; this is the guarantee that survives a stylesheet
+      // change, and the reason components/ui/button.test.tsx bypasses the CSS.
+      onClick={loading || disabled ? undefined : onClick}
     >
       {loading ? (
         <>

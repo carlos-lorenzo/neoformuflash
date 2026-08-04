@@ -57,6 +57,11 @@ This distinction decides the URL scheme. Public content pages are **not** locale
 
 Content language also feeds the AI layer: flashcards generated from a Spanish note must come back in Spanish. Storing it now means phase 05 reads a column instead of guessing from the text.
 
+
+### 8. Shortcutes
+
+Menus and interactions are navigatable through the use of keyboard shortcuts. e.g. N, S, C... These will be reflected in the UI by using `refs/01-nativations/menu_with_shortcuts.png` and `refs/04-empty-states/empty_projects_with_hint.png` (and the corresponding `NOTES.md`) as inspiration.
+
 ---
 
 ## Migration
@@ -398,3 +403,5 @@ I previously leaned toward materialising rows on deck open. **The subscription m
 ## Remaining open question
 
 - **What happens to a subscriber's `card_states` when the author edits a card's content?** Options: leave the schedule untouched (simplest, but a rewritten card is arguably a new memory), reset the card to `new`, or flag it and let the student decide. Leaving it untouched is the MVP answer and needs no schema. Flagging would need an `updated_at` comparison against `card_states.last_reviewed_at`, which the columns already support — so this is a phase 03 UX decision, not a schema one. Noted so it is not discovered mid-build.
+
+Answer: Flag it as described

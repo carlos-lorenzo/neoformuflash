@@ -11,21 +11,31 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  * byte-identical to a real one.
  *
  * ── Why this is not a production backdoor ────────────────────────────────
- * Two independent gates, both of which must hold:
+ * The real defence is that this file is `.e2e.ts`, so it is only compiled into
+ * a route when `E2E_TEST_AUTH=1` was set for the BUILD (see next.config.ts's
+ * `pageExtensions`). In any other build there is no route to reach.
  *
- *   1. E2E_TEST_AUTH must be exactly '1'. Never set in any deploy.
- *   2. The configured Supabase URL must point at localhost. Even if gate 1
- *      were set by mistake in a real environment, this route would refuse,
- *      because a deployed app never points at 127.0.0.1.
- *
- * Gate 2 is the one that matters: it makes a misconfigured environment variable
- * insufficient on its own. Flagged deliberately for the security audit.
+ * The runtime gates below are defence in depth, and one of them used to be a
+ * lie. The security audit found that `process.env.NEXT_PUBLIC_SUPABASE_URL` is
+ * inlined by Next at build time, so the localhost check compiled to a constant
+ * describing the build machine — it could not refuse a misconfigured runtime,
+ * which was the entire claim made for it. It is read dynamically now, via a
+ * computed key Next does not inline, so it actually evaluates where the app is
+ * running rather than where it was built.
  */
 
-function isEnabled(): boolean {
-  if (process.env.E2E_TEST_AUTH !== '1') return false;
+/** Computed key: `process.env[expr]` is not statically inlined the way `process.env.FOO` is. */
+function runtimeEnv(name: string): string | undefined {
+  return process.env[name];
+}
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+function isEnabled(): boolean {
+  if (runtimeEnv('E2E_TEST_AUTH') !== '1') return false;
+
+  // Never in a real deployment, whatever else is misconfigured.
+  if (runtimeEnv('VERCEL_ENV') === 'production' || runtimeEnv('VERCEL') === '1') return false;
+
+  const url = runtimeEnv('NEXT_PUBLIC_SUPABASE_URL') ?? '';
   try {
     const { hostname } = new URL(url);
     return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1';

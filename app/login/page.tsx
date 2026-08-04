@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { GoogleSignInButton } from './google-sign-in-button';
+import { GoogleSignInButton } from '@/components/google-sign-in-button';
 
 // Server Component: only the OAuth button needs the browser.
 

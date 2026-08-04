@@ -11,6 +11,13 @@ Localisation **plumbing** is in scope; translation coverage beyond `es` and `en`
 ## Contract changes
 `profiles`, `institutions`, `degrees` tables only, plus their RLS. The rest of the schema lands in phase 01.
 
+`0002_rls_column_grants.sql` adds no tables and no columns. It narrows write privileges to the
+column level after the security audit found four privilege escalations that row-level policies
+cannot reach — a user could self-grant `is_pro`, insert a profile directly with a chosen slug,
+forge a moderation request's `status`, or call `claim_profile_slug` anonymously. Approved by
+the owner on 2026-08-04. It also adds a reserved-slug denylist, because the slug immutability
+trigger makes a squat permanent and phase 04 serves public profiles at `/{slug}`.
+
 ## Routes and server actions
 | Path | Method | Input | Output | Auth |
 |---|---|---|---|---|
@@ -56,7 +63,8 @@ These seven are the shared primitives. Phases 02–04 use them and do not invent
 - Reviewers: test-runner, design-critic, code-reviewer, **security-auditor** (auth is in scope)
 
 ## Files I may touch
-`app/**`, `components/**`, `lib/**`, `styles/**`, `e2e/**`, `supabase/migrations/0001_*.sql`, root config files.
+`app/**`, `components/**`, `lib/**`, `styles/**`, `e2e/**`, `tests/**`, `scripts/**`,
+`supabase/migrations/*.sql`, root config files.
 
 ## Risks and open questions
 - Theme flash: solve with a blocking inline script reading the cookie before hydration. Do not solve it with `useEffect`.

@@ -1,7 +1,9 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+# Unanchored: `/node_modules` only covered the root, so pnpm's symlinks under
+# packages/*/node_modules were committed and churn on every dependency bump.
+node_modules/
 /.pnp
 .pnp.js
 
@@ -25,8 +27,12 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+# Match anything env-shaped, not just names ending in `.local`. A backup called
+# `.env.local.bak` slipped past the old `.env*.local` pattern while it held real
+# hosted Supabase credentials.
 .env
+.env.*
+!.env.example
 
 # vercel
 .vercel

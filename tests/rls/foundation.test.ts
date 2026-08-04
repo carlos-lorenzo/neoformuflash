@@ -133,11 +133,26 @@ describe('profiles', () => {
   });
 
   it('rejects a slug change and allows a handle change (decision 6)', async () => {
-    const { error: slugError } = await alice.client
+    /*
+     * Two layers, and they refuse at different depths — assert both.
+     *
+     * Since 0002 a signed-in user has no `update` grant on `slug` at all, so
+     * they are refused before the trigger is ever consulted. The trigger is
+     * still the guard that matters for anything holding a table-level grant,
+     * which is service_role: migrations, the Stripe webhook, this suite.
+     * Dropping either one would leave a hole the other does not cover.
+     */
+    const { error: grantError } = await alice.client
       .from('profiles')
       .update({ slug: 'brand-new-slug' })
       .eq('id', alice.id);
-    expect(slugError?.message).toContain('slug is immutable');
+    expect(grantError?.message).toContain('permission denied');
+
+    const { error: triggerError } = await admin
+      .from('profiles')
+      .update({ slug: 'brand-new-slug' })
+      .eq('id', alice.id);
+    expect(triggerError?.message).toContain('slug is immutable');
 
     const { error: handleError } = await alice.client
       .from('profiles')
@@ -203,5 +218,160 @@ describe('institution_requests', () => {
   it('does not create an institution row as a side effect', async () => {
     const { data } = await anon.from('institutions').select('slug').eq('slug', 'universidad-de-prueba');
     expect(data).toHaveLength(0);
+  });
+});
+
+/*
+ * Privilege escalation — the four findings migration 0002 closes.
+ *
+ * Every test here was run against 0001 alone and seen to FAIL before 0002 was
+ * written. That matters more than usual: the suite above was green over all
+ * four of these for two sessions. Row policies were never the problem — they
+ * authorise the row and say nothing about which columns the write may name.
+ *
+ * If you add a column to profiles or institution_requests, it is unwritable by
+ * `authenticated` until a migration grants it. That is the intended default.
+ */
+describe('privilege escalation', () => {
+  // A signed-in user with no profile row, so the direct-insert attempt is
+  // testing the grant rather than tripping over the primary key.
+  let mallory: TestUser;
+
+  beforeAll(async () => {
+    mallory = await createUser('mallory');
+  }, 30_000);
+
+  afterAll(async () => {
+    if (mallory) await admin.auth.admin.deleteUser(mallory.id);
+  });
+
+  it('F3: does not let a user grant themselves is_pro', async () => {
+    const { error } = await alice.client
+      .from('profiles')
+      .update({ is_pro: true })
+      .eq('id', alice.id);
+    expect(error).not.toBeNull();
+
+    const { data } = await admin.from('profiles').select('is_pro').eq('id', alice.id).single();
+    expect(data?.is_pro).toBe(false);
+  });
+
+  it('F3: does not let a user set their own desired_retention', async () => {
+    /*
+     * Deliberately service-role-only until phase 03 ships the control.
+     *
+     * 0.85, not 0.70: `desired_retention` is `real`, so 0.70 round-trips as
+     * 0.6999999881 and the `between 0.70 and 0.98` constraint rejects it. The
+     * first version of this test used 0.70 and passed against the unfixed
+     * schema — the constraint was doing the work, not the grant. 0.85 is
+     * comfortably inside the range, so only the column grant can refuse it.
+     */
+    const { error } = await alice.client
+      .from('profiles')
+      .update({ desired_retention: 0.85 })
+      .eq('id', alice.id);
+    expect(error).not.toBeNull();
+
+    const { data } = await admin
+      .from('profiles')
+      .select('desired_retention')
+      .eq('id', alice.id)
+      .single();
+    expect(data?.desired_retention).toBeCloseTo(0.9, 5);
+  });
+
+  it('F4: does not let a user insert their own profile row directly', async () => {
+    // create_profile() is the only supported path. A direct insert would let
+    // the caller choose their own slug and is_pro in one statement.
+    const { error } = await mallory.client.from('profiles').insert({
+      id: mallory.id,
+      slug: 'mallory-chosen',
+      handle: 'mallory-chosen',
+      display_name: 'Mallory',
+      is_pro: true,
+    });
+    expect(error).not.toBeNull();
+
+    const { data } = await admin.from('profiles').select('id').eq('id', mallory.id);
+    expect(data).toHaveLength(0);
+  });
+
+  it('F5: does not let a user file a request that is already accepted', async () => {
+    const { error } = await alice.client
+      .from('institution_requests')
+      .insert({ user_id: alice.id, name: 'Forged Status', country: 'ES', status: 'accepted' });
+    expect(error).not.toBeNull();
+  });
+
+  it('F5: does not let a user pre-resolve a request to an institution', async () => {
+    const { data: upv } = await anon.from('institutions').select('id').eq('slug', 'upv').single();
+
+    const { error } = await alice.client.from('institution_requests').insert({
+      user_id: alice.id,
+      name: 'Pre-resolved',
+      country: 'ES',
+      resolved_institution_id: upv?.id,
+    });
+    expect(error).not.toBeNull();
+  });
+
+  it('F5: still lands a legitimate request as pending', async () => {
+    const name = `Universidad Legitima ${Date.now()}`;
+    const { error } = await alice.client
+      .from('institution_requests')
+      .insert({ user_id: alice.id, name, country: 'ES' });
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from('institution_requests')
+      .select('status, resolved_institution_id')
+      .eq('name', name)
+      .single();
+    expect(data?.status).toBe('pending');
+    expect(data?.resolved_institution_id).toBeNull();
+  });
+
+  it('F6: does not let an anonymous caller claim a slug', async () => {
+    // Postgres grants EXECUTE to PUBLIC by default, so 0001's explicit grants
+    // were decorative and anon inherited access to every function.
+    const { error } = await anon.rpc('claim_profile_slug', { p_base: 'Anonymous Squatter' });
+    expect(error).not.toBeNull();
+  });
+
+  it('F6: does not let an anonymous caller run slugify', async () => {
+    const { error } = await anon.rpc('slugify', { p_input: 'anything' });
+    expect(error).not.toBeNull();
+  });
+
+  it('reserves slugs that would collide with a route or a support channel', async () => {
+    // The immutability trigger makes a squat permanent, and phase 04 serves
+    // public profiles at /{slug}. Cheap to reserve now, unfixable later.
+    for (const word of ['Admin', 'support', 'FormuFlash', 'settings']) {
+      const claimed = await claimSlug(word);
+      expect(claimed).not.toBe(word.toLowerCase());
+      expect(claimed).toMatch(/^[a-z0-9][a-z0-9_-]{2,29}$/);
+    }
+  });
+
+  it('still lets a user change the fields onboarding and settings own', async () => {
+    // Regression guard on the column grant: lib/db/profiles.ts writes locale
+    // here and {user_id, name, country} on the moderation queue. Narrowing the
+    // grant further than this breaks the product.
+    const { error } = await alice.client
+      .from('profiles')
+      .update({
+        locale: 'es',
+        handle: 'alice-settings',
+        display_name: 'Alice Settings',
+        avatar_url: null,
+      })
+      .eq('id', alice.id);
+    expect(error).toBeNull();
+
+    // Put it back so later runs of the suite see the name they seeded.
+    await admin
+      .from('profiles')
+      .update({ locale: 'en', display_name: 'Alice Alpha' })
+      .eq('id', alice.id);
   });
 });

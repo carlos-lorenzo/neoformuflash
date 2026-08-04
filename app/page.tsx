@@ -1,7 +1,15 @@
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { GoogleSignInButton } from '@/components/google-sign-in-button';
 
-// Server Component: static marketing surface, public, no interactivity.
+/*
+ * Server Component: static marketing surface, public. The one client island is
+ * the sign-in button, which has to start OAuth in the browser so the PKCE
+ * verifier has somewhere to live.
+ *
+ * It is the real button, not a link to /login. A control that says "Sign in
+ * with Google" signs you in with Google — sending it to a page with a second
+ * button that does the actual thing makes the label a lie and costs a click.
+ */
 
 export default async function LandingPage() {
   const t = await getTranslations();
@@ -18,12 +26,9 @@ export default async function LandingPage() {
 
         <p className="mt-4 max-w-measure text-ui-base text-secondary">{t('brand.tagline')}</p>
 
-        <Link
-          href="/login"
-          className="duration-instant mt-8 inline-flex h-11 items-center justify-center rounded-md bg-accent px-6 text-ui-base font-medium text-on-accent transition-colors ease-out hover:bg-accent-hover"
-        >
-          {t('landing.signIn')}
-        </Link>
+        <div className="mt-8 w-full max-w-auth">
+          <GoogleSignInButton label={t('landing.signIn')} />
+        </div>
       </div>
     </main>
   );

@@ -30,6 +30,14 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   }
 
   const supabase = createServerClient(url, anonKey, {
+    // Must match lib/supabase/server.ts — the middleware is what actually
+    // rewrites the refreshed session cookie, so omitting `secure` here would
+    // undo it on the very request that matters.
+    cookieOptions: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: 'lax',
+    },
     cookies: {
       getAll() {
         return request.cookies.getAll();

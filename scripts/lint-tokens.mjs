@@ -120,7 +120,16 @@ function checkSpacing(line) {
   return findings;
 }
 
-/** Raw px in plain CSS must land on the 4px grid; 1px and 2px are hairlines and the focus ring. */
+/**
+ * Raw px must land on the 4px grid; 1px and 2px are hairlines and the focus ring.
+ *
+ * Runs on TSX as well as CSS. It used to be CSS-only, which left `style={{ gap:
+ * '13px' }}` completely unguarded even though the header above claimed inline
+ * styles were covered — a guarantee that was documented but never implemented.
+ * Scanning whole files rather than just `style={{ … }}` is deliberate: the value
+ * can arrive through a variable, and a check that only reads the attribute would
+ * miss it.
+ */
 function checkCssPixels(line) {
   const findings = [];
   const re = /(?<![\w.-])(\d+)px\b/g;
@@ -138,7 +147,7 @@ function checkCssPixels(line) {
   return findings;
 }
 
-/** Durations declared directly in CSS, outside tokens.css. */
+/** Durations declared as raw values, outside tokens.css. TSX included — see above. */
 function checkCssDuration(line) {
   const findings = [];
   const re = /(?<![\w-])(\d+(?:\.\d+)?)(ms|s)(?![\w-])/g;
@@ -205,9 +214,13 @@ for (const file of files) {
       }
     }
 
-    const extra = isCss
-      ? [...checkCssPixels(line), ...checkCssDuration(line)]
-      : checkSpacing(line);
+    // Raw px and raw durations are wrong wherever they appear, so both checks
+    // run everywhere. Only the Tailwind spacing scale is class-syntax specific.
+    const extra = [
+      ...checkCssPixels(line),
+      ...checkCssDuration(line),
+      ...(isCss ? [] : checkSpacing(line)),
+    ];
 
     for (const finding of extra) {
       findings.push({ file, line: index + 1, ...finding });

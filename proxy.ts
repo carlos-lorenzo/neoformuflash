@@ -8,9 +8,18 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Everything except static assets and image files. The session cookie has
-     * to be refreshed on real navigations, not on every icon request.
+     * Everything except Next's own build output.
+     *
+     * This used to also exclude any path ending in an image or font extension,
+     * which meant `/app/anything.png` skipped the middleware entirely — the
+     * guard in `updateSession` never ran for it. Harmless while every route
+     * under `/app/` is also covered by the server-side check in
+     * `app/app/layout.tsx`, and a real auth bypass the moment phase 01 adds one
+     * that isn't.
+     *
+     * The exclusion bought nothing anyway: there is no `public/` directory, so
+     * every asset this app serves already comes from `_next/`.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
