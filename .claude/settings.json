@@ -1,8 +1,5 @@
 {
   "$comment": "Project-scoped, committed to git. Personal overrides go in .claude/settings.local.json (gitignored).",
-  "env": {
-    "CLAUDE_CODE_SUBAGENT_MODEL": "haiku"
-  },
   "permissions": {
     "allow": [
       "Bash(pnpm:*)",

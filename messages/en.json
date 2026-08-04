@@ -1,0 +1,88 @@
+{
+  "brand": {
+    "name": "FormuFlash",
+    "tagline": "Structured notes and spaced repetition, for STEM degrees."
+  },
+  "common": {
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving",
+    "retry": "Retry",
+    "close": "Close",
+    "loading": "Loading"
+  },
+  "landing": {
+    "signIn": "Sign in with Google",
+    "lede": "Write the derivation once. Review it until it sticks."
+  },
+  "login": {
+    "title": "Sign in to FormuFlash",
+    "subtitle": "Use your Google account to get started.",
+    "google": "Continue with Google",
+    "failed": "We couldn't finish signing you in. Try again.",
+    "legal": "By continuing you accept the terms of use."
+  },
+  "onboarding": {
+    "title": "Tell us who you are",
+    "subtitle": "We use this to suggest notes from your degree.",
+    "displayName": {
+      "label": "Name",
+      "placeholder": "What we should call you",
+      "required": "Enter a name.",
+      "tooLong": "Name can't be longer than 80 characters."
+    },
+    "institution": {
+      "label": "University",
+      "placeholder": "Search for your university",
+      "other": "My university isn't listed",
+      "otherLabel": "Type your university's name",
+      "otherHint": "We'll review it and add it.",
+      "required": "Choose a university.",
+      "invalid": "That university doesn't exist.",
+      "tooLong": "Name can't be longer than 120 characters.",
+      "ambiguous": "Pick a university from the list or type your own, not both."
+    },
+    "degree": {
+      "label": "Degree",
+      "placeholder": "Choose your degree",
+      "empty": "Choose a university first.",
+      "invalid": "That degree doesn't exist.",
+      "needsInstitution": "Choose a university first."
+    },
+    "submit": "Get started"
+  },
+  "app": {
+    "empty": {
+      "title": "Your first note starts here",
+      "body": "Write a derivation once and turn it into cards you'll review just before you'd forget it.",
+      "action": "Create note"
+    }
+  },
+  "nav": {
+    "dashboard": "Home",
+    "notes": "Notes",
+    "decks": "Decks",
+    "review": "Review",
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "expandSidebar": "Open the menu",
+    "collapseSidebar": "Close the menu"
+  },
+  "theme": {
+    "label": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "system": "System"
+  },
+  "locale": {
+    "label": "Language",
+    "es": "Español",
+    "en": "English",
+    "ca": "Català"
+  },
+  "error": {
+    "unexpected": "Something went wrong. Try again.",
+    "network": "You're offline. Check your connection and retry."
+  }
+}

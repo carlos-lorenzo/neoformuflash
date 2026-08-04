@@ -1,0 +1,57 @@
+{
+  "name": "neoformuflash",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit && pnpm --filter @neoformuflash/contracts typecheck",
+    "lint": "eslint . --max-warnings 0 && pnpm lint:tokens && pnpm lint:i18n && pnpm lint:contrast",
+    "lint:tokens": "node scripts/lint-tokens.mjs",
+    "lint:contrast": "node scripts/check-contrast.mjs",
+    "lint:i18n": "node scripts/lint-i18n.mjs",
+    "i18n:pseudo": "node scripts/gen-pseudo-locale.mjs",
+    "test": "vitest run --project unit",
+    "test:rls": "vitest run --project rls",
+    "test:e2e": "playwright test",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --local > packages/contracts/src/db.ts"
+  },
+  "dependencies": {
+    "@neoformuflash/contracts": "workspace:*",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-select": "^2.2.6",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.58.0",
+    "clsx": "^2.1.1",
+    "next": "^16.3.0",
+    "next-intl": "^4.13.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.20.3",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "dotenv": "^17.4.2",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.3.0",
+    "pg": "^8.22.0",
+    "supabase": "^2.111.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.10"
+  }
+}

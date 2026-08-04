@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Static checks need no services, so they fail in ~1 minute rather than
+  # waiting on a Postgres container to boot.
+  static:
+    name: typecheck, lint, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate the pseudo-locale catalog
+        run: pnpm i18n:pseudo
+
+      - run: pnpm typecheck
+
+      # eslint, then lint:tokens, lint:i18n and lint:contrast — the design
+      # system's own enforcement (§9.1). These are the guarantee; the written
+      # rules are intent.
+      - run: pnpm lint
+
+      - run: pnpm build
+
+      - run: pnpm test
+
+  database:
+    name: migrations, RLS, e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm i18n:pseudo
+
+      - name: Start Supabase
+        # Applies every migration from empty and runs the seed — acceptance
+        # criterion 1 of specs/01-contracts.md, checked on every push rather
+        # than the next time somebody happens to reset their local database.
+        run: pnpm exec supabase start
+
+      - name: Check generated types are current
+        # A migration whose types were never regenerated typechecks locally
+        # (against the stale file) and breaks for whoever pulls next.
+        run: |
+          pnpm db:types
+          git diff --exit-code packages/contracts/src/db.ts \
+            || (echo "::error::packages/contracts/src/db.ts is stale. Run 'pnpm db:types' and commit." && exit 1)
+
+      - name: RLS and database tests
+        run: pnpm test:rls
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: End-to-end
+        # Builds and starts its own production server, and reads the local
+        # Supabase keys from the CLI, so no secrets are needed.
+        run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: screenshots
+          path: e2e/__screenshots__/
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

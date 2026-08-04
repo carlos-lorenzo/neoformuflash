@@ -1,0 +1,88 @@
+{
+  "brand": {
+    "name": "FormuFlash",
+    "tagline": "Apuntes estructurados y repaso espaciado, para carreras técnicas."
+  },
+  "common": {
+    "continue": "Continuar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "loading": "Cargando"
+  },
+  "landing": {
+    "signIn": "Entrar con Google",
+    "lede": "Escribe la derivación una vez. Repásala hasta que se quede."
+  },
+  "login": {
+    "title": "Entra en FormuFlash",
+    "subtitle": "Usa tu cuenta de Google para empezar.",
+    "google": "Continuar con Google",
+    "failed": "No hemos podido completar el acceso. Vuelve a intentarlo.",
+    "legal": "Al continuar aceptas las condiciones de uso."
+  },
+  "onboarding": {
+    "title": "Cuéntanos quién eres",
+    "subtitle": "Lo usamos para sugerirte apuntes de tu carrera.",
+    "displayName": {
+      "label": "Nombre",
+      "placeholder": "Cómo quieres que te llamemos",
+      "required": "Escribe un nombre.",
+      "tooLong": "El nombre no puede pasar de 80 caracteres."
+    },
+    "institution": {
+      "label": "Universidad",
+      "placeholder": "Busca tu universidad",
+      "other": "Mi universidad no está en la lista",
+      "otherLabel": "Escribe el nombre de tu universidad",
+      "otherHint": "La revisaremos y la añadiremos.",
+      "required": "Elige una universidad.",
+      "invalid": "Esa universidad no existe.",
+      "tooLong": "El nombre no puede pasar de 120 caracteres.",
+      "ambiguous": "Elige una universidad de la lista o escribe la tuya, no las dos."
+    },
+    "degree": {
+      "label": "Grado",
+      "placeholder": "Elige tu grado",
+      "empty": "Elige antes una universidad.",
+      "invalid": "Ese grado no existe.",
+      "needsInstitution": "Elige antes una universidad."
+    },
+    "submit": "Empezar"
+  },
+  "app": {
+    "empty": {
+      "title": "Tus primeros apuntes empiezan aquí",
+      "body": "Escribe una derivación una vez y conviértela en tarjetas que repasarás justo antes de olvidarla.",
+      "action": "Crear apuntes"
+    }
+  },
+  "nav": {
+    "dashboard": "Inicio",
+    "notes": "Apuntes",
+    "decks": "Mazos",
+    "review": "Repasar",
+    "settings": "Ajustes",
+    "signOut": "Salir",
+    "expandSidebar": "Abrir el menú",
+    "collapseSidebar": "Cerrar el menú"
+  },
+  "theme": {
+    "label": "Tema",
+    "dark": "Oscuro",
+    "light": "Claro",
+    "system": "Automático"
+  },
+  "locale": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "English",
+    "ca": "Català"
+  },
+  "error": {
+    "unexpected": "Algo ha fallado. Vuelve a intentarlo.",
+    "network": "No hay conexión. Comprueba tu red y reintenta."
+  }
+}

@@ -42,7 +42,7 @@ All colours are declared in OKLCH so lightness is perceptually even and we can g
 
 --text-primary:   oklch(0.960 0.004 250);  /* chalk */
 --text-secondary: oklch(0.730 0.010 250);
---text-tertiary:  oklch(0.560 0.012 250);  /* metadata, timestamps only */
+--text-tertiary:  oklch(0.610 0.012 250);  /* metadata, timestamps only. was 0.560 — see below */
 
 --border-subtle:  oklch(0.290 0.013 250);  /* default 1px hairline */
 --border-strong:  oklch(0.400 0.015 250);  /* hover, focus-within, active row */
@@ -66,7 +66,7 @@ All colours are declared in OKLCH so lightness is perceptually even and we can g
 
 --text-primary:   oklch(0.225 0.010 250);  /* graphite, not black */
 --text-secondary: oklch(0.450 0.010 250);
---text-tertiary:  oklch(0.600 0.010 250);
+--text-tertiary:  oklch(0.540 0.010 250);  /* was 0.600 — see below */
 
 --border-subtle:  oklch(0.900 0.005 090);
 --border-strong:  oklch(0.800 0.008 090);
@@ -84,6 +84,18 @@ All colours are declared in OKLCH so lightness is perceptually even and we can g
 
 - Semantic names only in components. `bg-raised`, never `slate-800`. A component that references a raw colour is a bug.
 - **Contrast is a verified requirement, not an aspiration.** Body text ≥ 4.5:1 against its background; large text and UI borders ≥ 3:1. These values are designed to hit that, but the Playwright axe run is the source of truth. If a pair fails, adjust the lightness channel only and record it here.
+
+  **Recorded adjustments (phase 00).** Two tokens failed against real surfaces. Lightness channel only; chroma and hue unchanged. Ratios below are the worst case across all four surfaces (`--bg-base`, `--bg-raised`, `--bg-overlay`, `--bg-inset`).
+
+  | Token | Mode | Was | Now | Worst ratio | Failing pair that caught it |
+  |---|---|---|---|---|---|
+  | `--text-tertiary` | dark | 0.560 | **0.635** | 4.73:1 | 3.83:1 on `--bg-raised`, 4.28:1 on `--bg-overlay` |
+  | `--text-tertiary` | light | 0.600 | **0.515** | 4.97:1 | 3.78:1 on `--bg-base`, 4.47:1 on `--bg-inset` |
+  | `--warning` | light | 0.560 | **0.520** | 4.90:1 | 4.15:1 on `--bg-inset` |
+
+  `--text-tertiary` is used at `--ui-xs` (11px), which is small text, so the 3:1 large-text allowance never applies to it. `--warning` has no consumer yet; phase 03's grading row will be the first.
+
+  `pnpm lint:contrast` checks **every** foreground against **every** surface, not a hand-picked list. The hand-picked version missed `--text-tertiary` on `--bg-inset` — the placeholder inside an input — and axe found it on `/onboarding` instead. A checker whose coverage depends on remembering the combinations is the same kind of hope this document exists to replace.
 - The accent is for **interaction and identity**, never decoration. On a typical screen it appears 0–2 times.
 - `--success` / `--warning` / `--danger` in the flashcard grading row are the one place three colours legitimately appear together. Everywhere else, one at most.
 - No gradients. No coloured shadows. No glow.

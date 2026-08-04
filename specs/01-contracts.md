@@ -51,6 +51,8 @@ Same rule for notes and courses: the slug is fixed at first publish, the title i
 
 `profiles.locale` is which language the *product* speaks to you in. `notes.language` / `courses.language` is what language the *content* is written in. They are unrelated: a student with an English interface writes notes in Spanish constantly.
 
+**Their defaults are also unrelated, and deliberately different.** `profiles.locale` defaults to `en` — the widest-understood fallback for a visitor we know nothing about, and one a Spanish browser overrides via `Accept-Language` anyway. `notes.language` / `courses.language` default to `es`, because the people writing content here are at UPV writing in Spanish. Setting both to the same value would be a coincidence, not a simplification.
+
 This distinction decides the URL scheme. Public content pages are **not** locale-prefixed — a Spanish note lives at one URL, declares `<html lang="es">` from `notes.language`, and is indexed once. Prefixing every public URL by interface locale would generate duplicate URLs for content that was never translated, which is an SEO liability, not a feature. Authenticated `/app/*` routes are `noindex` and take their locale from the profile with no URL involvement at all.
 
 Content language also feeds the AI layer: flashcards generated from a Spanish note must come back in Spanish. Storing it now means phase 05 reads a column instead of guessing from the text.
@@ -91,7 +93,7 @@ create table profiles (
   handle         citext not null unique check (handle ~ '^[a-z0-9][a-z0-9_-]{2,29}$'),
   display_name   text not null,
   avatar_url     text,
-  locale         text not null default 'es' check (locale in ('es','en','ca')),
+  locale         text not null default 'en' check (locale in ('es','en','ca')),
   institution_id uuid references institutions(id) on delete set null,
   degree_id      uuid references degrees(id) on delete set null,
   is_pro         boolean not null default false,

@@ -1,0 +1,136 @@
+/*
+ * Design tokens — transcribed verbatim from specs/design-system.md (FROZEN).
+ *
+ * This file is the ONLY place a raw value may appear. Nothing else in the repo
+ * declares a colour, spacing, radius, font size, shadow or duration.
+ * `pnpm lint:tokens` excludes this file and fails on raw values everywhere else.
+ *
+ * Two modes, and they are different materials, not a colour inversion:
+ *   dark (default) — "slate": chalk marks ON a deep, faintly cool surface
+ *   light          — "paper": graphite IN warm off-white stock
+ *
+ * :root carries dark because dark is the default. An explicit light choice is
+ * stamped as data-theme="light" on <html> by the server (see app/layout.tsx),
+ * so there is no flash and no client-side detection in the common case.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- colour: dark, "slate" ---- */
+  --bg-base: oklch(0.170 0.012 250); /* page */
+  --bg-raised: oklch(0.208 0.013 250); /* cards, sidebars, editor canvas */
+  --bg-overlay: oklch(0.245 0.014 250); /* menus, dialogs, popovers */
+  --bg-inset: oklch(0.145 0.012 250); /* code blocks, inputs, wells */
+
+  --text-primary: oklch(0.960 0.004 250); /* chalk */
+  --text-secondary: oklch(0.730 0.010 250);
+  /* 0.560 as originally specified measured 3.83:1 on --bg-raised and 4.28:1 on
+   * --bg-overlay. Raised to 0.635 (worst case 4.73:1 across all four surfaces).
+   * Lightness channel only — see design-system.md §1. */
+  --text-tertiary: oklch(0.635 0.012 250); /* metadata, timestamps only */
+
+  --border-subtle: oklch(0.290 0.013 250); /* default 1px hairline */
+  --border-strong: oklch(0.400 0.015 250); /* hover, focus-within, active row */
+
+  --accent: oklch(0.720 0.135 232); /* chalk-blue. interactive + brand */
+  --accent-hover: oklch(0.780 0.135 232);
+  --accent-quiet: oklch(0.380 0.070 232); /* accent-tinted surface, selection */
+
+  --success: oklch(0.740 0.125 155); /* "recalled easily" */
+  --warning: oklch(0.800 0.125 085); /* "due soon" */
+  --danger: oklch(0.655 0.190 025); /* red pen. destructive + "forgot" */
+
+  /* ---- space: strict 4px grid. There are no other values. ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+
+  /* ---- shape ---- */
+  --radius-sm: 4px; /* inputs, badges, table cells */
+  --radius-md: 6px; /* buttons, cards, menu items — the default */
+  --radius-lg: 10px; /* dialogs, the review card */
+  --radius-full: 9999px; /* avatars, streak pip only */
+
+  /* ---- elevation: only things that float above the page and can be dismissed ---- */
+  --shadow-overlay: 0 4px 16px -2px oklch(0 0 0 / 0.35);
+  --shadow-dialog: 0 16px 48px -8px oklch(0 0 0 / 0.45);
+
+  /* ---- motion ---- */
+  --dur-instant: 80ms; /* colour/opacity on hover */
+  --dur-fast: 140ms; /* menus, tooltips, toggles */
+  --dur-base: 200ms; /* dialogs, panels, card flip */
+  --ease-out-curve: cubic-bezier(0.32, 0.72, 0, 1); /* the default. decelerating. */
+  --ease-in-out-curve: cubic-bezier(0.65, 0, 0.35, 1); /* only for reversible flips */
+
+  /* ---- layout ---- */
+  --measure: 68ch; /* reading measure cap */
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 56px;
+  --outline-rail-width: 200px;
+
+  /* ---- the signature: a 24px ruled grid, --border-subtle at 40% ---- */
+  --ruled-grid-size: 24px;
+  --ruled-grid-opacity: 0.4;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* ---- colour: light, "paper" ---- */
+  --bg-base: oklch(0.985 0.004 090); /* warm stock, not white */
+  --bg-raised: oklch(1.000 0 000);
+  --bg-overlay: oklch(1.000 0 000);
+  --bg-inset: oklch(0.958 0.005 090);
+
+  --text-primary: oklch(0.225 0.010 250); /* graphite, not black */
+  --text-secondary: oklch(0.450 0.010 250);
+  /* 0.600 measured 3.78:1 on --bg-base and 4.47:1 on --bg-inset (the input
+   * placeholder). Lowered to 0.515 (worst case 4.97:1). See §1. */
+  --text-tertiary: oklch(0.515 0.010 250);
+
+  --border-subtle: oklch(0.900 0.005 090);
+  --border-strong: oklch(0.800 0.008 090);
+
+  --accent: oklch(0.520 0.150 232);
+  --accent-hover: oklch(0.455 0.150 232);
+  --accent-quiet: oklch(0.945 0.035 232);
+
+  --success: oklch(0.520 0.130 155);
+  /* 0.560 measured 4.15:1 on --bg-inset. Lowered to 0.520 (worst case 4.90:1).
+   * Nothing renders it yet; phase 03's grading row will. See §1. */
+  --warning: oklch(0.520 0.130 085);
+  --danger: oklch(0.520 0.190 025);
+}
+
+/*
+ * Reduced motion is enforced by a Playwright test, not left to good intentions.
+ * Every duration collapses; the card flip swaps instantly rather than rotating.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 1ms;
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+  }
+
+  /*
+   * Durations alone are not enough: keyframe animations (the button spinner)
+   * and smooth scrolling carry their own timing. The Playwright test asserts
+   * no transition or animation exceeds 1ms, so this has to cover both.
+   */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

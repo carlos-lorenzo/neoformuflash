@@ -1,0 +1,22 @@
+packages:
+  - 'packages/*'
+# All three are transitive deps of next / eslint-config-next / tailwindcss, whose
+# own build output we already execute. Their postinstall steps fetch the native
+# binary for this platform; without them the build falls back to slow JS paths.
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@next/env@16.3.0'
+  - '@next/eslint-plugin-next@16.3.0'
+  - '@next/swc-darwin-arm64@16.3.0'
+  - '@next/swc-darwin-x64@16.3.0'
+  - '@next/swc-linux-arm64-gnu@16.3.0'
+  - '@next/swc-linux-arm64-musl@16.3.0'
+  - '@next/swc-linux-x64-gnu@16.3.0'
+  - '@next/swc-linux-x64-musl@16.3.0'
+  - '@next/swc-win32-arm64-msvc@16.3.0'
+  - '@next/swc-win32-x64-msvc@16.3.0'
+  - eslint-config-next@16.3.0
+  - next@16.3.0

@@ -36,3 +36,16 @@ yarn-error.log*
 next-env.d.ts
 .claude/settings.local.json
 .claude/cost-log.csv
+
+# generated
+messages/pseudo.json
+
+# playwright
+/test-results
+/playwright-report
+/e2e/__screenshots__
+/.playwright
+
+# supabase local stack
+/supabase/.temp
+/supabase/.branches

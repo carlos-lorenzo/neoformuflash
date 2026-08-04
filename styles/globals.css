@@ -1,0 +1,278 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/*
+ * Tokens as a type system, not as documentation.
+ *
+ * Every Tailwind namespace below is reset to `initial` before our tokens are
+ * added back. That deletes `bg-red-500`, `p-5`, `rounded-xl`, `text-sm` and the
+ * rest of the stock scales from the language entirely, so an off-token value is
+ * a compile error rather than something a linter catches after review.
+ * `pnpm lint:tokens` is the backstop for what escapes this (arbitrary values,
+ * raw CSS, inline styles) — it is not the primary defence.
+ *
+ * `@theme inline` (not plain `@theme`) makes every utility resolve through the
+ * live CSS variable, so one `data-theme` swap on <html> repaints both modes
+ * without generating a duplicate class set per theme.
+ */
+@theme inline {
+  /* ============ colour ============
+   * Semantic names only. A component that references a raw colour is a bug.
+   * Reads as: bg-raised, text-secondary, border-subtle, bg-accent, text-danger.
+   */
+  --color-*: initial;
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-inherit: inherit;
+
+  --color-base: var(--bg-base);
+  --color-raised: var(--bg-raised);
+  --color-overlay: var(--bg-overlay);
+  --color-inset: var(--bg-inset);
+
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
+
+  --color-subtle: var(--border-subtle);
+  --color-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-quiet: var(--accent-quiet);
+
+  /* Text sitting ON an accent fill. Resolves to the page background, which is
+   * the far end of the lightness range in both modes, so contrast holds without
+   * a second hardcoded pair. Named explicitly because `text-base` would read as
+   * a font size to anyone with Tailwind muscle memory. */
+  --color-on-accent: var(--bg-base);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  /* ============ space ============
+   * The nine values from design-system.md §3, keyed by their true 4px
+   * multiplier so `p-6` is 24px exactly as a Tailwind reader expects.
+   * The steps in between (p-5, p-7, p-9, p-10 …) do not exist and will not
+   * compile. Mapping to --sp-N: 1→1 2→2 3→3 4→4 6→5 8→6 12→7 16→8 24→9.
+   */
+  --spacing-*: initial;
+  --spacing-0: 0px;
+  --spacing-px: 1px;
+  --spacing-1: var(--sp-1); /* 4  */
+  --spacing-2: var(--sp-2); /* 8  */
+  --spacing-3: var(--sp-3); /* 12 */
+  --spacing-4: var(--sp-4); /* 16 */
+  --spacing-6: var(--sp-5); /* 24 */
+  --spacing-8: var(--sp-6); /* 32 */
+  --spacing-12: var(--sp-7); /* 48 */
+  --spacing-16: var(--sp-8); /* 64 */
+  --spacing-24: var(--sp-9); /* 96 */
+  --spacing-11: 44px; /* the minimum touch target at 390px. On grid, not in --sp-*. */
+
+  /* ============ type ============
+   * Two scales: chrome wants density (Geist Sans), reading wants air
+   * (Source Serif 4). The pairing is load-bearing — KaTeX renders in Computer
+   * Modern, a serif, so a sans reading face makes every equation look pasted in.
+   */
+  --font-*: initial;
+  --font-sans: var(--font-geist-sans), 'Inter Tight', system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), Georgia, serif;
+  --font-mono: var(--font-geist-mono), 'JetBrains Mono', ui-monospace, monospace;
+
+  --text-*: initial;
+
+  /* interface scale, ratio 1.2 */
+  --text-ui-xs: 0.6875rem; /* 11 — metadata, keyboard hints */
+  --text-ui-xs--line-height: 1rem;
+  --text-ui-sm: 0.8125rem; /* 13 — default UI text, table cells, menu items */
+  --text-ui-sm--line-height: 1.25rem;
+  --text-ui-base: 0.875rem; /* 14 — buttons, inputs, primary labels */
+  --text-ui-base--line-height: 1.375rem;
+  --text-ui-lg: 1rem; /* 16 — section headers */
+  --text-ui-lg--line-height: 1.5rem;
+  --text-ui-xl: 1.25rem; /* 20 — page titles */
+  --text-ui-xl--line-height: 1.75rem;
+
+  /* reading scale, ratio 1.25 */
+  --text-read-sm: 0.9375rem; /* 15 — captions, figure labels */
+  --text-read-sm--line-height: 1.6;
+  --text-read-base: 1.0625rem; /* 17 — tuned to sit optically level with KaTeX at 1em */
+  --text-read-base--line-height: 1.7;
+  --text-read-h3: 1.25rem;
+  --text-read-h3--line-height: 1.4;
+  --text-read-h2: 1.5rem;
+  --text-read-h2--line-height: 1.35;
+  --text-read-h1: 1.875rem;
+  --text-read-h1--line-height: 1.25;
+
+  /* Weights 400/500/600 only. Never 700 in chrome — hierarchy is size, colour, space. */
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --tracking-*: initial;
+  --tracking-ui: 0.01em; /* --ui-xs metadata */
+  --tracking-eyebrow: 0.06em; /* the only place ALL CAPS is permitted */
+
+  /* ============ shape ============ */
+  --radius-*: initial;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 9999px;
+
+  /* Nothing casts a shadow except things that float and can be dismissed. */
+  --shadow-*: initial;
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-dialog: var(--shadow-dialog);
+
+  /* ============ motion ============
+   * Default to ease-out. Things arrive quickly and settle.
+   * Nothing bounces. Nothing springs.
+   */
+  --ease-*: initial;
+  --ease-out: var(--ease-out-curve);
+  --ease-in-out: var(--ease-in-out-curve);
+
+  /* ============ layout ============
+   * Named container widths, so no screen needs an arbitrary max-width.
+   * Reads as: max-w-auth, max-w-measure, max-w-review.
+   */
+  --container-*: initial;
+  --container-auth: 400px; /* refs/06-auth: 380–420px, centred, chrome stripped */
+  --container-measure: var(--measure); /* 68ch reading cap */
+  --container-review: 640px; /* the review card (§7) */
+  --container-sidebar: var(--sidebar-width); /* 240px */
+  --container-sidebar-rail: var(--sidebar-width-collapsed); /* 56px icon rail */
+  --container-outline: var(--outline-rail-width); /* 200px, ≥1440px only */
+
+  /* §6 breakpoints, named not numbered. 390px is the mobile-first base. */
+  --breakpoint-*: initial;
+  --breakpoint-tablet: 768px; /* reader, review, browse */
+  --breakpoint-laptop: 1024px; /* full editor, single sidebar */
+  --breakpoint-desktop: 1440px; /* full editor, sidebar + optional outline rail */
+}
+
+/*
+ * Durations are utilities rather than a theme namespace, because Tailwind's
+ * `duration-*` accepts bare numbers (`duration-300`) that no theme reset can
+ * remove. These three names are the only ones components may use; lint:tokens
+ * fails on any numeric `duration-N`.
+ */
+@utility duration-instant {
+  transition-duration: var(--dur-instant);
+}
+@utility duration-fast {
+  transition-duration: var(--dur-fast);
+}
+@utility duration-base {
+  transition-duration: var(--dur-base);
+}
+
+/*
+ * The signature (§8). A 24px square grid in --border-subtle at 40%, in exactly
+ * three places: behind empty states, the editor canvas margin rule, and behind
+ * the auth screen. Never behind live content, never animated, never accent.
+ */
+@utility ruled-grid {
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in oklch, var(--border-subtle) 40%, transparent) 0 1px,
+      transparent 1px var(--ruled-grid-size)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--border-subtle) 40%, transparent) 0 1px,
+      transparent 1px var(--ruled-grid-size)
+    );
+}
+
+/* Reading measure cap. Display equations may break out of it; prose may not. */
+@utility measure {
+  max-width: var(--measure);
+}
+
+/*
+ * Overlay motion, hand-rolled rather than pulled from an animation plugin, so
+ * every duration and curve traces to a token and lint:tokens can see it.
+ *
+ * transform and opacity only (§5). Nothing bounces, nothing springs.
+ */
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@utility animate-overlay {
+  animation: overlay-fade-in var(--dur-base) var(--ease-out-curve);
+
+  &[data-state='closed'] {
+    animation-direction: reverse;
+  }
+}
+
+@utility animate-dialog {
+  animation: dialog-enter var(--dur-base) var(--ease-out-curve);
+
+  &[data-state='closed'] {
+    animation-direction: reverse;
+  }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-size: var(--text-ui-base);
+    line-height: var(--text-ui-base--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Focus ring on every interactive element, no exceptions (§4).
+   * Asserted by a Playwright test that tabs through each page. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--accent-quiet);
+  }
+
+  /* Jittering digits in a review counter are felt without being named. */
+  [data-numeric],
+  th,
+  td {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Computer Modern runs optically small against Source Serif 4 at nominal
+   * parity. Phase 02 inherits this; verify visually, not by spec. */
+  .katex {
+    font-size: 1.03em;
+  }
+}
