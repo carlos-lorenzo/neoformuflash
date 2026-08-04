@@ -55,3 +55,6 @@ messages/pseudo.json
 # supabase local stack
 /supabase/.temp
 /supabase/.branches
+
+
+export_omniroute.sh
