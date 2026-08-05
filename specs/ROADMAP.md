@@ -29,7 +29,7 @@ Each phase = one branch = one worktree = one or more focused sessions. A phase c
 | # | Name | Spec | Parallel with | Ship when |
 |---|---|---|---|---|
 | 00 | Foundation | `phase-00-foundation.md` | — | App boots, Google auth works, tokens render, Playwright captures a screenshot, CI is green |
-| 01 | Contracts | `01-contracts.md` | — | Migrations apply, RLS suite passes, types generate |
+| 01 | Contracts | `phase-01-contracts.md` | — | Migrations apply, RLS suite passes, types generate |
 | 00b | Shortcut infrastructure | `phase-00b-shortcuts.md` | 01 | Global bindings work, nothing fires while typing, `Kbd` renders per platform |
 | 02 | Editor | `phase-02-editor.md` | 03, 04 | A student can write a note with headings, lists, inline and display LaTeX, and it survives a reload |
 | 03 | Review engine | *(write with `plan-phase`)* — read `ADR-001-spaced-repetition.md` first | 02, 04 | A student can review a deck to completion on a phone, grade cards, and get intervals identical to the `ts-fsrs` reference for the same rating sequence |

@@ -3,12 +3,50 @@
  * defines these types. Changing this package is a schema change: it needs a
  * migration, a spec update, and Carlos's approval. Never edit it to make a
  * test pass.
- *
- * Phase 00 ships only the slice signup needs. `src/srs.ts`, `src/sharing.ts`,
- * `src/content.ts` and the remaining schemas land in phase 01.
  */
 
 export { LOCALES, DEFAULT_LOCALE, isLocale, resolveLocale } from './i18n';
 export type { Locale } from './i18n';
 
-export { SignupProfileInput, DISPLAY_NAME_MAX, INSTITUTION_OTHER_MAX } from './schemas';
+export {
+  SignupProfileInput,
+  DISPLAY_NAME_MAX,
+  INSTITUTION_OTHER_MAX,
+  TITLE_MAX,
+  CreateNoteInput,
+  UpdateNoteInput,
+  CreateDeckInput,
+  CardInput,
+  ReviewSubmission,
+  ApiKeyInput,
+} from './schemas';
+
+export {
+  schedule,
+  FSRS6_DEFAULT_WEIGHTS,
+  MAX_INTERVAL_DAYS,
+  LEARNING_STEPS,
+  RELEARNING_STEPS,
+} from './srs';
+export type { SrsState, SchedulingSettings, ScheduleLog, CardPhase, Rating } from './srs';
+
+export { extractText } from './content';
+export type {
+  NoteDoc,
+  BlockNode,
+  InlineNode,
+  TextNode,
+  InlineMathNode,
+  DisplayMathNode,
+  ParagraphNode,
+  HeadingNode,
+  CodeBlockNode,
+  BulletListNode,
+  OrderedListNode,
+  ListItemNode,
+  BlockquoteNode,
+  TextMarks,
+} from './content';
+
+export { SubscribeInput, ForkInput } from './sharing';
+export type { CourseLineage, ForkResult } from './sharing';

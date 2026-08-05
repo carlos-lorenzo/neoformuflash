@@ -40,6 +40,9 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_
   process.env.NEXT_PUBLIC_SUPABASE_URL ??= local.API_URL;
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??= local.ANON_KEY;
   process.env.SUPABASE_SERVICE_ROLE_KEY ??= local.SERVICE_ROLE_KEY;
+  // Direct Postgres, not PostgREST: the grants audit reads information_schema,
+  // which the REST API never exposes. tests/db/grants.test.ts is the consumer.
+  process.env.SUPABASE_DB_URL ??= local.DB_URL;
 }
 
 /*

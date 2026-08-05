@@ -31,7 +31,7 @@ serves public profiles at `/{slug}`.
 | `/onboarding` | GET/POST | `SignupProfileInput` | profile row | authed, first-run only |
 | `/app` | GET | — | dashboard empty state | authed |
 
-**Note:** `/api/test-auth/route.e2e.ts` is compiled only when `E2E_TEST_AUTH=1` is set, via `pageExtensions` in `next.config.ts`. It is absent from the production route manifest.
+**Note:** `/api/test-auth/route.e2e.ts` is compiled only when `E2E_TEST_AUTH=1` is set, via `pageExtensions` in `next.config.ts`. It is absent from the production route manifest, and `scripts/assert-build-safe.mjs` (part of `pnpm build`) fails the build if it ever ships anyway — see Verification.
 
 ## Component inventory
 | Component | File | Client/Server | States |
@@ -66,6 +66,7 @@ These are the shared primitives. Phases 02–04 use them and do not invent alter
 
 ## Verification
 - `pnpm typecheck && pnpm lint && pnpm lint:tokens && pnpm build`
+- `pnpm build` runs `scripts/assert-build-safe.mjs` after `next build`: it fails the build if a test-only route reaches the route manifest or secret-shaped material (`sb_secret_` keys, decoded `service_role`/`supabase_admin` JWTs) reaches a client bundle. `vercel.json` pins platform builds to `pnpm build` so the scan runs there too.
 - `pnpm test:e2e` — flows: `auth-signup`, `auth-returning`, `auth-signout`, `theme-toggle`, `shell-mobile`
 - Screenshots at 390/768/1440 for `/login`, `/onboarding`, `/app` empty, in both themes → `design-critic`
 - axe-core zero violations, both themes

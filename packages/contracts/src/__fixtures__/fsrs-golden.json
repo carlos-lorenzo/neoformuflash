@@ -1,0 +1,113 @@
+{
+  "settings": {
+    "desiredRetention": 0.9
+  },
+  "start": "2026-01-01T00:00:00.000Z",
+  "steps": [
+    {
+      "rating": "good",
+      "now": "2026-01-01T00:00:00.000Z",
+      "next": {
+        "stability": 2.3065,
+        "difficulty": 2.11810397,
+        "phase": "learning",
+        "learningSteps": 1,
+        "reps": 1,
+        "lapses": 0,
+        "dueAt": "2026-01-01T00:10:00.000Z",
+        "lastReviewedAt": "2026-01-01T00:00:00.000Z"
+      },
+      "log": {
+        "phaseBefore": "new",
+        "elapsedDays": 0,
+        "scheduledDays": 0,
+        "reviewStability": 0,
+        "reviewDifficulty": 0
+      }
+    },
+    {
+      "rating": "good",
+      "now": "2026-01-01T00:10:00.000Z",
+      "next": {
+        "stability": 2.3065,
+        "difficulty": 2.11121424,
+        "phase": "review",
+        "learningSteps": 0,
+        "reps": 2,
+        "lapses": 0,
+        "dueAt": "2026-01-03T00:10:00.000Z",
+        "lastReviewedAt": "2026-01-01T00:10:00.000Z"
+      },
+      "log": {
+        "phaseBefore": "learning",
+        "elapsedDays": 0,
+        "scheduledDays": 0,
+        "reviewStability": 2.3065,
+        "reviewDifficulty": 2.11810397
+      }
+    },
+    {
+      "rating": "again",
+      "now": "2026-01-03T00:10:00.000Z",
+      "next": {
+        "stability": 0.60770166,
+        "difficulty": 7.39223814,
+        "phase": "relearning",
+        "learningSteps": 0,
+        "reps": 3,
+        "lapses": 1,
+        "dueAt": "2026-01-03T00:20:00.000Z",
+        "lastReviewedAt": "2026-01-03T00:10:00.000Z"
+      },
+      "log": {
+        "phaseBefore": "review",
+        "elapsedDays": 2,
+        "scheduledDays": 2,
+        "reviewStability": 2.3065,
+        "reviewDifficulty": 2.11121424
+      }
+    },
+    {
+      "rating": "good",
+      "now": "2026-01-03T00:20:00.000Z",
+      "next": {
+        "stability": 0.65979762,
+        "difficulty": 7.38007427,
+        "phase": "review",
+        "learningSteps": 0,
+        "reps": 4,
+        "lapses": 1,
+        "dueAt": "2026-01-04T00:20:00.000Z",
+        "lastReviewedAt": "2026-01-03T00:20:00.000Z"
+      },
+      "log": {
+        "phaseBefore": "relearning",
+        "elapsedDays": 0,
+        "scheduledDays": 0,
+        "reviewStability": 0.60770166,
+        "reviewDifficulty": 7.39223814
+      }
+    },
+    {
+      "rating": "easy",
+      "now": "2026-01-04T00:20:00.000Z",
+      "next": {
+        "stability": 4.08614772,
+        "difficulty": 6.48984555,
+        "phase": "review",
+        "learningSteps": 0,
+        "reps": 5,
+        "lapses": 1,
+        "dueAt": "2026-01-08T00:20:00.000Z",
+        "lastReviewedAt": "2026-01-04T00:20:00.000Z"
+      },
+      "log": {
+        "phaseBefore": "review",
+        "elapsedDays": 1,
+        "scheduledDays": 1,
+        "reviewStability": 0.65979762,
+        "reviewDifficulty": 7.38007427
+      }
+    }
+  ]
+}

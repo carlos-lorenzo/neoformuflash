@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { LOCALES } from './i18n';
+import type { NoteDoc } from './content';
+import type { Database } from './db';
 
 /*
  * Zod schemas for every input crossing a trust boundary.
@@ -58,3 +60,99 @@ export const SignupProfileInput = z
   });
 
 export type SignupProfileInput = z.infer<typeof SignupProfileInput>;
+
+/*
+ * Phase 01: content, sharing, review and BYOK inputs. Frozen alongside the
+ * migrations in supabase/migrations/0003-0007. A schema change here needs a
+ * migration, a spec update, and Carlos's approval.
+ */
+
+const Visibility = z.enum(['public', 'unlisted', 'private']);
+// Content language (decision 7) — deliberately independent of interface LOCALES.
+const ContentLanguage = z
+  .string()
+  .toLowerCase()
+  .regex(/^[a-z]{2}$/, 'content.language.invalid');
+
+export const TITLE_MAX = 200;
+
+export const CreateNoteInput = z.object({
+  courseId: z.uuid('content.course.invalid').nullable(),
+  title: z
+    .string()
+    .trim()
+    .min(1, 'content.title.required')
+    .max(TITLE_MAX, 'content.title.tooLong'),
+  contentJson: z.custom<NoteDoc>(),
+  contentText: z.string(),
+  language: ContentLanguage,
+  visibility: Visibility,
+});
+export type CreateNoteInput = z.infer<typeof CreateNoteInput>;
+
+export const UpdateNoteInput = z.object({
+  id: z.uuid('content.note.invalid'),
+  courseId: z.uuid('content.course.invalid').nullable().optional(),
+  title: z
+    .string()
+    .trim()
+    .min(1, 'content.title.required')
+    .max(TITLE_MAX, 'content.title.tooLong')
+    .optional(),
+  contentJson: z.custom<NoteDoc>().optional(),
+  contentText: z.string().optional(),
+  language: ContentLanguage.optional(),
+  visibility: Visibility.optional(),
+});
+export type UpdateNoteInput = z.infer<typeof UpdateNoteInput>;
+
+export const CreateDeckInput = z.object({
+  courseId: z.uuid('content.course.invalid').nullable(),
+  noteId: z.uuid('content.note.invalid').nullable(),
+  title: z
+    .string()
+    .trim()
+    .min(1, 'content.title.required')
+    .max(TITLE_MAX, 'content.title.tooLong'),
+  visibility: Visibility,
+  // null = inherit from profile (matches the nullable column).
+  desiredRetention: z
+    .number()
+    .min(0.7, 'content.deck.retentionOutOfRange')
+    .max(0.98, 'content.deck.retentionOutOfRange')
+    .nullable(),
+  newCardsPerDay: z.int().min(0, 'content.deck.newCardsPerDayNegative'),
+});
+export type CreateDeckInput = z.infer<typeof CreateDeckInput>;
+
+export const CardInput = z.object({
+  deckId: z.uuid('content.deck.invalid'),
+  frontJson: z.custom<NoteDoc>(),
+  backJson: z.custom<NoteDoc>(),
+  frontText: z.string(),
+  backText: z.string(),
+  position: z.int(),
+});
+export type CardInput = z.infer<typeof CardInput>;
+
+export const ReviewSubmission = z.object({
+  cardId: z.uuid('srs.card.invalid'),
+  rating: z.enum(['again', 'hard', 'good', 'easy']),
+  elapsedMs: z.int().min(0, 'srs.elapsedMs.negative').nullable(),
+  editedDuringReview: z.boolean(),
+});
+export type ReviewSubmission = z.infer<typeof ReviewSubmission>;
+
+const AiProvider: z.ZodType<Database['public']['Enums']['ai_provider']> = z.enum([
+  'openai',
+  'google',
+  'anthropic',
+]);
+
+export const ApiKeyInput = z.object({
+  provider: AiProvider,
+  // Raw key from the user. Encrypted server-side before it ever reaches
+  // user_api_keys — this schema never sees ciphertext.
+  apiKey: z.string().trim().min(1, 'ai.apiKey.required'),
+});
+export type ApiKeyInput = z.infer<typeof ApiKeyInput>;
