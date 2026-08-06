@@ -34,10 +34,12 @@ Five migrations, one concern each, in this order:
 | `0005_sharing.sql` | `course_subscriptions`, `deck_subscriptions`, counter triggers, and the procedures `subscribe_to_course`, `subscribe_to_deck`, `fork_course`, `fork_deck`, `acknowledge_card_change`, `apply_review` |
 | `0006_ai.sql` | `user_api_keys`, `ai_jobs` |
 | `0007_rls_and_grants.sql` | every `enable row level security`, every policy, every column grant, every revoke — including the TRUNCATE revoke and function EXECUTE revokes |
+| `0008_progress_and_fork_fixes.sql` | Deck/card BEFORE DELETE triggers that block deletes when other users have progress; `apply_review` keeps `seen_version`; `fork_course` carries `published_at`; `fork_deck` cancels a parent-course subscription |
 
 Ordering constraints that must hold: enums before the tables using them; every
-function before its `grant execute`; `0007` last because it references
-everything.
+function before its `grant execute`; `0007` before `0008` — the fixes recreate
+0005 functions (`create or replace` preserves 0007's EXECUTE grants), and
+0008's delete-protection triggers are `security definer` over the 0004 table.
 
 ### 0003_content.sql
 
@@ -503,12 +505,13 @@ begin
     where n.course_id = p_course_id and n.visibility <> 'private'
   loop
     insert into public.notes
-      (owner_id, course_id, slug, title, content_json, content_text, language, visibility, source_note_id)
+      (owner_id, course_id, slug, title, content_json, content_text, language,
+       visibility, published_at, source_note_id)
     values
       (v_user_id, v_new_course,
        public.slugify(v_note.title) || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8),
        v_note.title, v_note.content_json, v_note.content_text, v_note.language,
-       v_note.visibility, v_note.id)
+       v_note.visibility, v_note.published_at, v_note.id) -- 0008: carry the publish state; a fork of a public course is public content
     returning id into v_new_note;
     insert into fork_note_map values (v_note.id, v_new_note);
   end loop;
@@ -655,9 +658,18 @@ begin
 
   get diagnostics v_states = row_count;
 
-  -- 4. Forking is one-way at deck scope.
+  -- 4. Forking is one-way at every granularity (decision 10). The deck
+  -- subscription is cancelled; and (0008) when the source deck belongs to a
+  -- course the caller subscribes to, that course subscription goes too —
+  -- otherwise the queue still serves the empty source D through C alongside
+  -- D' with the caller's full history.
   delete from public.deck_subscriptions
   where user_id = v_user_id and deck_id = p_deck_id;
+
+  if v_source.course_id is not null then
+    delete from public.course_subscriptions
+    where user_id = v_user_id and course_id = v_source.course_id;
+  end if;
 
   return row(null, v_new_deck, v_states)::public.fork_result;
 end $$;
@@ -779,7 +791,10 @@ begin
       phase            = excluded.phase,
       learning_steps   = excluded.learning_steps,
       reps             = card_states.reps + 1,
-      seen_version     = excluded.seen_version,
+      -- 0008: NOT excluded.seen_version. A review must not auto-dismiss a
+      -- pending content-change flag (decision 8); only acknowledge_card_change
+      -- moves seen_version.
+      seen_version     = card_states.seen_version,
       lapses           = excluded.lapses,
       due_at           = excluded.due_at,
       last_reviewed_at = now();
@@ -1250,6 +1265,7 @@ source, per phase 02 AC8. `package.json`: `ts-fsrs` pinned **exact** (no caret).
 | `tests/db/sharing.test.ts` | AC 8, 9, 10, 11 — subscribe idempotence, counters, fork lineage, **the 90-day progress-survival assertion**, deck-level equivalents |
 | `tests/db/card-version.test.ts` | AC 13, 14 — `content_version` bumps on semantic change only; dismiss/reset behaviour; edit-then-revert |
 | `tests/db/queue.test.ts` | AC 17 — `explain analyze` proves the queue query uses `card_states_queue_idx` |
+| `tests/db/cascade.test.ts` | AC 19 — an owner DELETE of a deck/card is refused when another user has `card_states` referencing that content; the deck/card stays, and the subscriber's state is untouched. The owner's own `card_states` are still allowed to cascade when they delete their own card. |
 | `tests/db/grants.test.ts` | **extend** — the corrected invariant below |
 | `packages/contracts/src/srs.test.ts` | AC 3 — golden fixtures |
 | `packages/contracts/src/content.test.ts` | `extractText` over a document containing every node type |
@@ -1296,11 +1312,12 @@ rescheduling every user. The generator is run deliberately, never as part of
 11. Forking cancels the subscription (course-level and deck-level) and moves both counters.
 12. Forking or subscribing to a private course fails at the database, not the app. **Forking a public/unlisted course skips private notes and decks** — `fork_course` copies only `visibility <> 'private'` sub-objects so private content is not leaked to the forker. Cards under skipped private decks are excluded (their `deck_id` does not appear in the copy set).
 13. Editing a card's `front_text` flags subscribers; changing only formatting, reordering, or edit-then-revert does not.
-14. A subscriber sees one flag per changed card. Dismissing does not re-flag next session. Resetting returns the card to new, preserves `lapses`, and writes no `review_logs` row.
+14. A subscriber sees one flag per changed card. Dismissing does not re-flag next session. Resetting returns the card to new, preserves `lapses`, and writes no `review_logs` row. **A review of a changed card does not dismiss the flag** — `apply_review` keeps the user's `seen_version` (0008).
 15. `update ... set slug = ...` raises on `profiles`, `courses` and published `notes`. `handle`, `display_name` and `title` update freely.
 16. Submitting a review writes `card_states` and `review_logs` atomically — a failure leaves neither.
 17. The queue query for "cards due for user U in deck D" uses `card_states_queue_idx`, proven by `explain analyze`.
 18. No table in `public` grants TRUNCATE to `anon` or `authenticated`; DELETE appears only on the allowlist; no table-level INSERT/UPDATE exists for `authenticated`.
+19. Deleting a deck or card (the owner's DELETE grant) does not destroy other users' `card_states`: the delete is blocked (0008) when a `card_states` row references a card from a user other than the deck owner; the owner's own states may cascade. Forking re-points only the forker's own states — another user's progress stays on the source card.
 
 ## Verification
 
@@ -1318,7 +1335,7 @@ the anonymous-read boundary are all in scope). Not design-critic.
 
 ## Files I may touch
 
-`packages/contracts/**`, `supabase/migrations/0003_*.sql` … `0007_*.sql`,
+`packages/contracts/**`, `supabase/migrations/0003_*.sql` … `0008_*.sql`,
 `supabase/seed.sql`, `scripts/seed-dev.mjs`, `scripts/gen-fsrs-fixtures.mjs`,
 `tests/**`, `specs/phase-01-contracts.md`, `specs/ADR-002-schema-decisions.md`,
 `specs/01-contracts.md` (delete), `specs/ROADMAP.md` (link only), root
@@ -1339,6 +1356,11 @@ appears to need any of those, stop and ask.
 - **`fork_course` is a large `security definer` function.** It bypasses the
   caller's RLS by design. Every id it touches is re-derived from the source
   rows, never taken from a parameter.
+- **Owner deletes are a silent-progress-loss vector (0008).** `decks`/`cards`
+  carry an owner DELETE grant; without the preserve-on-delete trigger,
+  `card_states`/`review_logs` cascade would erase every subscriber's and
+  forker's history on the author's first delete. `tests/db/cascade.test.ts` is
+  the regression pin: the deck is really gone while the state survives.
 - **Open:** the reserved-slug denylist in `profile_slug_base` guards profile
   slugs. Course and note slugs are namespaced per-owner (`unique (owner_id,
   slug)`), so squatting is not possible — but a course slugged `settings` under

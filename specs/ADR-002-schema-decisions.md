@@ -45,6 +45,8 @@ Every copied row keeps a `source_*_id` pointer to the row it came from. That doe
 
 `subscriber_count` and `fork_count` live on `courses` as trigger-maintained counters. The underlying rows remain the source of truth; the counters exist so "browse by popularity" in V2 is an index scan rather than an aggregate over every subscription in the system.
 
+**Deleting content does not delete progress.** 0007 grants the owner DELETE on `decks` and `cards`, but the progress rows point at those cards with `on delete cascade` (0004) — a naive delete would silently erase every subscriber's and forker's `card_states`, the exact failure this decision names. Since 0008, a pair of `BEFORE DELETE` triggers block the delete whenever a `card_states` row references a card from a user OTHER than the deck's owner: a deck-level trigger (primary, since a deck CASCADE to cards would otherwise fire card triggers only after the deck row is gone) and a card-level trigger for direct card deletes. The owner's own states cascade away (they chose to delete their own progress), but other users' rows are protected by the delete being refused entirely. `review_logs.card_id` keeps `ON DELETE CASCADE` intentionally: a card that no longer exists has no training data worth keeping.
+
 ### 6. Slugs are immutable; titles and handles are not
 
 The Google account supplies the initial handle at signup. The user can change it later. **The URL slug, derived once at signup, never changes.**
@@ -78,6 +80,8 @@ Dismissing sets `seen_version` to current and nothing else. Resetting sets `seen
 
 Forking sets `seen_version` on the carried states to the new cards' version — you have just taken ownership, so there is nothing pending from an upstream author you are no longer connected to.
 
+**A review must not dismiss the flag.** The first version of `apply_review` set `seen_version = excluded.seen_version` on every write, where `excluded.seen_version` is the card's *current* `content_version` — so the very review that surfaces a pending change auto-acknowledged it, permanently, with no dismissal recorded. Since 0008 the ON CONFLICT branch keeps the user's own `seen_version`; only `acknowledge_card_change` moves it. A first review (fresh insert) still records the current version, which is correct — the user just read the card.
+
 ### 9. Deck-level sharing is symmetric to course-level
 
 A standalone deck (`decks.course_id is null`) is shareable in its own right. Requiring a course wrapper to share one deck is friction on the most common sharing act. So `decks` carries the same `subscriber_count` / `fork_count` counters and `deck_subscriptions` exists, mirroring `course_subscriptions` — a student shares a deck by itself as often as they share a whole course, and forcing a course around it would make the simplest sharing act the most awkward one.
@@ -85,6 +89,8 @@ A standalone deck (`decks.course_id is null`) is shareable in its own right. Req
 ### 10. Forking is one-way at every level
 
 `fork_course` drops the caller's `course_subscriptions` row *and* any `deck_subscriptions` rows on decks belonging to that course. Otherwise a user ends up both subscribed to deck D and owning its copy D′, and the queue shows both. The same rule applies at deck scope: `fork_deck` drops the caller's `deck_subscriptions` row for the source deck. A user is either connected to upstream (subscribed) or cut off (owner of a fork) — never both, at any granularity.
+
+**Deck scope closes upward as well.** The original `fork_deck` cancelled only the deck-level subscription; a caller subscribed to course C that contains deck D stayed subscribed to C after forking D, so the queue still served the empty source D through C alongside D′ with their full history. Since 0008 `fork_deck` also cancels a course-level subscription on the source deck's parent course — the symmetric half of `fork_course`'s downward closure.
 
 ---
 

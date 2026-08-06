@@ -210,3 +210,57 @@ describe('acknowledge_card_change: dismiss and reset (AC14)', () => {
     }
   });
 });
+
+describe('a review does not dismiss a pending content-change flag (AC14 via the apply_review path)', () => {
+  it('apply_review keeps the user own seen_version — only acknowledge_card_change moves it (0008)', async () => {
+    const deck = await createDeck(owner.id);
+    const card = await createCard(deck.id, { front_text: 'v1' });
+    const subscriber = await createTestUser('card-version-sub-review');
+    try {
+      // The subscriber has accepted the original version.
+      await createCardState(subscriber.id, card, { seen_version: card.content_version });
+
+      // Author edits the card: content_version bumps, the subscriber's
+      // seen_version now lags — this is the "changed since you last accepted
+      // it" flag from ADR-002 §8.
+      await admin.from('cards').update({ front_text: 'v2' }).eq('id', card.id);
+      const { data: bumped } = await admin.from('cards').select('content_version').eq('id', card.id).single();
+      expect(bumped!.content_version).toBeGreaterThan(card.content_version);
+
+      // The subscriber reviews the card. Before 0008 the ON CONFLICT branch
+      // set seen_version to excluded.seen_version (the card's current version),
+      // silently auto-dismissing the flag on the very review that surfaces it.
+      const { error } = await subscriber.client.rpc('apply_review', {
+        p_card_id: card.id,
+        p_rating: 'good',
+        p_phase_before: 'review',
+        p_elapsed_days: 1,
+        p_scheduled_days: 2,
+        p_review_stability: 4,
+        p_review_difficulty: 5,
+        p_lapses: 0,
+        p_stability: 5,
+        p_difficulty: 5,
+        p_phase: 'review',
+        p_due_at: new Date().toISOString(),
+        p_learning_steps: 0,
+        p_elapsed_ms: 1000,
+        p_edited_during_review: false,
+      });
+      expect(error).toBeNull();
+
+      const { data: state } = await admin
+        .from('card_states')
+        .select('seen_version, reps')
+        .eq('user_id', subscriber.id)
+        .eq('card_id', card.id)
+        .single();
+      // The flag is still pending: seen_version is the user's own last-accepted
+      // value, not the card's current version.
+      expect(state?.seen_version).toBe(card.content_version);
+      expect(state?.reps).toBe(1);
+    } finally {
+      await deleteTestUser(subscriber.id);
+    }
+  });
+});

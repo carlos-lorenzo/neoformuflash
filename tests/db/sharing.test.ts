@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   admin,
+  anon,
   createCard,
   createCardState,
   createCourse,
@@ -303,6 +304,72 @@ describe('forking cancels subscriptions and moves counters (AC11)', () => {
     expect(afterDeck?.subscriber_count).toBe(0);
     expect(afterDeck?.fork_count).toBe(1);
   });
+
+  it('forking a deck inside a course cancels the course subscription too (ADR-002 §10, deck scope)', async () => {
+    const course = await createCourse(proOwner.id, { visibility: 'public' });
+    const deck = await createDeck(proOwner.id, { course_id: course.id, visibility: 'public' });
+
+    await subscriber.client.rpc('subscribe_to_course', { p_course_id: course.id });
+    await subscriber.client.rpc('subscribe_to_deck', { p_deck_id: deck.id });
+
+    const { error } = await subscriber.client.rpc('fork_deck', { p_deck_id: deck.id });
+    expect(error).toBeNull();
+
+    const { data: deckSub } = await admin
+      .from('deck_subscriptions')
+      .select('user_id')
+      .eq('deck_id', deck.id)
+      .eq('user_id', subscriber.id);
+    expect(deckSub).toHaveLength(0);
+
+    // 0008: a caller must not stay subscribed to a course that contains the
+    // very deck they just forked — otherwise the queue serves the empty
+    // source D through the course alongside D' with their full history.
+    const { data: courseSub } = await admin
+      .from('course_subscriptions')
+      .select('user_id')
+      .eq('course_id', course.id)
+      .eq('user_id', subscriber.id);
+    expect(courseSub).toHaveLength(0);
+
+    const { data: afterCourse } = await admin.from('courses').select('subscriber_count').eq('id', course.id).single();
+    expect(afterCourse?.subscriber_count).toBe(0);
+  });
+});
+
+describe('fork re-points only the forker own card_states (AC10)', () => {
+  it('fork_course leaves another subscriber progress untouched on the source card', async () => {
+    const course = await createCourse(proOwner.id, { visibility: 'public' });
+    const deck = await createDeck(proOwner.id, { course_id: course.id, visibility: 'public' });
+    const card = await createCard(deck.id);
+
+    await createCardState(subscriber.id, card, { stability: 8.5, reps: 20, lapses: 1 });
+
+    const bystander = await createTestUser('sharing-bystander');
+    try {
+      await createCardState(bystander.id, card, { stability: 21, reps: 60, lapses: 5 });
+
+      const { data: forkResult, error } = await subscriber.client.rpc('fork_course', { p_course_id: course.id });
+      expect(error).toBeNull();
+      expect(forkResult?.states_carried).toBe(1);
+
+      // The bystander's progress must still point at the ORIGINAL card and
+      // deck. The procedures are security definer and bypass RLS; without
+      // `where cs.user_id = v_user_id`, this re-point would steal every other
+      // user's progress into the forker's private copy.
+      const { data: bystanderState } = await admin
+        .from('card_states')
+        .select('card_id, deck_id, stability')
+        .eq('user_id', bystander.id)
+        .eq('card_id', card.id)
+        .single();
+      expect(bystanderState?.card_id).toBe(card.id);
+      expect(bystanderState?.deck_id).toBe(deck.id);
+      expect(bystanderState?.stability).toBeCloseTo(21, 5);
+    } finally {
+      await deleteTestUser(bystander.id);
+    }
+  });
 });
 
 describe('fork_course skips private sub-objects (AC12)', () => {
@@ -344,5 +411,32 @@ describe('fork_course skips private sub-objects (AC12)', () => {
       .eq('course_id', forkedCourseId);
     expect(forkedDecks).toHaveLength(1);
     expect(forkedDecks?.[0]?.title).toBe('public-deck');
+  });
+
+  it('forked public notes come out published and readable by anon — a fork of a public course is public content', async () => {
+    const course = await createCourse(proOwner.id, { visibility: 'public' });
+    await createNote(proOwner.id, {
+      course_id: course.id,
+      title: 'published-note',
+      visibility: 'public',
+      published_at: new Date().toISOString(),
+    });
+
+    const { data: forkResult, error } = await forker.client.rpc('fork_course', { p_course_id: course.id });
+    expect(error).toBeNull();
+
+    const { data: forkedNotes } = await admin
+      .from('notes')
+      .select('id, visibility, published_at')
+      .eq('course_id', forkResult!.course_id!);
+    expect(forkedNotes).toHaveLength(1);
+    expect(forkedNotes?.[0]?.visibility).toBe('public');
+    // Without 0008 the copy landed with published_at = null — an invisible
+    // draft readable by nobody but the forker, with a mutable slug.
+    expect(forkedNotes?.[0]?.published_at).not.toBeNull();
+
+    // The point of forking a public course: an anonymous visitor reads the copy.
+    const { data: anonRead } = await anon.from('notes').select('id').eq('id', forkedNotes![0]!.id);
+    expect(anonRead).toHaveLength(1);
   });
 });

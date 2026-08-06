@@ -33,6 +33,10 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
+# The no-leading-dot forms (`env.local`, `env.local.back`) matched none of the
+# above, so git reported them untracked instead of ignored — the same class as
+# the `.env.local.bak` incident, one `git add -A` from being committed.
+env.local*
 
 # vercel
 .vercel
