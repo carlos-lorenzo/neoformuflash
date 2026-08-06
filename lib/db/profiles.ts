@@ -20,7 +20,16 @@ export type Profile = {
   keyboardShortcutsEnabled: boolean;
 };
 
-export async function getProfile(userId: string): Promise<Profile | null> {
+/*
+ * The full profile for a user. The shape distinguishes three outcomes:
+ *   ok(profile) — row exists and reads.
+ *   ok(null)    — no row yet, the onboarding path.
+ *   err(...)    — the query itself failed (schema drift, RLS, transient).
+ * A caller must not treat `err` like "no profile": the row can still exist,
+ * and redirecting to /onboarding would then bounce straight back — the exact
+ * infinite loop this Result exists to prevent.
+ */
+export async function getProfile(userId: string): Promise<Result<Profile | null>> {
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
@@ -29,9 +38,10 @@ export async function getProfile(userId: string): Promise<Profile | null> {
     .eq('id', userId)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) return err('error.unexpected', error);
+  if (!data) return ok(null);
 
-  return {
+  return ok({
     id: data.id,
     slug: data.slug,
     handle: data.handle,
@@ -42,7 +52,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
     degreeId: data.degree_id,
     isPro: data.is_pro,
     keyboardShortcutsEnabled: data.keyboard_shortcuts_enabled,
-  };
+  });
 }
 
 /** Cheap existence check for the callback and middleware redirect decisions. */
