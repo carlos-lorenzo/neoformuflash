@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { cn } from '@/lib/cn';
+import { ShortcutManager } from '@/lib/shortcuts/shortcut-manager';
 import { SidebarToggle } from './sidebar-toggle';
 
 /*
@@ -20,9 +21,11 @@ export type AppShellProps = {
   /** Rendered top-right: theme toggle, locale switcher, account. */
   actions?: React.ReactNode;
   collapsed?: boolean;
+  /** Per-user toggle for bare-letter shortcuts (default true). */
+  keyboardShortcutsEnabled?: boolean;
 };
 
-export async function AppShell({ children, actions, collapsed = false }: AppShellProps) {
+export async function AppShell({ children, actions, collapsed = false, keyboardShortcutsEnabled = true }: AppShellProps) {
   const t = await getTranslations('nav');
 
   /*
@@ -35,6 +38,7 @@ export async function AppShell({ children, actions, collapsed = false }: AppShel
   const navItems = [{ href: '/app', label: t('dashboard') }] as const;
 
   return (
+    <ShortcutManager enabled={keyboardShortcutsEnabled}>
     <div className="flex min-h-screen bg-base">
       <aside
         data-collapsed={collapsed ? '' : undefined}
@@ -97,5 +101,6 @@ export async function AppShell({ children, actions, collapsed = false }: AppShel
         </nav>
       </div>
     </div>
+    </ShortcutManager>
   );
 }

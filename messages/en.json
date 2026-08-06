@@ -84,5 +84,13 @@
   "error": {
     "unexpected": "Something went wrong. Try again.",
     "network": "You're offline. Check your connection and retry."
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "overlay": "Show keyboard shortcuts",
+    "search": "Focus search",
+    "close": "Close",
+    "commandPalette": "Command palette",
+    "goHome": "Go to home"
   }
 }

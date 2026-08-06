@@ -2,8 +2,8 @@
     "env": {
         "ANTHROPIC_BASE_URL": "http://localhost:20128/v1",
         "ANTHROPIC_AUTH_TOKEN": "sk-d73f82b5163eb00b-43bbc3-fd5933ff",
-        "ANTHROPIC_DEFAULT_HAIKU_MODEL":  "auto/coding",
-        "ANTHROPIC_DEFAULT_SONNET_MODEL": "cc/claude-sonnet-5",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL":  "auto/fast",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "auto/coding",
         "ANTHROPIC_DEFAULT_OPUS_MODEL":   "cc/claude-opus-5"
       },
   "$comment": "Project-scoped, committed to git. Personal overrides go in .claude/settings.local.json (gitignored).",

@@ -34,6 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <AppShell
       collapsed={collapsed}
+      keyboardShortcutsEnabled={profile.keyboardShortcutsEnabled}
       actions={
         <SettingsMenu theme={theme} locale={isLocale(locale) ? locale : DEFAULT_LOCALE} />
       }

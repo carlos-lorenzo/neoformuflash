@@ -17,6 +17,7 @@ export type Profile = {
   institutionId: string | null;
   degreeId: string | null;
   isPro: boolean;
+  keyboardShortcutsEnabled: boolean;
 };
 
 export async function getProfile(userId: string): Promise<Profile | null> {
@@ -24,7 +25,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, slug, handle, display_name, avatar_url, locale, institution_id, degree_id, is_pro')
+    .select('id, slug, handle, display_name, avatar_url, locale, institution_id, degree_id, is_pro, keyboard_shortcuts_enabled')
     .eq('id', userId)
     .maybeSingle();
 
@@ -40,6 +41,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
     institutionId: data.institution_id,
     degreeId: data.degree_id,
     isPro: data.is_pro,
+    keyboardShortcutsEnabled: data.keyboard_shortcuts_enabled,
   };
 }
 
@@ -109,6 +111,7 @@ export async function createProfile(
     institutionId: data.institution_id,
     degreeId: data.degree_id,
     isPro: data.is_pro,
+    keyboardShortcutsEnabled: data.keyboard_shortcuts_enabled,
   });
 }
 

@@ -84,5 +84,13 @@
   "error": {
     "unexpected": "Algo ha fallado. Vuelve a intentarlo.",
     "network": "No hay conexión. Comprueba tu red y reintenta."
+  },
+  "shortcuts": {
+    "title": "Atajos de teclado",
+    "overlay": "Mostrar atajos de teclado",
+    "search": "Enfocar búsqueda",
+    "close": "Cerrar",
+    "commandPalette": "Paleta de comandos",
+    "goHome": "Ir al inicio"
   }
 }

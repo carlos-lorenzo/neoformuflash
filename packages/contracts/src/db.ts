@@ -630,6 +630,7 @@ export type Database = {
           id: string
           institution_id: string | null
           is_pro: boolean
+          keyboard_shortcuts_enabled: boolean
           locale: string
           slug: string
         }
@@ -643,6 +644,7 @@ export type Database = {
           id: string
           institution_id?: string | null
           is_pro?: boolean
+          keyboard_shortcuts_enabled?: boolean
           locale?: string
           slug: string
         }
@@ -656,6 +658,7 @@ export type Database = {
           id?: string
           institution_id?: string | null
           is_pro?: boolean
+          keyboard_shortcuts_enabled?: boolean
           locale?: string
           slug?: string
         }
@@ -848,6 +851,7 @@ export type Database = {
           id: string
           institution_id: string | null
           is_pro: boolean
+          keyboard_shortcuts_enabled: boolean
           locale: string
           slug: string
         }
