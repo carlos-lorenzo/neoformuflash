@@ -233,6 +233,7 @@
       "confidenceHint": "Tu indicador de dificultad para esta tarjeta.",
       "save": "Guardar tarjeta",
       "saved": "Tarjeta guardada",
+      "editTitle": "Editar tarjeta",
       "invalidLatex": "Esta fórmula no se puede renderizar"
     },
     "cardList": {

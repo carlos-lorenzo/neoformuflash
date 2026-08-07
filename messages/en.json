@@ -233,6 +233,7 @@
       "confidenceHint": "Your difficulty hint for this card.",
       "save": "Save card",
       "saved": "Card saved",
+      "editTitle": "Edit card",
       "invalidLatex": "This formula can't be rendered"
     },
     "cardList": {
