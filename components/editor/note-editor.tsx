@@ -297,12 +297,15 @@ export function NoteEditor({ note }: { note: NoteRow }) {
       }
 
       // `/` — slash menu, only at the start of an empty block (AC2).
+      // The `/` is prevented from entering the doc; a plain non-empty-block
+      // `/` falls through and stays literal text.
       if (event.key === '/') {
         if (isAtStartOfEmptyBlock(ed)) {
           event.preventDefault();
           const coords = ed.view.coordsAtPos(ed.state.selection.from);
           setSlashPosition({ top: coords.bottom, left: coords.left });
           setSlashOpen(true);
+          return true;
         }
         return false;
       }
@@ -446,6 +449,7 @@ export function NoteEditor({ note }: { note: NoteRow }) {
             position={slashPosition}
             onClose={closeSlashMenu}
             onCancel={cancelSlashMenu}
+            onInsertEquation={openDisplayMath}
           />
         )}
         {mathPanel && (

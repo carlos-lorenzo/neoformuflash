@@ -1,22 +1,73 @@
 import { getTranslations } from 'next-intl/server';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getSessionUser } from '@/lib/supabase/session';
+import { getNotes } from '@/lib/db/notes';
 import { EmptyState } from '@/components/ui/empty-state';
 
-// Server Component: the dashboard is an empty state and nothing more this phase.
+// Server Component: the dashboard shows recent notes for returning users,
+// and a welcoming empty state for first-time visitors.
 
 export default async function DashboardPage() {
+  const user = await getSessionUser();
+  if (!user) redirect('/login');
+
   const t = await getTranslations('app.empty');
+  const tn = await getTranslations('notes');
+  const result = await getNotes(user.id);
+
+  // DB failure during note fetch is unexpected — surface the empty state.
+  const notes = result.ok ? result.value : [];
+
+  if (notes.length === 0) {
+    return (
+      <EmptyState
+        title={t('title')}
+        body={t('body')}
+        icon={<NotebookMark />}
+        action={
+          <Link
+            href="/app/notes"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-accent px-3 text-ui-base font-medium text-on-accent transition-colors ease-out hover:bg-accent-hover"
+          >
+            {t('action')}
+          </Link>
+        }
+      />
+    );
+  }
+
+  const recent = notes.slice(0, 5);
 
   return (
-    <EmptyState
-      title={t('title')}
-      body={t('body')}
-      icon={<NotebookMark />}
-      action={
-        // Exactly one action (§7).
-        <Button variant="primary">{t('action')}</Button>
-      }
-    />
+    <div className="flex flex-col gap-6 py-2">
+      <h1 className="text-ui-xl font-semibold text-primary">{tn('listTitle')}</h1>
+      <ul className="flex flex-col divide-y divide-subtle">
+        {recent.map((note) => (
+          <li key={note.id}>
+            <a
+              href={`/app/notes/${note.id}`}
+              className="flex flex-col gap-1 px-2 py-3 transition-colors hover:bg-inset"
+            >
+              <span className="text-ui-base text-primary">{note.title}</span>
+              {note.contentText ? (
+                <span className="truncate text-ui-sm text-secondary">
+                  {note.contentText.slice(0, 120)}
+                </span>
+              ) : null}
+            </a>
+          </li>
+        ))}
+      </ul>
+      {notes.length > 5 ? (
+        <Link
+          href="/app/notes"
+          className="text-ui-sm text-accent hover:underline"
+        >
+          {tn('listTitle')}
+        </Link>
+      ) : null}
+    </div>
   );
 }
 

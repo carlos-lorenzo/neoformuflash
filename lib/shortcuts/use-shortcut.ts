@@ -22,11 +22,15 @@ export function useShortcut(
 ): void {
   const ctx = useContext(ShortcutContext);
   const id = useId();
+  // Same as useActiveScope: depend on the stable function refs, not the ctx
+  // object, which the provider recreates whenever the scope stack changes.
+  const register = ctx?.register;
+  const unregister = ctx?.unregister;
 
   useEffect(() => {
-    if (!ctx) return;
+    if (!register || !unregister) return;
 
-    ctx.register({
+    register({
       id,
       keys,
       scope,
@@ -36,10 +40,10 @@ export function useShortcut(
     });
 
     return () => {
-      ctx.unregister(id);
+      unregister(id);
     };
     // Intentionally only register/unregister on mount/unmount.
     // Binding metadata is read from the ref at keydown time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctx, id, keys, scope]);
+  }, [register, unregister, id, keys, scope]);
 }

@@ -33,6 +33,7 @@ Do not advance to the next todo until you are 95% confident the current one is c
 - Errors: never swallow. Surface via typed `Result` returns, not thrown strings.
 - No `any`. No `@ts-expect-error` without a linked issue.
 - Tests live next to the code (`*.test.ts`); e2e lives in `e2e/`.
+- **Context consumer hooks (`useContext` → `useEffect`) must depend on the stable function refs extracted from the context, not the context object itself.** If the provider rebuilds its `useMemo` context on any state change, the object identity churns and every consumer's effect re-fires — infinite loop. Extract the stable callbacks (`useCallback(…, [])`) as local variables and list only those in the deps array.
 
 ## Writing UI copy
 

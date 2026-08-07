@@ -281,3 +281,135 @@
     font-size: 1.03em;
   }
 }
+
+/*
+ * ProseMirror content typography — scoped to the editor surface.
+ *
+ * Tailwind's Preflight resets every element to the same style (no heading
+ * sizes, no list bullets, no code backgrounds), so all visible structure in
+ * the editor comes from these rules.  Every value traces to a design-system
+ * token (§2–3): --font-serif / --font-mono for faces, --text-read-* for
+ * sizes, --font-weight-semibold for headings, --spacing-* for margins.
+ *
+ * Equations are excluded — KaTeX ships its own CSS that already handles
+ * display math sizing and positioning.
+ */
+.tiptap {
+  font-family: var(--font-serif);
+  font-size: var(--text-read-base);
+  line-height: var(--text-read-base--line-height);
+  color: var(--text-primary);
+}
+
+/* ---- headings ---- */
+
+.tiptap h1 {
+  font-size: var(--text-read-h1);
+  line-height: var(--text-read-h1--line-height);
+  font-weight: var(--font-weight-semibold);
+  margin-top: var(--spacing-3);
+  margin-bottom: var(--spacing-2);
+}
+
+.tiptap h2 {
+  font-size: var(--text-read-h2);
+  line-height: var(--text-read-h2--line-height);
+  font-weight: var(--font-weight-semibold);
+  margin-top: var(--spacing-3);
+  margin-bottom: var(--spacing-2);
+}
+
+.tiptap h3 {
+  font-size: var(--text-read-h3);
+  line-height: var(--text-read-h3--line-height);
+  font-weight: var(--font-weight-semibold);
+  margin-top: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+}
+
+.tiptap :is(h1, h2, h3):first-child {
+  margin-top: 0;
+}
+
+/* ---- paragraphs ---- */
+
+.tiptap p {
+  margin-bottom: var(--spacing-2);
+}
+
+.tiptap > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---- lists ---- */
+
+.tiptap ul {
+  list-style-type: disc;
+  margin: var(--spacing-2) 0;
+  padding-left: var(--spacing-6);
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+  margin: var(--spacing-2) 0;
+  padding-left: var(--spacing-6);
+}
+
+.tiptap li {
+  margin-bottom: var(--spacing-1);
+}
+
+.tiptap li::marker {
+  color: var(--text-secondary);
+}
+
+/* ---- blockquote ---- */
+
+.tiptap blockquote {
+  border-left: var(--spacing-px) solid var(--border-subtle);
+  padding-left: var(--spacing-4);
+  margin: var(--spacing-2) 0;
+  color: var(--text-secondary);
+}
+
+/* ---- code ---- */
+
+.tiptap pre {
+  font-family: var(--font-mono);
+  font-size: var(--text-read-sm);
+  background: var(--bg-inset);
+  border: var(--spacing-px) solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-3) var(--spacing-4);
+  margin: var(--spacing-2) 0;
+  overflow-x: auto;
+}
+
+.tiptap code {
+  font-family: var(--font-mono);
+  font-size: var(--text-read-sm);
+  background: var(--bg-inset);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-px) var(--spacing-1);
+}
+
+.tiptap pre code {
+  background: none;
+  padding: 0;
+}
+
+/* ---- inline formatting ---- */
+
+.tiptap strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.tiptap em {
+  font-style: italic;
+}
+
+.tiptap a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: var(--spacing-px);
+}

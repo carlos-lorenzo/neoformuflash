@@ -17,12 +17,18 @@ import type { Scope } from './types';
  */
 export function useActiveScope(scope: Scope): void {
   const ctx = useContext(ShortcutContext);
+  // Depend on the stable function refs, never the ctx object: the provider
+  // recreates ctx on every pushScope/popScope (activeScopes is in its memo
+  // deps), so depending on ctx would re-run this effect forever and trip
+  // React's "Maximum update depth exceeded".
+  const push = ctx?.pushScope;
+  const pop = ctx?.popScope;
 
   useEffect(() => {
-    if (!ctx) return;
-    ctx.pushScope(scope);
+    if (!push || !pop) return;
+    push(scope);
     return () => {
-      ctx.popScope(scope);
+      pop(scope);
     };
-  }, [ctx, scope]);
+  }, [push, pop, scope]);
 }

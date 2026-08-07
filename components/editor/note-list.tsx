@@ -1,5 +1,9 @@
 // Server Component: renders the user's note list or an empty-state invitation.
 // "No notes yet" is not acceptable copy — see design-system.md §7.
+//
+// The "New note" button must be reachable in BOTH states: it is the only way to
+// create a second note once the list is non-empty (a regression that shipped
+// when the button lived only in the empty state).
 
 import { getTranslations } from 'next-intl/server';
 import type { NoteSummary } from '@/lib/db/notes';
@@ -19,17 +23,28 @@ export async function NoteList({ notes }: { notes: NoteSummary[] }) {
   }
 
   return (
-    <ul className="flex flex-col divide-y divide-subtle">
-      {notes.map((note) => (
-        <li key={note.id}>
-          <a
-            href={`/app/notes/${note.id}`}
-            className="flex h-11 items-center px-2 text-ui-base text-primary hover:bg-inset"
-          >
-            <span className="truncate">{note.title}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <h1 className="text-ui-lg font-semibold text-primary">{t('listTitle')}</h1>
+        <CreateNoteButton />
+      </div>
+      <ul className="flex flex-col divide-y divide-subtle">
+        {notes.map((note) => (
+          <li key={note.id}>
+            <a
+              href={`/app/notes/${note.id}`}
+              className="flex flex-col gap-1 px-2 py-3 transition-colors hover:bg-inset"
+            >
+              <span className="text-ui-base text-primary">{note.title}</span>
+              {note.contentText ? (
+                <span className="truncate text-ui-sm text-secondary">
+                  {note.contentText.slice(0, 120)}
+                </span>
+              ) : null}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

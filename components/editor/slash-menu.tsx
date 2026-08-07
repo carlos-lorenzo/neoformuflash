@@ -25,9 +25,11 @@ type SlashMenuProps = {
   onClose: () => void;
   /** Called on Escape — the `/` stays as literal text (AC2). */
   onCancel: () => void;
+  /** Opens the display-equation MathInput — the slash alternative to `$$`. */
+  onInsertEquation: () => void;
 };
 
-export function SlashMenu({ editor, position, onClose, onCancel }: SlashMenuProps) {
+export function SlashMenu({ editor, position, onClose, onCancel, onInsertEquation }: SlashMenuProps) {
   const t = useTranslations('editor.blocks');
   const tp = useTranslations('editor');
   const [filter, setFilter] = useState('');
@@ -45,8 +47,9 @@ export function SlashMenu({ editor, position, onClose, onCancel }: SlashMenuProp
       { id: 'orderedList', label: t('orderedList'), action: () => editor.chain().focus().toggleOrderedList().run() },
       { id: 'codeBlock', label: t('codeBlock'), action: () => editor.chain().focus().toggleCodeBlock().run() },
       { id: 'blockquote', label: t('blockquote'), action: () => editor.chain().focus().toggleBlockquote().run() },
+      { id: 'equation', label: t('equation'), action: onInsertEquation },
     ],
-    [editor, t],
+    [editor, t, onInsertEquation],
   );
 
   const filtered = useMemo(() => {
@@ -64,8 +67,17 @@ export function SlashMenu({ editor, position, onClose, onCancel }: SlashMenuProp
     (item: SlashMenuItem) => {
       item.action();
       onClose();
+      // The filter input unmounts with the menu, dropping focus to <body> and
+      // swallowing the student's next keystrokes. A microtask after the commit
+      // returns focus to the editor (same pattern as MathInput's cancel).
+      // Equation is excluded — MathInput focuses its own input.
+      if (item.id !== 'equation') {
+        void Promise.resolve().then(() => {
+          editor.chain().focus().run();
+        });
+      }
     },
-    [onClose],
+    [editor, onClose],
   );
 
   const handleKeyDown = useCallback(
