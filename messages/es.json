@@ -18,10 +18,61 @@
   },
   "login": {
     "title": "Entra en FormuFlash",
-    "subtitle": "Usa tu cuenta de Google para empezar.",
+    "subtitle": "Hola de nuevo.",
     "google": "Continuar con Google",
     "failed": "No hemos podido completar el acceso. Vuelve a intentarlo.",
-    "legal": "Al continuar aceptas las condiciones de uso."
+    "legal": "Al continuar aceptas las condiciones de uso.",
+    "email": {
+      "label": "Email",
+      "placeholder": "tu@universidad.edu",
+      "required": "Escribe tu email."
+    },
+    "password": {
+      "label": "Contraseña",
+      "required": "Escribe tu contraseña."
+    },
+    "submit": "Entrar",
+    "divider": "o",
+    "toggleSignup": "Crear cuenta",
+    "errors": {
+      "invalid": "Ese email y contraseña no coinciden. Revísalos e inténtalo de nuevo.",
+      "unconfirmed": "Tu email aún no está confirmado. Revisa tu bandeja de entrada y abre el enlace de confirmación.",
+      "rateLimited": "Demasiados intentos. Espera unos minutos y vuelve a intentarlo."
+    }
+  },
+  "signup": {
+    "title": "Crea tu cuenta",
+    "subtitle": "Gratis para estudiantes de carreras técnicas. Apuntes y repaso espaciado en un solo lugar.",
+    "google": "Continuar con Google",
+    "email": {
+      "label": "Email",
+      "placeholder": "tu@universidad.edu",
+      "required": "Escribe tu email.",
+      "invalid": "Escribe un email válido."
+    },
+    "password": {
+      "label": "Contraseña",
+      "required": "Escribe una contraseña.",
+      "tooShort": "La contraseña debe tener al menos 6 caracteres."
+    },
+    "passwordConfirm": {
+      "label": "Repite la contraseña",
+      "required": "Repite la contraseña.",
+      "mismatch": "Las contraseñas no coinciden."
+    },
+    "submit": "Crear cuenta",
+    "divider": "o",
+    "toggleLogin": "Entrar",
+    "legal": "Al continuar aceptas las condiciones de uso.",
+    "checkEmail": {
+      "title": "Revisa tu email",
+      "body": "Hemos enviado un enlace de confirmación a {email}. Ábrelo para terminar de configurar tu cuenta."
+    },
+    "errors": {
+      "emailTaken": "Ya existe una cuenta con ese email. Prueba a entrar.",
+      "weakPassword": "Esa contraseña es demasiado débil. Añade más caracteres.",
+      "rateLimited": "Demasiados intentos. Espera unos minutos y vuelve a intentarlo."
+    }
   },
   "onboarding": {
     "title": "Cuéntanos quién eres",

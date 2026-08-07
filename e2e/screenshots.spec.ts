@@ -36,6 +36,11 @@ for (const theme of ['dark', 'light'] as const) {
       await capture(page, 'login', theme, testInfo.project.use.viewport!.width);
     });
 
+    test('signup', async ({ page }, testInfo) => {
+      await page.goto('/signup');
+      await capture(page, 'signup', theme, testInfo.project.use.viewport!.width);
+    });
+
     test('landing', async ({ page }, testInfo) => {
       await page.goto('/');
       await capture(page, 'landing', theme, testInfo.project.use.viewport!.width);

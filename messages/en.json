@@ -18,10 +18,61 @@
   },
   "login": {
     "title": "Sign in to FormuFlash",
-    "subtitle": "Use your Google account to get started.",
+    "subtitle": "Welcome back.",
     "google": "Continue with Google",
     "failed": "We couldn't finish signing you in. Try again.",
-    "legal": "By continuing you accept the terms of use."
+    "legal": "By continuing you accept the terms of use.",
+    "email": {
+      "label": "Email",
+      "placeholder": "you@university.edu",
+      "required": "Enter your email."
+    },
+    "password": {
+      "label": "Password",
+      "required": "Enter your password."
+    },
+    "submit": "Sign in",
+    "divider": "or",
+    "toggleSignup": "Create account",
+    "errors": {
+      "invalid": "That email and password don't match. Check them and try again.",
+      "unconfirmed": "Your email isn't confirmed yet. Check your inbox for the confirmation link.",
+      "rateLimited": "Too many attempts. Wait a few minutes and try again."
+    }
+  },
+  "signup": {
+    "title": "Create your account",
+    "subtitle": "Free for STEM students. Notes and spaced-repetition flashcards in one place.",
+    "google": "Continue with Google",
+    "email": {
+      "label": "Email",
+      "placeholder": "you@university.edu",
+      "required": "Enter your email.",
+      "invalid": "Enter a valid email address."
+    },
+    "password": {
+      "label": "Password",
+      "required": "Enter a password.",
+      "tooShort": "Password must be at least 6 characters."
+    },
+    "passwordConfirm": {
+      "label": "Confirm password",
+      "required": "Confirm your password.",
+      "mismatch": "Those passwords don't match."
+    },
+    "submit": "Create account",
+    "divider": "or",
+    "toggleLogin": "Sign in",
+    "legal": "By continuing you accept the terms of use.",
+    "checkEmail": {
+      "title": "Check your email",
+      "body": "We sent a confirmation link to {email}. Open it to finish setting up your account."
+    },
+    "errors": {
+      "emailTaken": "An account with that email already exists. Try signing in instead.",
+      "weakPassword": "That password is too weak. Add more characters.",
+      "rateLimited": "Too many signup attempts. Wait a few minutes and try again."
+    }
   },
   "onboarding": {
     "title": "Tell us who you are",

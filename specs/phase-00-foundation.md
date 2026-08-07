@@ -1,7 +1,7 @@
 # Phase 00 — Foundation
 
 ## Goal and why
-Get a deployable Next.js app where a student can sign in with Google and land on an empty dashboard that already looks like the product. Everything after this depends on the design tokens, the auth session, and the verification harness existing and being trustworthy. Build the harness before the product, or every later phase inherits an unverifiable base.
+Get a deployable Next.js app where a student can sign in with Google/Own email and land on an empty dashboard that already looks like the product. Everything after this depends on the design tokens, the auth session, and the verification harness existing and being trustworthy. Build the harness before the product, or every later phase inherits an unverifiable base.
 
 ## Not in this phase
 Notes, decks, cards, editor, AI, ads, payments, profile pages, any real data. The dashboard is an empty state and nothing more.

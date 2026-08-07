@@ -9,7 +9,7 @@ You are writing the document that lets a fresh agent build this phase with almos
 
 ## Step 1 — Load context (do not skip)
 
-Read: `specs/design-system.md`, `packages/contracts/README.md`, `specs/ROADMAP.md`, the previous phase spec, and any contracts about that phase if they exist.
+Read: `specs/design-system.md`, `packages/contracts/README.md`, `specs/ROADMAP.md`, `specs/shortcuts.md`, `specs/EVOLUTION.md`, the previous phase spec, and any contracts about that phase if they exist.
 Then dispatch `explorer` to map the parts of the codebase this phase will touch. Do not read the codebase yourself.
 
 ## Step 2 — Interrogate

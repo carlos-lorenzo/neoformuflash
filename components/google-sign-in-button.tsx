@@ -11,13 +11,23 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
-export function GoogleSignInButton({ label }: { label: string }) {
+export function GoogleSignInButton({
+  label,
+  variant = 'primary',
+}: {
+  label: string;
+  /**
+   * Auth screens carry exactly one primary (the email submit, §7); Google is
+   * secondary there. The landing page keeps the default primary.
+   */
+  variant?: 'primary' | 'secondary';
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
   return (
     <Button
-      variant="primary"
+      variant={variant}
       className="w-full"
       loading={pending}
       loadingLabel={label}

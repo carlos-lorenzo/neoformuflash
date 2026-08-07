@@ -6,7 +6,7 @@ import type { Result } from '@/lib/result';
  *
  * The distinction that matters is "no profile row yet" vs "could not read the
  * profile". Both make the dashboard unrenderable, but only the first may go to
- * /onboarding. If the row exists (hasProfile would say so) and the full read
+editor* /onboarding. If the row exists (hasProfile would say so) and the full read
  * failed, /onboarding redirects straight back to /app — an infinite redirect
  * loop. resolveAppEntry maps that failure to `login` so the layout surfaces it
  * instead of looping.

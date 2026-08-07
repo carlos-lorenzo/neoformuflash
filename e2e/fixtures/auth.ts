@@ -86,6 +86,46 @@ export async function seedUserWithoutProfile(label: string): Promise<SeededUser>
   };
 }
 
+/** Create an auth user that is NOT email-confirmed — the unconfirmed-login state. */
+export async function seedUserUnconfirmed(label: string): Promise<SeededUser> {
+  const admin = adminClient();
+  const email = `e2e-${label}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
+  const password = 'test-password-not-a-secret';
+
+  const { data, error } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: false,
+  });
+  if (error || !data.user) throw new Error(`seed failed: ${error?.message}`);
+
+  return {
+    id: data.user.id,
+    email,
+    password,
+    cleanup: async () => {
+      await adminClient().auth.admin.deleteUser(data.user!.id);
+    },
+  };
+}
+
+/**
+ * Delete an auth user by email, for users the UI itself created (the fixture
+ * helpers return a cleanup bound to the id they minted; a UI signup gives us
+ * only the email we typed). The profiles FK cascades on delete.
+ *
+ * Bounded to the first 1000 users — the local e2e stack never approaches that.
+ */
+export async function cleanupUserByEmail(email: string): Promise<void> {
+  const admin = adminClient();
+  const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (error) throw new Error(`cleanup list failed: ${error.message}`);
+  const match = data.users.find((u) => u.email === email);
+  if (!match) return;
+  const { error: deleteError } = await admin.auth.admin.deleteUser(match.id);
+  if (deleteError) throw new Error(`cleanup delete failed: ${deleteError.message}`);
+}
+
 /** Create an auth user that already has a profile — the returning-user state. */
 export async function seedUserWithProfile(label: string): Promise<SeededUser> {
   const user = await seedUserWithoutProfile(label);

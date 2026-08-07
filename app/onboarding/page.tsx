@@ -26,8 +26,13 @@ export default async function OnboardingPage() {
   ]);
 
   const metadata = user.user_metadata as Record<string, unknown> | undefined;
+  // Google supplies full_name; email signups supply display_name (set at signup
+  // from the email local part). Fall back to a blank field either way.
   const suggestedName =
-    pickString(metadata?.['full_name']) ?? pickString(metadata?.['name']) ?? '';
+    pickString(metadata?.['full_name']) ??
+    pickString(metadata?.['name']) ??
+    pickString(metadata?.['display_name']) ??
+    '';
 
   return (
     <main className="ruled-grid flex min-h-screen flex-col items-center justify-center px-4 py-12">

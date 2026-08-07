@@ -70,8 +70,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     return NextResponse.redirect(redirectUrl);
   }
 
-  // A signed-in user has no reason to see the sign-in page.
-  if (pathname === '/login' && user) {
+  // A signed-in user has no reason to see the sign-in or sign-up page.
+  if ((pathname === '/login' || pathname === '/signup') && user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/app';
     return NextResponse.redirect(redirectUrl);
