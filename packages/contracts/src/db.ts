@@ -147,6 +147,7 @@ export type Database = {
           back_json: Json
           back_text: string
           complexity: number
+          confidence: Database["public"]["Enums"]["review_rating"] | null
           content_version: number
           created_at: string
           deck_id: string
@@ -161,6 +162,7 @@ export type Database = {
           back_json: Json
           back_text?: string
           complexity?: number
+          confidence?: Database["public"]["Enums"]["review_rating"] | null
           content_version?: number
           created_at?: string
           deck_id: string
@@ -175,6 +177,7 @@ export type Database = {
           back_json?: Json
           back_text?: string
           complexity?: number
+          confidence?: Database["public"]["Enums"]["review_rating"] | null
           content_version?: number
           created_at?: string
           deck_id?: string
@@ -886,6 +889,10 @@ export type Database = {
       slugify: { Args: { p_input: string }; Returns: string }
       subscribe_to_course: { Args: { p_course_id: string }; Returns: undefined }
       subscribe_to_deck: { Args: { p_deck_id: string }; Returns: undefined }
+      undo_review: {
+        Args: { p_card_id: string; p_prev: Json }
+        Returns: undefined
+      }
     }
     Enums: {
       ai_provider: "openai" | "google" | "anthropic"
