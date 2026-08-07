@@ -125,6 +125,22 @@ export const CreateDeckInput = z.object({
 });
 export type CreateDeckInput = z.infer<typeof CreateDeckInput>;
 
+/*
+ * Author-set difficulty hint, on the same 4-point scale as a review rating
+ * (migration 0010). Typed against the DB enum rather than a bare z.enum, so
+ * changing `review_rating` in a migration breaks this build instead of
+ * silently drifting — the same discipline as AiProvider below.
+ *
+ * NULL = unset. The card editor defaults new cards to 'good'. The enum's
+ * declaration order (again < hard < good < easy) is the card-list sort key.
+ */
+const Confidence: z.ZodType<Database['public']['Enums']['review_rating']> = z.enum([
+  'again',
+  'hard',
+  'good',
+  'easy',
+]);
+
 export const CardInput = z.object({
   deckId: z.uuid('content.deck.invalid'),
   frontJson: z.custom<NoteDoc>(),
@@ -132,8 +148,33 @@ export const CardInput = z.object({
   frontText: z.string(),
   backText: z.string(),
   position: z.int(),
+  confidence: Confidence.nullable(),
 });
 export type CardInput = z.infer<typeof CardInput>;
+
+/*
+ * The card-update action's input. Separate from CardInput rather than
+ * `CardInput.partial()`: an update targets an existing row by id, and deckId
+ * is required (not optional) because the action authorises against the deck's
+ * owner before it touches the card. Every content field is optional so the
+ * inline-edit path during review can send front/back alone, and the card
+ * editor can send confidence alone.
+ *
+ * `position` is updatable but `contentVersion` is not — that column is bumped
+ * by the 0003 trigger only when front_text/back_text actually change
+ * (ADR-002 decision 8), never by the client.
+ */
+export const UpdateCardInput = z.object({
+  id: z.uuid('content.card.invalid'),
+  deckId: z.uuid('content.deck.invalid'),
+  frontJson: z.custom<NoteDoc>().optional(),
+  backJson: z.custom<NoteDoc>().optional(),
+  frontText: z.string().optional(),
+  backText: z.string().optional(),
+  position: z.int().optional(),
+  confidence: Confidence.nullable().optional(),
+});
+export type UpdateCardInput = z.infer<typeof UpdateCardInput>;
 
 export const ReviewSubmission = z.object({
   cardId: z.uuid('srs.card.invalid'),
