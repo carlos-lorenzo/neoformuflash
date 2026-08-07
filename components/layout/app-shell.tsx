@@ -35,7 +35,10 @@ export async function AppShell({ children, actions, collapsed = false, keyboardS
    * `typedRoutes` makes this a compile error rather than a judgement call: a
    * link to an unbuilt route fails the build, so a dead nav item cannot ship.
    */
-  const navItems = [{ href: '/app', label: t('dashboard') }] as const;
+  const navItems = [
+    { href: '/app', label: t('dashboard') },
+    { href: '/app/notes', label: t('notes') },
+  ] as const;
 
   return (
     <ShortcutManager enabled={keyboardShortcutsEnabled}>

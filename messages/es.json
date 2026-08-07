@@ -91,6 +91,69 @@
     "search": "Enfocar búsqueda",
     "close": "Cerrar",
     "commandPalette": "Paleta de comandos",
-    "goHome": "Ir al inicio"
+    "goHome": "Ir al inicio",
+    "goNotes": "Ir a apuntes",
+    "forceSave": "Guardar ahora",
+    "toggleBold": "Negrita",
+    "toggleItalic": "Cursiva",
+    "exitMath": "Salir de las matemáticas"
+  },
+  "notes": {
+    "untitled": "Sin título",
+    "newNote": "Nueva nota",
+    "listTitle": "Apuntes",
+    "emptyTitle": "Tus primeros apuntes empiezan aquí",
+    "emptyBody": "Empieza a transcribir una clase y aparecerá aquí cuando cierres la pestaña.",
+    "updatedAt": "Editado {date}",
+    "notFound": "Este apunte no existe.",
+    "unsupportedBlock": "Este apunte contiene contenido que este editor no puede mostrar.",
+    "error": "Algo ha fallado al cargar tus apuntes. Vuelve a intentarlo."
+  },
+  "editor": {
+    "placeholder": "Empieza a escribir… `/` para bloques, `$` para matemáticas",
+    "titlePlaceholder": "Sin título",
+    "saved": "Guardado",
+    "saving": "Guardando…",
+    "saveFailed": "No se ha podido guardar",
+    "retry": "Reintentar guardado",
+    "offline": "Sin conexión — los cambios se guardan en esta pantalla hasta que te reconectes.",
+    "mobileReadonly": "Abre en una pantalla más grande para editar",
+    "editFormula": "Editar fórmula",
+    "outline": "Esquema",
+    "selection": {
+      "bold": "Negrita",
+      "italic": "Cursiva",
+      "code": "Código en línea"
+    },
+    "blocks": {
+      "paragraph": "Párrafo",
+      "heading1": "Título 1",
+      "heading2": "Título 2",
+      "heading3": "Título 3",
+      "bulletList": "Lista",
+      "orderedList": "Lista numerada",
+      "codeBlock": "Bloque de código",
+      "blockquote": "Cita",
+      "equation": "Ecuación"
+    },
+    "slashPlaceholder": "Filtrar…",
+    "noMatches": "No hay bloques que coincidan"
+  },
+  "math": {
+    "invalidLatex": "Esta fórmula no se puede previsualizar",
+    "dialogInline": "Matemáticas en línea",
+    "dialogDisplay": "Ecuación",
+    "searchPlaceholder": "Buscar símbolos",
+    "recent": "Recientes",
+    "palette": "Símbolos",
+    "categories": {
+      "greek": "Griego",
+      "operators": "Operadores",
+      "relations": "Relaciones",
+      "arrows": "Flechas",
+      "sets": "Conjuntos y lógica",
+      "calculus": "Cálculo",
+      "formatting": "Formato"
+    }
   }
 }

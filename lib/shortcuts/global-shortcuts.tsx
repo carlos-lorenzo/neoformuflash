@@ -41,5 +41,10 @@ export function GlobalShortcuts() {
     label: 'shortcuts.goHome',
   });
 
+  // g n → notes (/app/notes)
+  useShortcut('global', 'g>n', () => router.push('/app/notes'), {
+    label: 'shortcuts.goNotes',
+  });
+
   return null;
 }

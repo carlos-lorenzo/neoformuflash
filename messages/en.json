@@ -91,6 +91,69 @@
     "search": "Focus search",
     "close": "Close",
     "commandPalette": "Command palette",
-    "goHome": "Go to home"
+    "goHome": "Go to home",
+    "goNotes": "Go to notes",
+    "forceSave": "Force save",
+    "toggleBold": "Bold",
+    "toggleItalic": "Italic",
+    "exitMath": "Exit math"
+  },
+  "notes": {
+    "untitled": "Untitled",
+    "newNote": "New note",
+    "listTitle": "Notes",
+    "emptyTitle": "Your first note starts here",
+    "emptyBody": "Start transcribing a lecture and it will be here when you close the tab.",
+    "updatedAt": "Edited {date}",
+    "notFound": "This note doesn't exist.",
+    "unsupportedBlock": "This note contains content this editor can't display.",
+    "error": "Something went wrong loading your notes. Try again."
+  },
+  "editor": {
+    "placeholder": "Start typing… `/` for blocks, `$` for math",
+    "titlePlaceholder": "Untitled",
+    "saved": "Saved",
+    "saving": "Saving…",
+    "saveFailed": "Couldn't save",
+    "retry": "Retry saving",
+    "offline": "Offline — changes are kept on this screen until you reconnect.",
+    "mobileReadonly": "Open on a larger screen to edit",
+    "editFormula": "Edit formula",
+    "outline": "Outline",
+    "selection": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "code": "Inline code"
+    },
+    "blocks": {
+      "paragraph": "Paragraph",
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "bulletList": "Bullet list",
+      "orderedList": "Numbered list",
+      "codeBlock": "Code block",
+      "blockquote": "Quote",
+      "equation": "Equation"
+    },
+    "slashPlaceholder": "Filter…",
+    "noMatches": "No blocks match"
+  },
+  "math": {
+    "invalidLatex": "This formula can't be previewed",
+    "dialogInline": "Inline math",
+    "dialogDisplay": "Display equation",
+    "searchPlaceholder": "Search symbols",
+    "recent": "Recently used",
+    "palette": "Symbols",
+    "categories": {
+      "greek": "Greek",
+      "operators": "Operators",
+      "relations": "Relations",
+      "arrows": "Arrows",
+      "sets": "Sets & logic",
+      "calculus": "Calculus",
+      "formatting": "Formatting"
+    }
   }
 }
