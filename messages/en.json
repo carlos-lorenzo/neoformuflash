@@ -196,10 +196,18 @@
     "emptyBody": "Create a deck to organise cards for spaced-repetition review.",
     "createDeck": "Create deck",
     "shortcutHint": "Press c to create your first deck",
+    "dueCount": "{count} due",
+    "newCount": "{count} new",
+    "allCaughtUp": "All caught up",
+    "streak": "Day {current} — longest {longest}",
+    "keyboardHint": "{keys}",
     "form": {
       "title": "Title",
       "titlePlaceholder": "Deck title",
       "visibility": "Visibility",
+      "visibilityPublic": "Public",
+      "visibilityUnlisted": "Unlisted",
+      "visibilityPrivate": "Private",
       "desiredRetention": "Desired retention",
       "desiredRetentionHint": "Target recall rate (0.70–0.98). Null inherits from your profile.",
       "newCardsPerDay": "New cards per day",
@@ -210,6 +218,7 @@
       "study": "Study",
       "settings": "Deck settings",
       "cards": "Cards",
+      "cardCount": "{count, plural, =0 {No cards} one {# card} other {# cards}}",
       "addCard": "Add a card",
       "emptyCards": "No cards yet",
       "emptyCardsBody": "Add your first card to this deck.",
@@ -233,6 +242,12 @@
       "delete": "Delete card",
       "deleteConfirm": "Delete this card?",
       "hasSubscribers": "This card has subscribers and can't be deleted."
+    },
+    "grade": {
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
     },
     "error": "Something went wrong loading your decks."
   },

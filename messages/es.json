@@ -196,10 +196,18 @@
     "emptyBody": "Crea un mazo para organizar tarjetas de repaso espaciado.",
     "createDeck": "Crear mazo",
     "shortcutHint": "Pulsa c para crear tu primer mazo",
+    "dueCount": "{count} pendientes",
+    "newCount": "{count} nuevas",
+    "allCaughtUp": "Al día",
+    "streak": "Día {current} — récord {longest}",
+    "keyboardHint": "{keys}",
     "form": {
       "title": "Título",
       "titlePlaceholder": "Título del mazo",
       "visibility": "Visibilidad",
+      "visibilityPublic": "Público",
+      "visibilityUnlisted": "Oculto",
+      "visibilityPrivate": "Privado",
       "desiredRetention": "Retención deseada",
       "desiredRetentionHint": "Tasa de recuerdo objetivo (0.70–0.98). Null hereda de tu perfil.",
       "newCardsPerDay": "Tarjetas nuevas al día",
@@ -210,6 +218,7 @@
       "study": "Estudiar",
       "settings": "Ajustes del mazo",
       "cards": "Tarjetas",
+      "cardCount": "{count, plural, =0 {Sin tarjetas} one {# tarjeta} other {# tarjetas}}",
       "addCard": "Añadir tarjeta",
       "emptyCards": "Aún no hay tarjetas",
       "emptyCardsBody": "Añade tu primera tarjeta a este mazo.",
@@ -233,6 +242,12 @@
       "delete": "Eliminar tarjeta",
       "deleteConfirm": "¿Eliminar esta tarjeta?",
       "hasSubscribers": "Esta tarjeta tiene suscriptores y no se puede eliminar."
+    },
+    "grade": {
+      "again": "Otra vez",
+      "hard": "Difícil",
+      "good": "Bien",
+      "easy": "Fácil"
     },
     "error": "Algo salió mal al cargar tus mazos."
   },
