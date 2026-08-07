@@ -7,7 +7,8 @@ Each phase = one branch = one worktree = one or more focused sessions. A phase c
 ```
 00 foundation
       |
-01 contracts  (the gate)  ||  00b shortcuts  (independent, ships alongside)
+01 contracts  (the gate)  ||  00b shortcuts  (independent, ships alongside) || 00c email signup  (independent, ships alongside)
+      |
       |
       +-------------------+-------------------+
       |                   |                   |
@@ -31,12 +32,13 @@ Each phase = one branch = one worktree = one or more focused sessions. A phase c
 | 00 | Foundation | `phase-00-foundation.md` | — | App boots, Google auth works, tokens render, Playwright captures a screenshot, CI is green |
 | 01 | Contracts | `phase-01-contracts.md` | — | Migrations apply, RLS suite passes, types generate |
 | 00b | Shortcut infrastructure | `phase-00b-shortcuts.md` | 01 | Global bindings work, nothing fires while typing, `Kbd` renders per platform |
+| 00c | Email Signup | `phase-00c-auth-email.md` | 01 | Allows users to sign up without google |
 | 02 | Editor | `phase-02-editor.md` | 03, 04 | A student can write a note with headings, lists, inline and display LaTeX, and it survives a reload |
 | 03 | Review engine | *(write with `plan-phase`)* — read `ADR-001-spaced-repetition.md` first | 02, 04 | A student can review a deck to completion on a phone, grade cards, and get intervals identical to the `ts-fsrs` reference for the same rating sequence |
 | 04 | Profiles + public notes + SEO | *(write with `plan-phase`)* | 02, 03 | A shared link renders a public note fast, with correct OG tags and no private data reachable |
 | 05 | AI layer | *(write with `plan-phase`)* | — | BYOK key stored encrypted; all three call types return valid structured output; failures degrade gracefully to the no-AI path |
 | 06 | Monetization | *(write with `plan-phase`)* | — | Paid tier gates private notes and pooled key; ads appear only on passive surfaces; review route provably ad-free |
-| 07 | Hardening + launch | *(write with `plan-phase`)* | — | Security audit clean, Lighthouse ≥ 90 on public notes, error tracking live |
+| 07 | Hardening + launch | *(write with `plan-phase`)* | — | Security audit clean, Lighthouse ≥ 90 on public notes, error tracking live, improved look, polish and proper landing page |
 
 Write each spec with the `plan-phase` skill **immediately before** starting that phase, not now. Writing phase 06's spec today would be guessing at decisions that phases 02–05 will make for you. Phases 00, 01 and 02 are written now because they are the ones that constrain everything else.
 
