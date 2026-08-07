@@ -190,6 +190,79 @@
     "slashPlaceholder": "Filtrar…",
     "noMatches": "No hay bloques que coincidan"
   },
+  "decks": {
+    "listTitle": "Mazos",
+    "emptyTitle": "Tu primer mazo empieza aquí",
+    "emptyBody": "Crea un mazo para organizar tarjetas de repaso espaciado.",
+    "createDeck": "Crear mazo",
+    "shortcutHint": "Pulsa c para crear tu primer mazo",
+    "form": {
+      "title": "Título",
+      "titlePlaceholder": "Título del mazo",
+      "visibility": "Visibilidad",
+      "desiredRetention": "Retención deseada",
+      "desiredRetentionHint": "Tasa de recuerdo objetivo (0.70–0.98). Null hereda de tu perfil.",
+      "newCardsPerDay": "Tarjetas nuevas al día",
+      "submit": "Guardar mazo",
+      "privateRequiresPro": "Los mazos privados requieren una suscripción activa."
+    },
+    "detail": {
+      "study": "Estudiar",
+      "settings": "Ajustes del mazo",
+      "cards": "Tarjetas",
+      "addCard": "Añadir tarjeta",
+      "emptyCards": "Aún no hay tarjetas",
+      "emptyCardsBody": "Añade tu primera tarjeta a este mazo.",
+      "delete": "Eliminar mazo",
+      "deleteConfirm": "¿Estás seguro? Esto no se puede deshacer.",
+      "hasSubscribers": "Este mazo tiene suscriptores y no se puede eliminar. Hazlo privado primero."
+    },
+    "cardEditor": {
+      "front": "Frente",
+      "back": "Reverso",
+      "confidence": "Confianza",
+      "confidenceHint": "Tu indicador de dificultad para esta tarjeta.",
+      "save": "Guardar tarjeta",
+      "saved": "Tarjeta guardada",
+      "invalidLatex": "Esta fórmula no se puede renderizar"
+    },
+    "cardList": {
+      "sortPosition": "Ordenar por posición",
+      "sortConfidenceAsc": "Ordenar por confianza ↑",
+      "sortConfidenceDesc": "Ordenar por confianza ↓",
+      "delete": "Eliminar tarjeta",
+      "deleteConfirm": "¿Eliminar esta tarjeta?",
+      "hasSubscribers": "Esta tarjeta tiene suscriptores y no se puede eliminar."
+    },
+    "error": "Algo salió mal al cargar tus mazos."
+  },
+  "review": {
+    "loading": "Cargando repaso…",
+    "complete": {
+      "title": "Sesión completada",
+      "body": "Has repasado todas las tarjetas pendientes. ¡Buen trabajo!",
+      "streak": "Día {count}",
+      "streakLongest": "Récord: {count} días"
+    },
+    "grade": {
+      "again": "Otra vez",
+      "hard": "Difícil",
+      "good": "Bien",
+      "easy": "Fácil"
+    },
+    "changedCard": {
+      "title": "Esta tarjeta cambió",
+      "body": "El autor actualizó esta tarjeta desde tu último repaso.",
+      "keep": "Mantener mi progreso",
+      "startOver": "Empezar de nuevo"
+    },
+    "undo": "Deshacer",
+    "endSession": "Terminar sesión",
+    "endSessionConfirm": "Aún tienes tarjetas por repasar. ¿Terminar la sesión?",
+    "inlineEdit": "Editar tarjeta",
+    "noDueCards": "No hay tarjetas pendientes de repaso.",
+    "shortcutHint": "Pulsa 1-4 para calificar, Espacio para revelar"
+  },
   "math": {
     "invalidLatex": "Esta fórmula no se puede previsualizar",
     "dialogInline": "Matemáticas en línea",

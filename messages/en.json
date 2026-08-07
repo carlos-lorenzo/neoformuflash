@@ -190,6 +190,79 @@
     "slashPlaceholder": "Filter…",
     "noMatches": "No blocks match"
   },
+  "decks": {
+    "listTitle": "Decks",
+    "emptyTitle": "Your first deck starts here",
+    "emptyBody": "Create a deck to organise cards for spaced-repetition review.",
+    "createDeck": "Create deck",
+    "shortcutHint": "Press c to create your first deck",
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "Deck title",
+      "visibility": "Visibility",
+      "desiredRetention": "Desired retention",
+      "desiredRetentionHint": "Target recall rate (0.70–0.98). Null inherits from your profile.",
+      "newCardsPerDay": "New cards per day",
+      "submit": "Save deck",
+      "privateRequiresPro": "Private decks require an active subscription."
+    },
+    "detail": {
+      "study": "Study",
+      "settings": "Deck settings",
+      "cards": "Cards",
+      "addCard": "Add a card",
+      "emptyCards": "No cards yet",
+      "emptyCardsBody": "Add your first card to this deck.",
+      "delete": "Delete deck",
+      "deleteConfirm": "Are you sure? This can't be undone.",
+      "hasSubscribers": "This deck has subscribers and can't be deleted. Make it private first."
+    },
+    "cardEditor": {
+      "front": "Front",
+      "back": "Back",
+      "confidence": "Confidence",
+      "confidenceHint": "Your difficulty hint for this card.",
+      "save": "Save card",
+      "saved": "Card saved",
+      "invalidLatex": "This formula can't be rendered"
+    },
+    "cardList": {
+      "sortPosition": "Sort by position",
+      "sortConfidenceAsc": "Sort by confidence ↑",
+      "sortConfidenceDesc": "Sort by confidence ↓",
+      "delete": "Delete card",
+      "deleteConfirm": "Delete this card?",
+      "hasSubscribers": "This card has subscribers and can't be deleted."
+    },
+    "error": "Something went wrong loading your decks."
+  },
+  "review": {
+    "loading": "Loading review…",
+    "complete": {
+      "title": "Session complete",
+      "body": "You've reviewed all due cards. Great work!",
+      "streak": "Day {count}",
+      "streakLongest": "Longest: {count} days"
+    },
+    "grade": {
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
+    },
+    "changedCard": {
+      "title": "This card changed",
+      "body": "The author updated this card since you last reviewed it.",
+      "keep": "Keep my progress",
+      "startOver": "Start over"
+    },
+    "undo": "Undo",
+    "endSession": "End session",
+    "endSessionConfirm": "You still have cards to review. End the session?",
+    "inlineEdit": "Edit card",
+    "noDueCards": "No cards due for review.",
+    "shortcutHint": "Press 1-4 to grade, Space to reveal"
+  },
   "math": {
     "invalidLatex": "This formula can't be previewed",
     "dialogInline": "Inline math",

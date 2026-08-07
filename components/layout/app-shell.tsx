@@ -35,10 +35,13 @@ export async function AppShell({ children, actions, collapsed = false, keyboardS
    * `typedRoutes` makes this a compile error rather than a judgement call: a
    * link to an unbuilt route fails the build, so a dead nav item cannot ship.
    */
-  const navItems = [
-    { href: '/app', label: t('dashboard') },
-    { href: '/app/notes', label: t('notes') },
-  ] as const;
+  const navLinkClass = cn(
+    'duration-instant flex h-8 items-center rounded-sm px-2 text-ui-sm text-secondary transition-colors ease-out',
+    'hover:bg-inset hover:text-primary',
+  );
+
+  const mobileNavLinkClass =
+    'flex h-11 min-w-11 flex-1 items-center justify-center px-2 text-ui-xs tracking-ui text-secondary';
 
   return (
     <ShortcutManager enabled={keyboardShortcutsEnabled}>
@@ -57,18 +60,15 @@ export async function AppShell({ children, actions, collapsed = false, keyboardS
         </div>
 
         <nav aria-label={t('dashboard')} className="flex flex-1 flex-col gap-1 p-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'duration-instant flex h-8 items-center rounded-sm px-2 text-ui-sm text-secondary transition-colors ease-out',
-                'hover:bg-inset hover:text-primary'
-              )}
-            >
-              <span className={cn('truncate', collapsed && 'tablet:sr-only')}>{item.label}</span>
-            </Link>
-          ))}
+          <Link href="/app" className={navLinkClass}>
+            <span className={cn('truncate', collapsed && 'tablet:sr-only')}>{t('dashboard')}</span>
+          </Link>
+          <Link href="/app/notes" className={navLinkClass}>
+            <span className={cn('truncate', collapsed && 'tablet:sr-only')}>{t('notes')}</span>
+          </Link>
+          <Link href="/app/decks" className={navLinkClass}>
+            <span className={cn('truncate', collapsed && 'tablet:sr-only')}>{t('decks')}</span>
+          </Link>
         </nav>
 
         <div className="border-t border-subtle p-2">
@@ -91,16 +91,16 @@ export async function AppShell({ children, actions, collapsed = false, keyboardS
           aria-label={t('dashboard')}
           className="flex shrink-0 items-stretch border-t border-subtle bg-raised tablet:hidden"
         >
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              // 44px minimum touch target at 390px (AC 6).
-              className="flex h-11 min-w-11 flex-1 items-center justify-center px-2 text-ui-xs tracking-ui text-secondary"
-            >
-              <span className="truncate">{item.label}</span>
-            </Link>
-          ))}
+          {/* 44px minimum touch target at 390px (AC 6). */}
+          <Link href="/app" className={mobileNavLinkClass}>
+            <span className="truncate">{t('dashboard')}</span>
+          </Link>
+          <Link href="/app/notes" className={mobileNavLinkClass}>
+            <span className="truncate">{t('notes')}</span>
+          </Link>
+          <Link href="/app/decks" className={mobileNavLinkClass}>
+            <span className="truncate">{t('decks')}</span>
+          </Link>
         </nav>
       </div>
     </div>
