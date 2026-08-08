@@ -105,7 +105,7 @@ export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: bo
         setSessionComplete(true);
       }
     })();
-  }, [deckId, phase, gradingInFlight, queue]);
+  }, [deckId, phase, gradingInFlight, queue, revealTimestamp]);
 
   // Undo last review
   useShortcut('review', 'u', () => {
