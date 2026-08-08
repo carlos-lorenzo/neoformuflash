@@ -17,6 +17,7 @@ export {
   UpdateNoteInput,
   CreateDeckInput,
   CardInput,
+  UpdateCardInput,
   ReviewSubmission,
   ApiKeyInput,
 } from './schemas';

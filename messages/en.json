@@ -190,6 +190,100 @@
     "slashPlaceholder": "Filter…",
     "noMatches": "No blocks match"
   },
+  "decks": {
+    "listTitle": "Decks",
+    "emptyTitle": "Your first deck starts here",
+    "emptyBody": "Create a deck to organise cards for spaced-repetition review.",
+    "createDeck": "Create deck",
+    "shortcutHint": "Press c to create your first deck",
+    "dueCount": "{count} due",
+    "newCount": "{count} new",
+    "allCaughtUp": "All caught up",
+    "streak": "Day {current} — longest {longest}",
+    "keyboardHint": "{keys}",
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "Deck title",
+      "visibility": "Visibility",
+      "visibilityPublic": "Public",
+      "visibilityUnlisted": "Unlisted",
+      "visibilityPrivate": "Private",
+      "desiredRetention": "Desired retention",
+      "desiredRetentionHint": "Target recall rate (0.70–0.98). Null inherits from your profile.",
+      "newCardsPerDay": "New cards per day",
+      "submit": "Save deck",
+      "privateRequiresPro": "Private decks require an active subscription."
+    },
+    "detail": {
+      "study": "Study",
+      "settings": "Deck settings",
+      "cards": "Cards",
+      "cardCount": "{count, plural, =0 {No cards} one {# card} other {# cards}}",
+      "addCard": "Add a card",
+      "emptyCards": "No cards yet",
+      "emptyCardsBody": "Add your first card to this deck.",
+      "delete": "Delete deck",
+      "deleteConfirm": "Are you sure? This can't be undone.",
+      "hasSubscribers": "This deck has subscribers and can't be deleted. Make it private first."
+    },
+    "cardEditor": {
+      "front": "Front",
+      "back": "Back",
+      "confidence": "Confidence",
+      "confidenceHint": "Your difficulty hint for this card.",
+      "save": "Save card",
+      "saved": "Card saved",
+      "editTitle": "Edit card",
+      "invalidLatex": "This formula can't be rendered"
+    },
+    "cardList": {
+      "sortPosition": "Sort by position",
+      "sortConfidenceAsc": "Sort by confidence ↑",
+      "sortConfidenceDesc": "Sort by confidence ↓",
+      "delete": "Delete card",
+      "deleteConfirm": "Delete this card?",
+      "hasSubscribers": "This card has subscribers and can't be deleted."
+    },
+    "grade": {
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
+    },
+    "error": "Something went wrong loading your decks."
+  },
+  "review": {
+    "sessionTitle": "Review: {deck}",
+    "noDue": "No cards due",
+    "backToDeck": "Back to deck",
+    "grade": {
+      "label": "Grade your recall",
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
+    },
+    "shortcutHint": "Space · 1 2 3 4 · e edit · u undo · Esc end",
+    "changedCard": {
+      "title": "Card changed",
+      "body": "This card was edited by its author while you were reviewing. Keep your progress or start over?",
+      "keep": "Keep my progress",
+      "startOver": "Start over"
+    },
+    "inlineEdit": "Edit card",
+    "inlineEditDesc": "Changes will apply to your next review of this card.",
+    "endConfirm": {
+      "title": "End session?",
+      "body": "You have {count} cards remaining. Leaving now will save your progress for later.",
+      "leave": "Leave session"
+    },
+    "sessionComplete": {
+      "title": "Session complete",
+      "reviewed": "Reviewed {count} cards",
+      "streak": "Day {current} — longest {longest}",
+      "done": "Done"
+    }
+  },
   "math": {
     "invalidLatex": "This formula can't be previewed",
     "dialogInline": "Inline math",
