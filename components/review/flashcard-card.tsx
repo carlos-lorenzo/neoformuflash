@@ -22,7 +22,8 @@ export function FlashcardCard({ front, back, revealed, onReveal }: FlashcardCard
   return (
     <div
       className={cn(
-        'relative w-full aspect-[4/3] max-w-[640px] mx-auto perspective-1000',
+        'relative w-full aspect-[4/3] mx-auto perspective-1000',
+        'max-w-2xl',  // ~672px, closest to 640px on the 4px grid
         'border border-subtle rounded-lg bg-raised',
         revealed && 'flipped'
       )}

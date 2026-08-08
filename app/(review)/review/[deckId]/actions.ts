@@ -7,7 +7,8 @@
  */
 
 import { getSessionUser } from '@/lib/supabase/session';
-import { startReview, gradeCard, undoGrade, saveInlineEdit as saveInlineEditDb } from '@/lib/db/review';
+import { startReview, gradeCard, undoGrade, saveInlineEdit as saveInlineEditDb, acknowledgeChange } from '@/lib/db/review';
+import { getStreak } from '@/lib/db/decks';
 import type { ReviewQueueCard } from '@/lib/db/review';
 import type { SrsState, NoteDoc } from '@neoformuflash/contracts';
 
@@ -61,13 +62,17 @@ export async function submitReview(input: {
 
   // Transform the grade result to what the client expects
   const learning = res.value.next.phase === 'learning' || res.value.next.phase === 'relearning';
+  const streakResult = await getStreak(user.id);
+  const streak = streakResult.ok && streakResult.value
+    ? { current: streakResult.value.current, longest: streakResult.value.longest, lastActiveDate: streakResult.value.lastActiveDate }
+    : { current: 0, longest: 0, lastActiveDate: null };
   return {
     ok: true,
     value: {
       learning,
       queue: [], // client reloads from server
       reviewedCount: 1,
-      streak: { current: 0, longest: 0, lastActiveDate: null } // placeholder
+      streak
     }
   };
 }
@@ -80,18 +85,41 @@ export async function undoLastReview(input: { deckId: string; cardId: string }):
   const user = await getSessionUser();
   if (!user) return { ok: false, code: 'error.unexpected' };
 
-  // undoGrade requires a prevState - use a default SrsState for new cards
-  const defaultPrevState: SrsState = {
-    stability: 0,
-    difficulty: 5.0,
-    phase: 'new',
-    learningSteps: 0,
-    reps: 0,
-    lapses: 0,
-    dueAt: new Date(),
-    lastReviewedAt: null,
-  };
-  const res = await undoGrade(user.id, { cardId: input.cardId, prevState: defaultPrevState });
+  // Load the current card state before undoing — this is the state the
+  // undo_review RPC needs for the fields it restores (learning_steps, reps,
+  // lapses, due_at, last_reviewed_at).
+  const { createSupabaseServerClient } = await import('@/lib/supabase/server');
+  const supabase = await createSupabaseServerClient();
+  const { data: stateRow } = await supabase
+    .from('card_states')
+    .select('stability, difficulty, phase, learning_steps, reps, lapses, due_at, last_reviewed_at')
+    .eq('user_id', user.id)
+    .eq('card_id', input.cardId)
+    .maybeSingle();
+
+  const prevState: SrsState = stateRow
+    ? {
+        stability: stateRow.stability,
+        difficulty: stateRow.difficulty,
+        phase: stateRow.phase as SrsState['phase'],
+        learningSteps: stateRow.learning_steps,
+        reps: stateRow.reps,
+        lapses: stateRow.lapses,
+        dueAt: new Date(stateRow.due_at),
+        lastReviewedAt: stateRow.last_reviewed_at ? new Date(stateRow.last_reviewed_at) : null,
+      }
+    : {
+        stability: 0,
+        difficulty: 5.0,
+        phase: 'new' as SrsState['phase'],
+        learningSteps: 0,
+        reps: 0,
+        lapses: 0,
+        dueAt: new Date(),
+        lastReviewedAt: null,
+      };
+
+  const res = await undoGrade(user.id, { cardId: input.cardId, prevState });
   if (!res.ok) return { ok: false, code: res.code };
   return { ok: true };
 }
@@ -100,12 +128,31 @@ export async function undoLastReview(input: { deckId: string; cardId: string }):
 /*  End session                                                        */
 /* ------------------------------------------------------------------ */
 
+/**
+ * End a review session. The session state is client-side (queue, undo stack);
+ * the server has nothing to finalize — reviews are already persisted via
+ * gradeCard's apply_review RPC. This action exists so the client can
+ * distinguish "user explicitly ended" from "user navigated away".
+ */
 export async function endSession(_input: { deckId: string }): Promise<{ ok: boolean; code?: string }> {
   const user = await getSessionUser();
   if (!user) return { ok: false, code: 'error.unexpected' };
+  return { ok: true };
+}
 
-  // No endSession in lib/db/review.ts - use gradeCard with special flag or just return ok
-  // For now, just return ok since the client just navigates away
+/* ------------------------------------------------------------------ */
+/*  Acknowledge changed card                                            */
+/* ------------------------------------------------------------------ */
+
+export async function acknowledgeChangedCard(
+  cardId: string,
+  reset: boolean,
+): Promise<{ ok: boolean; code?: string }> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, code: 'error.unexpected' };
+
+  const res = await acknowledgeChange(user.id, { cardId, reset });
+  if (!res.ok) return { ok: false, code: res.code };
   return { ok: true };
 }
 

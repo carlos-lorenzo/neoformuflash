@@ -18,7 +18,7 @@ import { InlineEditOverlay } from './inline-edit-overlay';
 import { ChangedCardDialog } from './changed-card-dialog';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { getReviewQueue, submitReview, undoLastReview } from '@/app/(review)/review/[deckId]/actions';
+import { getReviewQueue, submitReview, undoLastReview, acknowledgeChangedCard } from '@/app/(review)/review/[deckId]/actions';
 import type { ReviewQueueItem } from '@/lib/db/review';
 
 const RATINGS = ['again', 'hard', 'good', 'easy'] as const;
@@ -232,8 +232,20 @@ export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: bo
       <ChangedCardDialog
         open={changedCardOpen}
         onClose={() => setChangedCardOpen(false)}
-        onKeep={() => {}}
-        onStartOver={() => {}}
+        onKeep={async () => {
+          const card = queue[0];
+          if (card) await acknowledgeChangedCard(card.card.id, false);
+          setChangedCardOpen(false);
+        }}
+        onStartOver={async () => {
+          const card = queue[0];
+          if (card) {
+            await acknowledgeChangedCard(card.card.id, true);
+            setQueue((q) => q.slice(1));
+            setPhase('front');
+          }
+          setChangedCardOpen(false);
+        }}
       />
 
       <Dialog
