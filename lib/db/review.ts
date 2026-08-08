@@ -332,7 +332,10 @@ export async function gradeCard(
     p_lapses: next.lapses,
   });
 
-  if (rpcErr) return err('error.unexpected', rpcErr);
+  if (rpcErr) {
+    console.error('apply_review RPC failed:', JSON.stringify(rpcErr, null, 2));
+    return err('error.unexpected', rpcErr);
+  }
 
   return ok({ next, log });
 }

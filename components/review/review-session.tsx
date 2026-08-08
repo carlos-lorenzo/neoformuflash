@@ -40,6 +40,7 @@ export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: bo
   const [summary, setSummary] = useState<{ reviewed: number; streak: { current: number; longest: number; lastActiveDate: string | null } } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
+  const [revealTimestamp, setRevealTimestamp] = useState(0);
 
   useActiveScope('review');
 
@@ -60,6 +61,7 @@ export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: bo
     if (phase === 'front') {
       setRevealed(true);
       setPhase('grading');
+      setRevealTimestamp(Date.now());
     }
   }, [phase]);
 
@@ -75,7 +77,7 @@ export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: bo
         deckId,
         cardId: current.card.id,
         rating,
-        responseTimeMs: Date.now(), // placeholder; real impl uses timestamp diff
+        responseTimeMs: Date.now() - revealTimestamp,
       });
       if (!res.ok) {
         setError(res.errors?.form ?? 'error.unexpected');
