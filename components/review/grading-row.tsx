@@ -50,7 +50,7 @@ export function GradingRow({
             )}
           >
             <span>{t(`grade.${rating}`)}</span>
-            <span className="text-ui-xs font-mono tabular-nums text-tertiary">
+            <span className="text-ui-sm font-mono tabular-nums text-secondary">
               {previews[rating]}
             </span>
           </button>

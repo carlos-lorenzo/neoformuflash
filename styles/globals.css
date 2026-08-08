@@ -195,6 +195,27 @@
   transform: rotateY(0deg);
 }
 
+/* Card flip raw classes (backup for @utility definitions that may not compile) */
+.flip-container {
+  perspective: 1000px;
+}
+.flip-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform var(--dur-base) var(--ease-in-out-curve);
+}
+.flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  backface-visibility: hidden;
+}
+.flip-back {
+  transform: rotateY(180deg);
+}
+
+
 /* Safe-area padding for iOS notch/home indicator on mobile */
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
