@@ -174,6 +174,33 @@
 }
 
 /*
+ * Card flip: 200ms Y-axis rotation using --ease-in-out (§7).
+ * The front face rotates away; the back face starts rotated 180° and
+ * rotates into view. Both faces have backface-visibility: hidden so
+ * only one is visible at any time.
+ */
+@utility perspective-1000 {
+  perspective: 1000px;
+}
+@utility transform-style-3d {
+  transform-style: preserve-3d;
+}
+@utility backface-hidden {
+  backface-visibility: hidden;
+}
+@utility rotate-y-180 {
+  transform: rotateY(180deg);
+}
+@utility rotate-y-0 {
+  transform: rotateY(0deg);
+}
+
+/* Safe-area padding for iOS notch/home indicator on mobile */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/*
  * The signature (§8). A 24px square grid in --border-subtle at 40%, in exactly
  * three places: behind empty states, the editor canvas margin rule, and behind
  * the auth screen. Never behind live content, never animated, never accent.

@@ -253,31 +253,36 @@
     "error": "Algo salió mal al cargar tus mazos."
   },
   "review": {
-    "loading": "Cargando repaso…",
-    "complete": {
-      "title": "Sesión completada",
-      "body": "Has repasado todas las tarjetas pendientes. ¡Buen trabajo!",
-      "streak": "Día {count}",
-      "streakLongest": "Récord: {count} días"
-    },
+    "sessionTitle": "Repaso: {deck}",
+    "noDue": "Sin tarjetas pendientes",
+    "backToDeck": "Volver al mazo",
     "grade": {
+      "label": "Califica tu recuerdo",
       "again": "Otra vez",
       "hard": "Difícil",
       "good": "Bien",
       "easy": "Fácil"
     },
+    "shortcutHint": "Espacio · 1 2 3 4 · e editar · u deshacer · Esc salir",
     "changedCard": {
-      "title": "Esta tarjeta cambió",
-      "body": "El autor actualizó esta tarjeta desde tu último repaso.",
-      "keep": "Mantener mi progreso",
+      "title": "Tarjeta modificada",
+      "body": "Esta tarjeta fue editada por su autor mientras la repasabas. ¿Mantener tu progreso o empezar de nuevo?",
+      "keep": "Mantener progreso",
       "startOver": "Empezar de nuevo"
     },
-    "undo": "Deshacer",
-    "endSession": "Terminar sesión",
-    "endSessionConfirm": "Aún tienes tarjetas por repasar. ¿Terminar la sesión?",
     "inlineEdit": "Editar tarjeta",
-    "noDueCards": "No hay tarjetas pendientes de repaso.",
-    "shortcutHint": "Pulsa 1-4 para calificar, Espacio para revelar"
+    "inlineEditDesc": "Los cambios se aplicarán en tu próximo repaso de esta tarjeta.",
+    "endConfirm": {
+      "title": "¿Terminar sesión?",
+      "body": "Te quedan {count} tarjetas. Si sales ahora se guardará tu progreso para más tarde.",
+      "leave": "Salir"
+    },
+    "sessionComplete": {
+      "title": "Sesión completa",
+      "reviewed": "Repasadas {count} tarjetas",
+      "streak": "Día {current} — récord {longest}",
+      "done": "Listo"
+    }
   },
   "math": {
     "invalidLatex": "Esta fórmula no se puede previsualizar",

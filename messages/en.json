@@ -253,31 +253,36 @@
     "error": "Something went wrong loading your decks."
   },
   "review": {
-    "loading": "Loading review…",
-    "complete": {
-      "title": "Session complete",
-      "body": "You've reviewed all due cards. Great work!",
-      "streak": "Day {count}",
-      "streakLongest": "Longest: {count} days"
-    },
+    "sessionTitle": "Review: {deck}",
+    "noDue": "No cards due",
+    "backToDeck": "Back to deck",
     "grade": {
+      "label": "Grade your recall",
       "again": "Again",
       "hard": "Hard",
       "good": "Good",
       "easy": "Easy"
     },
+    "shortcutHint": "Space · 1 2 3 4 · e edit · u undo · Esc end",
     "changedCard": {
-      "title": "This card changed",
-      "body": "The author updated this card since you last reviewed it.",
+      "title": "Card changed",
+      "body": "This card was edited by its author while you were reviewing. Keep your progress or start over?",
       "keep": "Keep my progress",
       "startOver": "Start over"
     },
-    "undo": "Undo",
-    "endSession": "End session",
-    "endSessionConfirm": "You still have cards to review. End the session?",
     "inlineEdit": "Edit card",
-    "noDueCards": "No cards due for review.",
-    "shortcutHint": "Press 1-4 to grade, Space to reveal"
+    "inlineEditDesc": "Changes will apply to your next review of this card.",
+    "endConfirm": {
+      "title": "End session?",
+      "body": "You have {count} cards remaining. Leaving now will save your progress for later.",
+      "leave": "Leave session"
+    },
+    "sessionComplete": {
+      "title": "Session complete",
+      "reviewed": "Reviewed {count} cards",
+      "streak": "Day {current} — longest {longest}",
+      "done": "Done"
+    }
   },
   "math": {
     "invalidLatex": "This formula can't be previewed",

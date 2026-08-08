@@ -31,7 +31,7 @@ export async function AuthShell({
           <p className="text-ui-sm font-medium text-secondary">FormuFlash</p>
           <Link
             href={toggleHref}
-            className="text-ui-sm text-secondary transition-colors duration-instant ease-out hover:text-primary"
+            className="h-11 flex items-center text-ui-sm text-secondary transition-colors duration-instant ease-out hover:text-primary min-h-touch"
           >
             {isLogin ? t('toggleSignup') : t('toggleLogin')}
           </Link>

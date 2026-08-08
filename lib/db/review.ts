@@ -22,7 +22,8 @@ import type { Database } from '@neoformuflash/contracts/db';
 import { err, ok, type Result } from '@/lib/result';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { formatInterval } from '@/lib/review/format-interval';
-import { getStreak, type Streak } from './decks';
+import { getStreak } from './decks';
+import type { Streak } from './decks';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -34,6 +35,8 @@ export type ReviewQueueCard = {
   changed: boolean;
   previews: Record<Rating, string>;
 };
+
+export type ReviewQueueItem = ReviewQueueCard;
 
 export type StartReviewResult = {
   deck: { id: string; title: string; desiredRetention: number };

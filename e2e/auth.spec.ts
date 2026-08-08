@@ -120,7 +120,8 @@ test.describe('dashboard empty state', () => {
     // Names what goes here, rather than reporting an absence ("No notes yet").
     await expect(heading).not.toHaveText(/^no\s/i);
 
-    const actions = page.getByRole('main').getByRole('button');
+    // The action is a link, not a button (navigates to /app/notes)
+    const actions = page.getByRole('main').getByRole('link');
     await expect(actions).toHaveCount(1);
     await expect(actions.first()).toBeEnabled();
 
