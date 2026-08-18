@@ -27,6 +27,28 @@ describe('queue query uses card_states_queue_idx (AC17)', () => {
     const client = new Client({ connectionString: process.env.SUPABASE_DB_URL! });
     await client.connect();
     try {
+      // The planner's choice depends on card_states being a realistic size: on
+      // an empty table a seq scan legitimately wins the cost model and the
+      // test fails against fresh databases (db:reset, CI's supabase start).
+      // Bulk-seed a few thousand states so the index path is deterministically
+      // cheaper, then ANALYZE so the estimates see the real row count.
+      await client.query('begin');
+      await client.query(
+        `insert into cards (deck_id, front_json, back_json, front_text, back_text, position)
+         select $1, '{"type":"doc","content":[]}'::jsonb, '{"type":"doc","content":[]}'::jsonb,
+                'bulk', 'bulk', g
+         from generate_series(1, 2000) g`,
+        [deck.id]
+      );
+      await client.query(
+        `insert into card_states (user_id, card_id, deck_id, due_at)
+         select $1, id, $2, '2020-01-01'::timestamptz
+         from cards where deck_id = $2 and position > 0`,
+        [owner.id, deck.id]
+      );
+      await client.query('commit');
+      await client.query('analyze card_states');
+
       const { rows } = await client.query(
         `explain analyze
          select c.id, cs.due_at

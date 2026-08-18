@@ -38,7 +38,7 @@ for (const theme of ['dark', 'light'] as const) {
       const deck = await seedDeckWithCards(user.id, 3);
       await signIn(context, user);
 
-      await page.goto(`/review/${deck.id}`);
+      await page.goto(`/app/courses/${deck.courseId}/review/${deck.id}`);
       // Card face loads
       await expect(page.getByText('Front of card 1')).toBeVisible();
 
@@ -52,7 +52,7 @@ for (const theme of ['dark', 'light'] as const) {
       const deck = await seedDeckWithCards(user.id, 3);
       await signIn(context, user);
 
-      await page.goto(`/review/${deck.id}`);
+      await page.goto(`/app/courses/${deck.courseId}/review/${deck.id}`);
       await expect(page.getByText('Front of card 1')).toBeVisible();
 
       // Click the card to reveal the back and surface the grading row.

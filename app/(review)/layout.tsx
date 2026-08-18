@@ -5,12 +5,19 @@
  * focused surface (spec §Component inventory). ShortcutManager is mounted
  * here so review-scope bindings (1-4, Space, e, u, Esc) work in any child.
  *
- * This is the repo's first route group outside /app (spec Risks). The
- * middleware adds /review to AUTHED_PREFIXES as the primary gate; this
- * layout's getSessionUser() is the second line of defence.
+ * Phase 03c moved the review route under /app/courses/[id]/review/[deckId].
+ * The group's directory nesting mirrors that URL so the page keeps the
+ * course-scoped path while escaping app/app/layout.tsx's AppShell — a route
+ * group is transparent to the URL but not to layout inheritance. /app is
+ * already in the middleware's AUTHED_PREFIXES, so the primary auth gate covers
+ * it; this layout's getSessionUser() is the second line of defence.
  */
 
 import { redirect } from 'next/navigation';
+// KaTeX CSS loaded structurally here (and in app/app/layout.tsx) so the review
+// card and any NoteDocView surface gets styled equations whether or not the
+// inline-edit editor is mounted.
+import 'katex/dist/katex.min.css';
 import { ShortcutManager } from '@/lib/shortcuts/shortcut-manager';
 import { getProfile } from '@/lib/db/profiles';
 import { getSessionUser } from '@/lib/supabase/session';

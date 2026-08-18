@@ -23,6 +23,7 @@ export default defineConfig({
           include: [
             'scripts/**/*.test.ts',
             'lib/**/*.test.ts',
+            'lib/**/*.test.tsx',
             'packages/**/*.test.ts',
             // Component tests belong here by the same rule: no services needed.
             // They opt into jsdom per file with a `@vitest-environment` docblock

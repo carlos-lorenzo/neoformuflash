@@ -29,11 +29,8 @@ export async function AppShell({ children, actions, collapsed = false, keyboardS
   const t = await getTranslations('nav');
 
   /*
-   * Only routes that exist. Notes, decks and review arrive with phases 02 and
-   * 03 and add their own entries here.
-   *
-   * `typedRoutes` makes this a compile error rather than a judgement call: a
-   * link to an unbuilt route fails the build, so a dead nav item cannot ship.
+   * Phase 03c: navigation is course-first. Sidebar shows Home and Courses only.
+   * Decks, notes, and review are accessed from within a course detail page.
    */
   const navLinkClass = cn(
     'duration-instant flex h-8 items-center rounded-sm px-2 text-ui-sm text-secondary transition-colors ease-out',
@@ -63,11 +60,8 @@ export async function AppShell({ children, actions, collapsed = false, keyboardS
           <Link href="/app" className={navLinkClass}>
             <span className={cn('truncate', collapsed && 'tablet:sr-only')}>{t('dashboard')}</span>
           </Link>
-          <Link href="/app/notes" className={navLinkClass}>
-            <span className={cn('truncate', collapsed && 'tablet:sr-only')}>{t('notes')}</span>
-          </Link>
-          <Link href="/app/decks" className={navLinkClass}>
-            <span className={cn('truncate', collapsed && 'tablet:sr-only')}>{t('decks')}</span>
+          <Link href="/app/courses" className={navLinkClass}>
+            <span className={cn('truncate', collapsed && 'tablet:sr-only')}>{t('courses')}</span>
           </Link>
         </nav>
 
@@ -95,11 +89,8 @@ export async function AppShell({ children, actions, collapsed = false, keyboardS
           <Link href="/app" className={mobileNavLinkClass}>
             <span className="truncate">{t('dashboard')}</span>
           </Link>
-          <Link href="/app/notes" className={mobileNavLinkClass}>
-            <span className="truncate">{t('notes')}</span>
-          </Link>
-          <Link href="/app/decks" className={mobileNavLinkClass}>
-            <span className="truncate">{t('decks')}</span>
+          <Link href="/app/courses" className={mobileNavLinkClass}>
+            <span className="truncate">{t('courses')}</span>
           </Link>
         </nav>
       </div>

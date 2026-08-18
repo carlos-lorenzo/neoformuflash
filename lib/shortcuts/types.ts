@@ -38,6 +38,13 @@ export type Binding = {
   onPress: () => void;
   /** True when the binding requires a modifier (⌘/Ctrl/Alt). */
   requireModified: boolean;
+  /**
+   * Opt into firing while focus is in an input/textarea/contenteditable.
+   * Defaults to false — specs/shortcuts.md forbids bare letters in editables.
+   * `Escape` is the canonical opt-in: it is not a letter, and a dispatcher
+   * that blocks it makes an editor impossible to dismiss by keyboard.
+   */
+  allowInEditable?: boolean;
 };
 
 /**

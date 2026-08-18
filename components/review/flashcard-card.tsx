@@ -6,6 +6,9 @@ import { useTranslations } from 'next-intl';
 import { NoteDocView } from '@/components/note/note-doc-view';
 import type { NoteDoc } from '@neoformuflash/contracts';
 
+// Ensure KaTeX styles are loaded for flashcard math rendering
+import 'katex/dist/katex.min.css';
+
 export type FlashcardCardProps = {
   front: NoteDoc;
   back: NoteDoc;
@@ -18,20 +21,21 @@ export function FlashcardCard({ front, back, revealed, onReveal }: FlashcardCard
 
   return (
     <div
-      className="flip-container relative w-full aspect-[4/3] max-w-2xl mx-auto rounded-lg border border-subtle bg-raised"
+      className="flip-container relative w-full h-full max-w-review mx-auto min-h-editor rounded-lg border border-subtle bg-raised"
       onClick={revealed ? undefined : onReveal}
       role="button"
       tabIndex={revealed ? undefined : 0}
       onKeyDown={(e) => {
-        if (!revealed && (e.key === 'Enter' || e.key === ' ')) {
+        if (!revealed && e.key === 'Enter') {
           e.preventDefault();
+          e.stopPropagation();
           onReveal();
         }
       }}
     >
-      <div className={revealed ? 'flip-inner flipped' : 'flip-inner'}>
+      <div className={revealed ? 'flip-inner flipped' : 'flip-inner'} style={{ height: '100%' }}>
         {/* Front */}
-        <div className="flip-face flip-front absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+        <div className="flip-face absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
           <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden">
             <NoteDocView doc={front} />
           </div>

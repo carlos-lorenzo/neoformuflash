@@ -55,7 +55,7 @@ export function GoogleSignInButton({
 /* refs/06-auth: the brand mark sits on the left axis, the label stays centred. */
 function GoogleMark() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 18 18" className="size-4 shrink-0" fill="currentColor">
+    <svg aria-hidden="true" viewBox="0 0 18 18" className="size-4 shrink-0 icon-inline" fill="currentColor">
       <path d="M9 7.2v3.5h4.9a4.2 4.2 0 0 1-1.8 2.8l2.9 2.2c1.7-1.6 2.7-3.9 2.7-6.7 0-.6-.05-1.2-.16-1.8H9z" />
       <path d="M4 10.7 3.3 11.2 1 13a9 9 0 0 0 8 5c2.4 0 4.5-.8 6-2.2l-2.9-2.2A5.4 5.4 0 0 1 4 10.7z" />
       <path d="M1 5a9 9 0 0 0 0 8l3-2.3a5.4 5.4 0 0 1 0-3.4z" />

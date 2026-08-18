@@ -63,7 +63,7 @@ function GearIcon() {
     <svg
       aria-hidden="true"
       viewBox="0 0 16 16"
-      className="size-4"
+      className="size-4 icon-inline"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"

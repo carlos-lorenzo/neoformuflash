@@ -88,7 +88,7 @@ export function OnboardingForm({
   }, [institutionId, isOther]);
 
   /** Translate a catalog key returned by the server action. */
-  const message = (key: string | undefined) => (key ? t(key) : undefined);
+  const message = (key: string | undefined) => (key ? t(key) /* i18n-dynamic-key */ : undefined);
 
   return (
     <form action={formAction} className={cn('flex flex-col gap-4', className)}>

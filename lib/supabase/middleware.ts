@@ -15,16 +15,17 @@ import { NextResponse, type NextRequest } from 'next/server';
  */
 
 /*
- * /app/* and /review/* require authentication. /onboarding is authed too —
- * a signed-in user on /onboarding is mid-flow; a signed-out user is
- * redirected to /login by the guard below.
+ * /app/* requires authentication. /onboarding is authed too — a signed-in user
+ * on /onboarding is mid-flow; a signed-out user is redirected to /login by the
+ * guard below.
  *
- * `/review` is the repo's first route group outside /app (phase 03).
- * The review layout asserts getSessionUser() as a second line of defence,
- * but the middleware is the primary gate — without it, the session is
- * reachable unauthenticated at the edge.
+ * Review lived at /review/* until phase 03c moved it to
+ * /app/courses/[id]/review/[deckId], which the /app prefix already covers. The
+ * review layout asserts getSessionUser() as a second line of defence, but the
+ * middleware is the primary gate — without it, the session is reachable
+ * unauthenticated at the edge.
  */
-const AUTHED_PREFIXES = ['/app', '/onboarding', '/review'];
+const AUTHED_PREFIXES = ['/app', '/onboarding'];
 
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   let response = NextResponse.next({ request });

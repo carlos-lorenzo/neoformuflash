@@ -38,6 +38,8 @@ describe('grant discipline (AC18)', () => {
       'notes',
       'decks',
       'cards',
+      // 0011: owner-only DELETE on courses, the auto-fork path is delete_course().
+      'courses',
     ]);
 
     const { rows } = await client.query<{ table_name: string }>(

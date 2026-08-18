@@ -16,6 +16,7 @@ import type { Route } from 'next';
 import { redirect } from 'next/navigation';
 import { createNoteRow, updateNoteRow } from '@/lib/db/notes';
 import { proseToUnion } from '@/lib/editor/serialize';
+import { deriveTitle } from '@/lib/editor/derive-title';
 import { getSessionUser } from '@/lib/supabase/session';
 
 /* ------------------------------------------------------------------ */
@@ -27,9 +28,14 @@ export type CreateNoteState = {
 };
 
 /**
- * Create a draft note and redirect into its editor.
+ * Create a draft note inside a course and redirect into its editor.
  * Called from a `useActionState` form — the title comes from a hidden input
  * or defaults to "Untitled".
+ *
+ * `courseId` is required (phase-03c): notes are created from a course detail
+ * page, so a create without one is a caller bug rather than a standalone note.
+ * The column stays nullable at the DB level — this is a UX invariant enforced
+ * at the entry point, not a schema change.
  */
 export async function createNote(
   _previous: CreateNoteState,
@@ -44,7 +50,14 @@ export async function createNote(
   // title is normal and defaults to "Untitled".
   const title = titleValue || 'Untitled';
 
-  const parsed = CreateNoteInput.pick({ title: true }).safeParse({ title });
+  const rawCourseId = formData.get('courseId');
+
+  const parsed = CreateNoteInput.pick({ title: true })
+    .extend({ courseId: CreateNoteInput.shape.courseId.unwrap() })
+    .safeParse({
+      title,
+      courseId: typeof rawCourseId === 'string' ? rawCourseId : undefined,
+    });
   if (!parsed.success) {
     const errors: Record<string, string> = {};
     for (const issue of parsed.error.issues) {
@@ -54,7 +67,10 @@ export async function createNote(
     return { errors };
   }
 
-  const result = await createNoteRow(user.id, parsed.data);
+  const result = await createNoteRow(user.id, {
+    title: parsed.data.title,
+    courseId: parsed.data.courseId,
+  });
   if (!result.ok) return { errors: { form: result.code } };
 
   redirect(`/app/notes/${result.value.id}` as Route);
@@ -105,9 +121,16 @@ export async function saveNote(input: {
     contentText = extractText(union.value);
   }
 
+  // Derive title from content if not explicitly provided (or if it's the "Untitled" default).
+  // This is the server-side trust boundary for title — matches the client-side deriveTitle logic.
+  let title = parsed.data.title;
+  if (contentJson && (!title || title === 'Untitled')) {
+    title = deriveTitle(contentJson);
+  }
+
   const result = await updateNoteRow(user.id, {
     id: parsed.data.id,
-    title: parsed.data.title,
+    title,
     contentJson,
     contentText,
   });

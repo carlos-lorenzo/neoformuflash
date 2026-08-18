@@ -1,5 +1,12 @@
 import { redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
+// KaTeX CSS is loaded structurally here (and in the review layout) so any page
+// that server-renders a NoteDoc — preview, review card, note reader — gets
+// styled equations regardless of whether an editor component is mounted. The
+// component-level import (components/editor/katex-client.ts) only reaches
+// editor surfaces; a read-only NoteDocView surface would otherwise get
+// unstyled KaTeX by transitivity.
+import 'katex/dist/katex.min.css';
 import { DEFAULT_LOCALE, isLocale } from '@neoformuflash/contracts';
 import { AppShell } from '@/components/layout/app-shell';
 import { SettingsMenu } from '@/components/settings-menu';

@@ -82,7 +82,11 @@ export async function listCards(
     .from('cards')
     .select('id, front_json, back_json, front_text, position, confidence, content_version')
     .eq('deck_id', deckId)
-    .order(orderCol, { ascending, nullsFirst: false });
+    .order(orderCol, { ascending, nullsFirst: false })
+    // Secondary sort: existing decks predate the server-side position
+    // computation and may hold many all-zero rows; created_at keeps those
+    // ordering stably instead of relying on an unstable tiebreak (phase-03b D).
+    .order('created_at', { ascending: true });
 
   if (error) return err('error.unexpected', error);
 
@@ -135,13 +139,11 @@ export async function getCard(
 /* ------------------------------------------------------------------ */
 
 /**
- * Insert a card. `position` defaults to 0 (the caller computes it as
- * max(position) + 1 if needed, or the editor handles ordering).
- *
- * The 0003 trigger bumps content_version only when front_text or
- * back_text changes — so a new card always starts at version 1
- * (the column default) and an initial save with the defaults does
- * not move it.
+ * Insert a card. `position` is computed server-side as max(position) + 1
+ * within the deck when not provided — the client computing it races two tabs
+ * (phase-03b D). The 0003 trigger bumps content_version only when front_text
+ * or back_text changes — so a new card always starts at version 1 (the column
+ * default) and an initial save with the defaults does not move it.
  */
 export async function createCardRow(
   _userId: string,
@@ -151,11 +153,23 @@ export async function createCardRow(
     backJson: NoteDoc;
     frontText: string;
     backText: string;
-    position: number;
+    position?: number;
     confidence: Database['public']['Enums']['review_rating'] | null;
   },
 ): Promise<Result<{ id: string }>> {
   const supabase = await createSupabaseServerClient();
+
+  let position = input.position;
+  if (position === undefined) {
+    const { data: maxRow } = await supabase
+      .from('cards')
+      .select('position')
+      .eq('deck_id', input.deckId)
+      .order('position', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    position = (maxRow?.position ?? -1) + 1;
+  }
 
   const { data, error } = await supabase
     .from('cards')
@@ -165,7 +179,7 @@ export async function createCardRow(
       back_json: input.backJson as unknown as Database['public']['Tables']['cards']['Insert']['back_json'],
       front_text: input.frontText,
       back_text: input.backText,
-      position: input.position,
+      position,
       confidence: input.confidence,
     })
     .select('id')

@@ -31,7 +31,7 @@ export function LocaleSwitcher({ value }: { value: Locale }) {
       // Only locales with a catalog on disk (see lib/i18n/shipped.ts). Offering
       // Catalan here while its catalog was missing crashed the next render and
       // locked the user out — a broken option is worse than no option.
-      options={SHIPPED_LOCALES.map((locale) => ({ value: locale, label: t(locale) }))}
+      options={SHIPPED_LOCALES.map((locale) => ({ value: locale, label: t(locale) /* i18n-dynamic-key */ }))}
       onValueChange={(next) => {
         startTransition(async () => {
           await setLocale(next);

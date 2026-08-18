@@ -1,0 +1,48 @@
+/*
+ * FIXTURE compiled CSS for scripts/assert-classes-compile.test.ts.
+ *
+ * These selectors deliberately include the shapes that broke the first version
+ * of the checker: attribute selectors (`[aria-disabled=true]`), child
+ * combinators (`>:not(:last-child)`), compound classes (`.flip-inner.flipped`),
+ * opacity modifiers (`/80`), arbitrary values (`[68ch]`), negatives
+ * (`-translate-x-1/2`) and escaped variant colons (`hover\:bg-accent-hover`).
+ */
+.bg-base {
+  background: var(--bg-base);
+}
+.hover\:bg-accent-hover:hover {
+  background: var(--accent-hover);
+}
+.bg-base\/80 {
+  background: color-mix(in oklch, var(--bg-base) 80%, transparent);
+}
+.divide-subtle > :not(:last-child) {
+  border-color: var(--border-subtle);
+}
+.aria-disabled\:opacity-50[aria-disabled='true'] {
+  opacity: 0.5;
+}
+.max-w-\[68ch\] {
+  max-width: 68ch;
+}
+.-translate-x-1\/2 {
+  translate: -50%;
+}
+.flip-inner {
+  transform-style: preserve-3d;
+}
+.flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+.flip-container {
+  perspective: 1000px;
+}
+.tablet\:hidden {
+  display: none;
+}
+.dark\:bg-base {
+  background: var(--bg-base);
+}
+.text-ui-xs {
+  font-size: 0.6875rem;
+}

@@ -16,6 +16,7 @@ type SlashMenuItem = {
   id: string;
   label: string;
   action: () => void;
+  focusesOwnInput?: boolean;
 };
 
 type SlashMenuProps = {
@@ -25,11 +26,13 @@ type SlashMenuProps = {
   onClose: () => void;
   /** Called on Escape — the `/` stays as literal text (AC2). */
   onCancel: () => void;
-  /** Opens the display-equation MathInput — the slash alternative to `$$`. */
-  onInsertEquation: () => void;
+  /** Opens the inline-equation MathInput — the slash alternative to `$`. */
+  onInsertInlineEquation: () => void;
+  /** Opens the block-equation MathInput — the slash alternative to `$$`. */
+  onInsertBlockEquation: () => void;
 };
 
-export function SlashMenu({ editor, position, onClose, onCancel, onInsertEquation }: SlashMenuProps) {
+export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineEquation, onInsertBlockEquation }: SlashMenuProps) {
   const t = useTranslations('editor.blocks');
   const tp = useTranslations('editor');
   const [filter, setFilter] = useState('');
@@ -47,9 +50,10 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertEquatio
       { id: 'orderedList', label: t('orderedList'), action: () => editor.chain().focus().toggleOrderedList().run() },
       { id: 'codeBlock', label: t('codeBlock'), action: () => editor.chain().focus().toggleCodeBlock().run() },
       { id: 'blockquote', label: t('blockquote'), action: () => editor.chain().focus().toggleBlockquote().run() },
-      { id: 'equation', label: t('equation'), action: onInsertEquation },
+      { id: 'inlineEquation', label: t('inlineEquation'), action: onInsertInlineEquation, focusesOwnInput: true },
+      { id: 'blockEquation', label: t('blockEquation'), action: onInsertBlockEquation, focusesOwnInput: true },
     ],
-    [editor, t, onInsertEquation],
+    [editor, t, onInsertInlineEquation, onInsertBlockEquation],
   );
 
   const filtered = useMemo(() => {
@@ -70,8 +74,8 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertEquatio
       // The filter input unmounts with the menu, dropping focus to <body> and
       // swallowing the student's next keystrokes. A microtask after the commit
       // returns focus to the editor (same pattern as MathInput's cancel).
-      // Equation is excluded — MathInput focuses its own input.
-      if (item.id !== 'equation') {
+      // MathInput items focus their own input.
+      if (!item.focusesOwnInput) {
         void Promise.resolve().then(() => {
           editor.chain().focus().run();
         });

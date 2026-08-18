@@ -3,10 +3,13 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { CoursePicker } from '@/components/courses/course-picker';
+import type { CourseSummary } from '@/lib/db/courses';
 import { createDeck, saveDeck } from '@/app/app/decks/actions';
 
 export type DeckFormProps = {
@@ -18,13 +21,21 @@ export type DeckFormProps = {
     desiredRetention: number | null;
     newCardsPerDay: number;
   };
+  /**
+   * The user's courses for the create-flow course picker (phase-03b H).
+   * Course-first is a UX affordance, not a DB invariant — the picker offers an
+   * explicit "no course" option and the field stays nullable.
+   */
+  courses?: CourseSummary[];
 };
 
-export function DeckForm({ deck }: DeckFormProps) {
+export function DeckForm({ deck, courses }: DeckFormProps) {
   const t = useTranslations('decks');
+  const searchParams = useSearchParams();
 
   const [title, setTitle] = useState(deck?.title ?? '');
   const [visibility, setVisibility] = useState(deck?.visibility ?? 'public');
+  const [courseId, setCourseId] = useState(searchParams.get('courseId') ?? '');
   const [retention, setRetention] = useState(
     deck?.desiredRetention != null ? String(deck.desiredRetention) : '',
   );
@@ -35,6 +46,8 @@ export function DeckForm({ deck }: DeckFormProps) {
   const [saveState, saveAction, savePending] = useActionState(saveDeck, {});
 
   const isEdit = Boolean(deck);
+  const hasCourseSelected = courseId !== '' || isEdit;
+  const isCreateFlow = !isEdit;
 
   function submitAction() {
     if (isEdit) {
@@ -48,9 +61,29 @@ export function DeckForm({ deck }: DeckFormProps) {
     }
     const fd = new FormData();
     fd.set('title', title);
+    if (courseId) fd.set('courseId', courseId);
     return createAction(fd);
   }
 
+  // Step 1: Course picker (no course selected yet, create flow)
+  if (isCreateFlow && !hasCourseSelected) {
+    return (
+      <form action={submitAction} className="flex flex-col gap-6">
+        <div className="text-center py-8">
+          <h2 className="mb-2 text-ui-lg font-semibold text-primary">{t('create.chooseCourse')}</h2>
+          <p className="text-ui-sm text-secondary">{t('create.createCourseFirst')}</p>
+        </div>
+        <CoursePicker courses={courses ?? []} value={courseId} onValueChange={setCourseId} />
+        <div className="flex justify-end pt-4">
+          <Button variant="primary" type="submit" loading={createPending} disabled={!courseId}>
+            {t('form.submit')}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  // Step 2: Title + settings (course selected, or edit flow)
   return (
     <form action={submitAction} className="flex flex-col gap-4">
       <Input
@@ -59,7 +92,12 @@ export function DeckForm({ deck }: DeckFormProps) {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         name="title"
+        autoFocus
       />
+
+      {!isEdit && courses ? (
+        <CoursePicker courses={courses} value={courseId} onValueChange={setCourseId} />
+      ) : null}
 
       <Select
         label={t('form.visibility')}
@@ -75,23 +113,31 @@ export function DeckForm({ deck }: DeckFormProps) {
         ]}
       />
 
-      <Input
-        label={t('form.desiredRetention')}
-        hint={t('form.desiredRetentionHint')}
-        value={retention}
-        onChange={(e) => setRetention(e.target.value)}
-        inputMode="decimal"
-        placeholder="0.90"
-        name="desiredRetention"
-      />
+      <details className="group">
+        <summary className="flex items-center justify-between cursor-pointer select-none">
+          <span className="text-ui-sm font-medium text-secondary">{t('detail.settings')}</span>
+          <span className="text-ui-xs text-tertiary transition-transform open:rotate-90">›</span>
+        </summary>
+        <div className="mt-4 flex flex-col gap-4">
+          <Input
+            label={t('form.desiredRetention')}
+            hint={t('form.desiredRetentionHint')}
+            value={retention}
+            onChange={(e) => setRetention(e.target.value)}
+            inputMode="decimal"
+            placeholder="0.90"
+            name="desiredRetention"
+          />
 
-      <Input
-        label={t('form.newCardsPerDay')}
-        value={newPerDay}
-        onChange={(e) => setNewPerDay(e.target.value)}
-        inputMode="numeric"
-        name="newCardsPerDay"
-      />
+          <Input
+            label={t('form.newCardsPerDay')}
+            value={newPerDay}
+            onChange={(e) => setNewPerDay(e.target.value)}
+            inputMode="numeric"
+            name="newCardsPerDay"
+          />
+        </div>
+      </details>
 
       {saveState.errors?.form ? (
         <p className="text-ui-sm text-danger">{saveState.errors.form}</p>

@@ -31,9 +31,9 @@ export async function AuthShell({
           <p className="text-ui-sm font-medium text-secondary">FormuFlash</p>
           <Link
             href={toggleHref}
-            className="h-11 flex items-center text-ui-sm text-secondary transition-colors duration-instant ease-out hover:text-primary min-h-touch"
+            className="h-11 flex items-center text-ui-sm text-secondary transition-colors duration-instant ease-out hover:text-primary min-h-11"
           >
-            {isLogin ? t('toggleSignup') : t('toggleLogin')}
+            {isLogin ? t('toggleSignup') : t('toggleLogin')} {/* i18n-dynamic-key */}
           </Link>
         </div>
         {children}

@@ -172,6 +172,20 @@ function blockToUnion(node: unknown): Result<BlockNode> {
       const latex = typeof attrs.latex === 'string' ? attrs.latex : '';
       return ok({ type: 'displayMath', latex });
     }
+    /*
+     * Idempotence: the union's own block-math name, accepted so a doc that has
+     * already been converted survives a second pass unchanged.
+     *
+     * The card path converts twice — MathEditorField.getDoc() returns a union,
+     * and the server action re-validates it (D3, untrusted client JSON). Before
+     * this case existed the second pass hit `default` and rejected the block, so
+     * every equation typed into a card was destroyed on save while notes (which
+     * send raw PM JSON, converted once) were fine.
+     */
+    case 'displayMath': {
+      const latex = typeof n.latex === 'string' ? n.latex : '';
+      return ok({ type: 'displayMath', latex });
+    }
     default:
       return err('editor.unsupportedBlock');
   }
@@ -202,9 +216,22 @@ function inlineToUnion(node: ProseNode): Result<InlineNode> {
   }
 
   if (node.type === 'inlineMath') {
+    /*
+     * The PM extension carries latex under `attrs.latex`; the union carries it
+     * top-level. A doc that has already been converted (e.g. the card save path
+     * runs proseToUnion twice — MathEditorField.getDoc() converts once, then
+     * the server action re-validates) has no `attrs`, so read from either
+     * location. Without this, the second pass silently rewrote every equation
+     * to an empty string — that's why card LaTeX vanished on save while notes
+     * (converted only once, via saveNote's raw PM JSON) rendered fine.
+     */
     const attrs = (node.attrs ?? {}) as Record<string, unknown>;
-    const latex = typeof attrs.latex === 'string' ? attrs.latex : '';
-    return ok({ type: 'inlineMath', latex });
+    const attrLatex = typeof attrs.latex === 'string' ? attrs.latex : undefined;
+    // Use `unknown` to avoid TS "conversion may be a mistake" on ProseNode
+    const topLatex = typeof (node as unknown as { latex?: unknown }).latex === 'string'
+      ? ((node as unknown as { latex: string }).latex)
+      : undefined;
+    return ok({ type: 'inlineMath', latex: attrLatex ?? topLatex ?? '' });
   }
 
   return err('editor.unsupportedBlock');

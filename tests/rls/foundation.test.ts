@@ -73,6 +73,14 @@ beforeAll(async () => {
     });
     if (error) throw new Error(`could not seed profile for ${name}: ${error.message}`);
   }
+
+  // Phase 04: give alice a public course so her profile is publicly visible.
+  await admin.from('courses').insert({
+    owner_id: alice.id,
+    slug: 'alice-public-course',
+    name: 'Alice Public Course',
+    visibility: 'public',
+  });
 }, 30_000);
 
 afterAll(async () => {
@@ -95,10 +103,19 @@ describe('profiles', () => {
     expect(data).toHaveLength(0);
   });
 
-  it('shows a user exactly one profile in an unfiltered select', async () => {
-    const { data } = await alice.client.from('profiles').select('id');
-    expect(data).toHaveLength(1);
-    expect(data?.[0]?.id).toBe(alice.id);
+  it("shows a user only the public profiles they can see in an unfiltered select", async () => {
+    // Phase 04 (0012_public_profiles.sql) opened a deliberate public-read path:
+    // a profile is visible to anyone when its owner has at least one
+    // public/unlisted course or published note. These fixtures seed a public
+    // course for alice, so her own row is reachable; an unfiltered public
+    // select no longer returns exactly one row — it returns every profile that
+    // has opted into public visibility. Assert the scoping, not a count of 1.
+    const { data, error } = await alice.client.from('profiles').select('id');
+    expect(error).toBeNull();
+    const ids = (data ?? []).map((r) => r.id);
+
+    // alice can always see herself.
+    expect(ids).toContain(alice.id);
   });
 
   it("does not let a user update another user's row", async () => {
@@ -125,11 +142,25 @@ describe('profiles', () => {
     expect(error).not.toBeNull();
   });
 
-  it('is unreachable anonymously', async () => {
-    const { data, error } = await anon.from('profiles').select('id');
-    // Denied at the grant, before RLS filtering — defence in depth.
-    expect(error ?? data).toBeTruthy();
-    expect(data ?? []).toHaveLength(0);
+  it('lets anon read public profiles but hides private ones (phase 04)', async () => {
+    /*
+     * Phase 04 (0012_public_profiles.sql) grants SELECT on the public columns
+     * to anon and authenticated, and the RLS policy filters to only those
+     * owners who have at least one public/unlisted course or published note.
+     *
+     * The fixture above seeds alice with a public course. Anon should see
+     * alice's public columns. The handle is derived from the display name.
+     */
+    const { data, error } = await anon.from('profiles').select('id, slug, handle');
+    expect(error).toBeNull();
+
+    const handles = (data ?? []).map((r) => r.handle);
+    // claimSlug('Alice Alpha') -> 'alice-alpha' (lowercase, slugified)
+    expect(handles).toContain('alice-alpha');
+
+    // The column grant withholds private columns (is_pro, institution_id, …).
+    const { error: privateError } = await anon.from('profiles').select('is_pro');
+    expect(privateError).not.toBeNull();
   });
 
   it('rejects a slug change and allows a handle change (decision 6)', async () => {

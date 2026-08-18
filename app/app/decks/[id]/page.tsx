@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/supabase/session';
 import { getDeck } from '@/lib/db/decks';
 import { listCards } from '@/lib/db/cards';
+import { getCourse } from '@/lib/db/courses';
 import { DeckDetail } from '@/components/decks/deck-detail';
 
 export default async function DeckDetailPage({
@@ -28,11 +29,21 @@ export default async function DeckDetailPage({
   const deck = deckResult.value;
   if (!deck) notFound();
 
+  // Fetch course name for breadcrumb if deck has a course
+  let courseName: string | null = null;
+  if (deck.courseId) {
+    const courseResult = await getCourse(deck.courseId);
+    if (courseResult.ok && courseResult.value) {
+      courseName = courseResult.value.name;
+    }
+  }
+
   return (
     <DeckDetail
       deck={deck}
       canEdit={deck.ownerId === user.id}
       cards={cardsResult.ok ? cardsResult.value : []}
+      courseName={courseName}
     />
   );
 }

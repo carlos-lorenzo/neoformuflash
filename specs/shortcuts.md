@@ -52,8 +52,26 @@ Taken from Linear, which is the reference that got this right: **`g` + letter na
 | `⌘M` | Inline math |
 | `⌘⇧M` | Display math |
 | `⌘⇧K` | Link |
-| `Esc` | Exit math node into surrounding text |
+| `⌘↩` | Save and close — explicitly-saved editors only (card editor) |
+| `⌘⇧↩` | Save and create another — card editor only |
+| `Esc` | Exit math node into surrounding text; otherwise cancel and close |
 | `/` | Slash menu — only at the start of an empty block |
+
+**On `⌘↩` / `⌘⇧↩` (added phase 03b).** The note editor autosaves, so it needs no save key
+beyond `⌘S`'s reassurance. The card editor does not: a card is a small, discrete unit that is
+either committed or abandoned, and the dominant act is writing several in a row. `⌘⇧↩` exists
+because "save and immediately start the next one" is the whole workload when building a deck —
+without it every card costs a round trip through the deck page.
+
+`↩` is safe to bind with a modifier here: bare `Enter` inside a Tiptap block creates a
+paragraph and must keep doing so.
+
+**On `Esc` (clarified phase 03b).** The global row below reads "close topmost layer", and this
+row is a case of it — but the dispatcher was blocking `Esc` inside every editable target,
+including this one, so a card editor could be opened and never dismissed by keyboard. *Never
+bind* forbids **bare letters** in an editable; `Esc` is not a letter, and closing is exactly
+what a user expects it to do. Bindings that need it opt in explicitly (`allowInEditable`), so
+the default stays closed and nothing else changes.
 
 ## Review session
 
@@ -70,7 +88,7 @@ Nothing here may open a dialog, navigate away, or interrupt. The review screen i
 ## Never bind
 
 - Anything the browser owns: `⌘T`, `⌘W`, `⌘L`, `⌘R`, `⌘N`, `⌘⇧N`, `⌘Q`, `F5`, `⌘[`, `⌘]`.
-- Any bare letter while focus is inside an `input`, `textarea`, `select`, or `contenteditable`. The dispatcher checks this before anything else — it is the single most common way keyboard shortcuts ship broken.
+- Any bare letter while focus is inside an `input`, `textarea`, `select`, or `contenteditable`. The dispatcher checks this before anything else — it is the single most common way keyboard shortcuts ship broken. **This means bare letters. `Esc` is exempt by opt-in** — see the Editor section.
 - `⌘⇧P` — reserved for browser and OS command surfaces on several platforms.
 
 ---

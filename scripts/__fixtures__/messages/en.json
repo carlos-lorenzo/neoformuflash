@@ -1,0 +1,17 @@
+{
+  "review": {
+    "grade": {
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy"
+    },
+    "endConfirm": {
+      "title": "End session?"
+    }
+  },
+  "shortcuts": {
+    "undo": "Undo",
+    "gradeHard": "Grade hard"
+  }
+}

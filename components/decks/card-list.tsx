@@ -22,7 +22,7 @@ export async function CardList({
     return (
       <div className="flex flex-col items-center gap-4 py-12 text-center">
         <p className="text-ui-lg font-semibold text-primary">{t('detail.emptyCards')}</p>
-        <p className="max-w-sm text-ui-base text-secondary">{t('detail.emptyCardsBody')}</p>
+        <p className="max-w-prose text-ui-base text-secondary">{t('detail.emptyCardsBody')}</p>
         {canEdit ? (
           <Link
             href={`/app/decks/${deckId}/cards/new`}

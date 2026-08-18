@@ -11,9 +11,10 @@ export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'offline';
 type SaveIndicatorProps = {
   status: SaveStatus;
   onRetry?: () => void;
+  className?: string;
 };
 
-export function SaveIndicator({ status, onRetry }: SaveIndicatorProps) {
+export function SaveIndicator({ status, onRetry, className }: SaveIndicatorProps) {
   const t = useTranslations('editor');
   const tc = useTranslations('common');
 
@@ -28,6 +29,7 @@ export function SaveIndicator({ status, onRetry }: SaveIndicatorProps) {
         status === 'saved' && 'text-success',
         status === 'error' && 'text-danger',
         status === 'offline' && 'text-warning',
+        className
       )}
     >
       {status === 'saving' && <span>{tc('saving')}</span>}

@@ -57,7 +57,7 @@ export function ThemeToggle({ value }: { value: ThemeChoice }) {
                 : 'text-secondary hover:text-primary'
             )}
           >
-            {t(choice)}
+            {t(choice) /* i18n-dynamic-key */}
           </button>
         );
       })}

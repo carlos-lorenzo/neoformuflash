@@ -106,6 +106,38 @@ export const UpdateNoteInput = z.object({
 });
 export type UpdateNoteInput = z.infer<typeof UpdateNoteInput>;
 
+export const COURSE_CODE_MAX = 32;
+
+export const CreateCourseInput = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'content.course.nameRequired')
+    .max(TITLE_MAX, 'content.course.nameTooLong'),
+  code: z.string().trim().max(COURSE_CODE_MAX, 'content.course.codeTooLong').nullable().optional(),
+  language: ContentLanguage,
+  visibility: Visibility,
+  institutionId: z.uuid('content.course.institutionInvalid').nullable().optional(),
+  degreeId: z.uuid('content.course.degreeInvalid').nullable().optional(),
+});
+export type CreateCourseInput = z.infer<typeof CreateCourseInput>;
+
+export const UpdateCourseInput = z.object({
+  id: z.uuid('content.course.invalid'),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'content.course.nameRequired')
+    .max(TITLE_MAX, 'content.course.nameTooLong')
+    .optional(),
+  code: z.string().trim().max(COURSE_CODE_MAX, 'content.course.codeTooLong').nullable().optional(),
+  language: ContentLanguage.optional(),
+  visibility: Visibility.optional(),
+  institutionId: z.uuid('content.course.institutionInvalid').nullable().optional(),
+  degreeId: z.uuid('content.course.degreeInvalid').nullable().optional(),
+});
+export type UpdateCourseInput = z.infer<typeof UpdateCourseInput>;
+
 export const CreateDeckInput = z.object({
   courseId: z.uuid('content.course.invalid').nullable(),
   noteId: z.uuid('content.note.invalid').nullable(),
@@ -197,3 +229,34 @@ export const ApiKeyInput = z.object({
   apiKey: z.string().trim().min(1, 'ai.apiKey.required'),
 });
 export type ApiKeyInput = z.infer<typeof ApiKeyInput>;
+
+/**
+ * SEO metadata for a note. All fields optional — owner can update any subset.
+ * ogImageUrl must be a valid HTTPS URL when provided.
+ */
+export const UpdateNoteSeoInput = z.object({
+  noteId: z.uuid('content.note.invalid'),
+  ogTitle: z
+    .string()
+    .trim()
+    .max(120, 'content.seo.ogTitleTooLong')
+    .nullable()
+    .optional(),
+  ogDescription: z
+    .string()
+    .trim()
+    .max(255, 'content.seo.ogDescriptionTooLong')
+    .nullable()
+    .optional(),
+  ogImageUrl: z
+    .string()
+    .trim()
+    .url('content.seo.ogImageUrlInvalid')
+    .max(2048, 'content.seo.ogImageUrlTooLong')
+    .nullable()
+    .optional()
+    .refine((v) => v === null || v === undefined || v.startsWith('https://'), {
+      error: 'content.seo.ogImageUrlMustBeHttps',
+    }),
+});
+export type UpdateNoteSeoInput = z.infer<typeof UpdateNoteSeoInput>;

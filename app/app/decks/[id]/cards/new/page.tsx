@@ -27,7 +27,7 @@ export default async function NewCardPage({
   const t = await getTranslations('decks');
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8">
+    <div className="mx-auto w-full max-w-measure px-4 py-8">
       <h1 className="mb-4 text-ui-lg font-semibold text-primary">
         {t('detail.addCard')}
       </h1>

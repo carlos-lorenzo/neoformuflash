@@ -58,9 +58,18 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 function matchesModifier(event: KeyboardEvent, keys: string): boolean {
   if (!keys.startsWith('mod+')) return false;
-  const key = keys.slice(4);
+  const keyPart = keys.slice(4); // e.g. "shift+enter" or "enter"
   const modifierHeld = isMac() ? event.metaKey : event.ctrlKey;
-  return event.key.toLowerCase() === key && modifierHeld;
+
+  if (!modifierHeld) return false;
+
+  // Handle shift+modifier combinations
+  if (keyPart.startsWith('shift+')) {
+    const key = keyPart.slice(6);
+    return event.shiftKey && event.key.toLowerCase() === key;
+  }
+
+  return event.key.toLowerCase() === keyPart;
 }
 
 function matchesBare(event: KeyboardEvent, keys: string): boolean {
@@ -148,7 +157,13 @@ export function ShortcutProvider({
       // Criterion 3: suppress bare-letter bindings when focus is in an
       // editable element. This check runs before anything else — it is
       // the single most common way keyboard shortcuts ship broken.
-      if (isEditableTarget(target) && !isModified) return;
+      //
+      // `allowInEditable` is the explicit opt-out of that suppression: Escape
+      // opts in (specs/shortcuts.md forbids only *bare letters* in editables,
+      // and blocking Esc makes an editor impossible to dismiss by keyboard).
+      // Record the editable context here and let the dispatch loop below skip
+      // non-opted bindings, so an opted-in binding can still fire.
+      const editableTarget = isEditableTarget(target) && !isModified;
 
       // Criterion 5: disabled setting suppresses bare-letter bindings.
       if (!enabled && !isModified) return;
@@ -157,9 +172,9 @@ export function ShortcutProvider({
 
       // ---- g-prefix state machine ----
       if (gPending) {
-        // Modified keys (⌘K etc.) are not g-prefix second keys — dismiss
-        // the g-window but let the modified binding handler run.
-        if (!isModified) {
+        // If focus is in an editable between the g press and the second
+        // key, the user is now typing — dismiss silently without firing.
+        if (!isModified && !editableTarget) {
           const action = gSecondKeyMap[key];
           if (action) {
             event.preventDefault();
@@ -194,14 +209,17 @@ export function ShortcutProvider({
         if (binding.requireModified) continue;
         if (!matchesBare(event, binding.keys)) continue;
         if (binding.scope === 'global' || binding.scope === mostSpecificScope) {
+          // Inside an editable, only explicitly opted-in bindings may fire.
+          if (editableTarget && !binding.allowInEditable) continue;
           event.preventDefault();
           binding.onPress();
           return;
         }
       }
 
-      // ---- g-prefix: start the window ----
-      if (key === 'g' && enabled) {
+      // ---- g-prefix: start the window (suppressed inside editables —
+      // the user is typing, not navigating) ----
+      if (key === 'g' && enabled && !editableTarget) {
         event.preventDefault();
         setGPending(true);
         gTimerRef.current = setTimeout(clearGPending, 1500);

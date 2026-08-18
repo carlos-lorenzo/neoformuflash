@@ -10,7 +10,8 @@
     "saving": "Saving",
     "retry": "Retry",
     "close": "Close",
-    "loading": "Loading"
+    "loading": "Loading",
+    "settings": "Settings"
   },
   "landing": {
     "signIn": "Sign in with Google",
@@ -114,6 +115,8 @@
     "dashboard": "Home",
     "notes": "Notes",
     "decks": "Decks",
+    "allDecks": "All decks",
+    "courses": "Courses",
     "review": "Review",
     "settings": "Settings",
     "signOut": "Sign out",
@@ -143,39 +146,88 @@
     "close": "Close",
     "commandPalette": "Command palette",
     "goHome": "Go to home",
-    "goNotes": "Go to notes",
+    "goCourses": "Go to courses",
     "forceSave": "Force save",
     "toggleBold": "Bold",
     "toggleItalic": "Italic",
-    "exitMath": "Exit math"
+    "exitMath": "Exit math",
+    "list": {
+      "next": "Next item",
+      "previous": "Previous item",
+      "open": "Open",
+      "study": "Study",
+      "createCourse": "Create course",
+      "createDeck": "Create deck",
+      "createNote": "Create note"
+    },
+    "review": {
+      "undo": "Undo",
+      "revealOrGood": "Reveal / Good",
+      "gradeAgain": "Again",
+      "gradeHard": "Hard",
+      "gradeGood": "Good",
+      "gradeEasy": "Easy",
+      "inlineEdit": "Edit card",
+      "endSession": "End session"
+    },
+    "editor": {
+      "inlineMath": "Inline math",
+      "displayMath": "Display math",
+      "save": "Save",
+      "saveAndNew": "Save and new",
+      "cancel": "Cancel"
+    }
   },
   "notes": {
-    "untitled": "Untitled",
+    "seo": {
+      "ogTitleTooLong": "OG title must be 120 characters or fewer.",
+      "ogDescriptionTooLong": "OG description must be 255 characters or fewer.",
+      "ogImageUrlInvalid": "OG image URL must be a valid URL.",
+      "ogImageUrlTooLong": "OG image URL must be 2048 characters or fewer.",
+      "ogImageUrlMustBeHttps": "OG image URL must use HTTPS.",
+      "title": "SEO metadata",
+      "description": "Customize how this note appears when shared on social media. All fields are optional.",
+      "ogTitleLabel": "OG Title",
+      "ogTitlePlaceholder": "Defaults to note title",
+      "ogDescriptionLabel": "OG Description",
+      "ogDescriptionPlaceholder": "Defaults to note excerpt",
+      "ogImageUrlLabel": "OG Image URL",
+      "ogImageUrlPlaceholder": "https://example.com/image.png",
+      "ogImageUrlError": "Must be a valid HTTPS URL",
+      "saveButton": "Save SEO metadata",
+      "savingButton": "Saving…",
+      "saved": "Saved"
+    },
+    "publish": {
+      "published": "Published",
+      "unpublished": "Unpublished",
+      "publishButton": "Publish note",
+      "unpublishButton": "Unpublish note",
+      "publishedToast": "Note published",
+      "unpublishedToast": "Note unpublished",
+      "publishDesc": "Publishing makes this note visible on your public profile and course page.",
+      "unpublishDesc": "Unpublishing hides this note from public pages. You can re-publish later."
+    },
+    "error": "Something went wrong loading this note.",
     "newNote": "New note",
-    "listTitle": "Notes",
-    "emptyTitle": "Your first note starts here",
-    "emptyBody": "Start transcribing a lecture and it will be here when you close the tab.",
-    "updatedAt": "Edited {date}",
-    "notFound": "This note doesn't exist.",
-    "unsupportedBlock": "This note contains content this editor can't display.",
-    "error": "Something went wrong loading your notes. Try again."
+    "breadcrumb": "Note"
   },
   "editor": {
-    "placeholder": "Start typing… `/` for blocks, `$` for math",
+    "inlineMath": "In-line math",
+    "displayMath": "Display math",
+    "save": "Save card",
+    "saved": "Card saved",
+    "notePlaceholder": "Start typing — or type / for a command",
     "titlePlaceholder": "Untitled",
-    "saved": "Saved",
-    "saving": "Saving…",
-    "saveFailed": "Couldn't save",
-    "retry": "Retry saving",
-    "offline": "Offline — changes are kept on this screen until you reconnect.",
-    "mobileReadonly": "Open on a larger screen to edit",
-    "editFormula": "Edit formula",
+    "readOnlyTitle": "Read-only",
+    "readOnlyBody": "This note is being edited elsewhere.",
+    "mobileReadonly": "Read-only",
     "outline": "Outline",
-    "selection": {
-      "bold": "Bold",
-      "italic": "Italic",
-      "code": "Inline code"
-    },
+    "saveFailed": "Couldn't save",
+    "retry": "Retry",
+    "offline": "Offline — changes will sync when you're back",
+    "slashPlaceholder": "Type to filter…",
+    "noMatches": "No commands match",
     "blocks": {
       "paragraph": "Paragraph",
       "heading1": "Heading 1",
@@ -185,10 +237,9 @@
       "orderedList": "Numbered list",
       "codeBlock": "Code block",
       "blockquote": "Quote",
-      "equation": "Equation"
-    },
-    "slashPlaceholder": "Filter…",
-    "noMatches": "No blocks match"
+      "inlineEquation": "Inline equation",
+      "blockEquation": "Block equation"
+    }
   },
   "decks": {
     "listTitle": "Decks",
@@ -216,6 +267,7 @@
     },
     "detail": {
       "study": "Study",
+      "preview": "Preview",
       "settings": "Deck settings",
       "cards": "Cards",
       "cardCount": "{count, plural, =0 {No cards} one {# card} other {# cards}}",
@@ -232,6 +284,7 @@
       "confidence": "Confidence",
       "confidenceHint": "Your difficulty hint for this card.",
       "save": "Save card",
+      "saveAndNew": "Save and new",
       "saved": "Card saved",
       "editTitle": "Edit card",
       "invalidLatex": "This formula can't be rendered"
@@ -240,9 +293,15 @@
       "sortPosition": "Sort by position",
       "sortConfidenceAsc": "Sort by confidence ↑",
       "sortConfidenceDesc": "Sort by confidence ↓",
+      "showAnswers": "Show answers",
+      "hideAnswers": "Hide answers",
       "delete": "Delete card",
       "deleteConfirm": "Delete this card?",
       "hasSubscribers": "This card has subscribers and can't be deleted."
+    },
+    "preview": {
+      "backToDeck": "Back to deck",
+      "card": "Card {n}"
     },
     "grade": {
       "again": "Again",
@@ -250,7 +309,68 @@
       "good": "Good",
       "easy": "Easy"
     },
-    "error": "Something went wrong loading your decks."
+    "error": "Something went wrong loading your decks.",
+    "create": {
+      "chooseCourse": "Choose a course for this deck",
+      "createCourseFirst": "Create a course first"
+    }
+  },
+  "courses": {
+    "listTitle": "Courses",
+    "createCourse": "Create course",
+    "emptyTitle": "Organise your studying by course",
+    "emptyBody": "A course groups your notes and decks around a subject. Create one and everything you add to it stays organised.",
+    "shortcutHint": "Press c to create your first course",
+    "error": "Something went wrong loading your courses.",
+    "notFound": "This course doesn't exist.",
+    "privateRequiresPro": "Private courses require an active subscription.",
+    "picker": {
+      "label": "Course",
+      "placeholder": "Choose a course",
+      "empty": "No courses yet",
+      "none": "No course (standalone deck)",
+      "create": "Create a course"
+    },
+    "form": {
+      "name": "Course name",
+      "namePlaceholder": "e.g. Calculus II",
+      "code": "Course code",
+      "codePlaceholder": "e.g. MAT-202",
+      "codeHint": "Optional. The code your university uses for this course.",
+      "language": "Content language",
+      "visibility": "Visibility",
+      "visibilityPublic": "Public",
+      "visibilityUnlisted": "Unlisted",
+      "visibilityPrivate": "Private",
+      "submit": "Create course",
+      "save": "Save course",
+      "saveFailed": "Couldn't save the course. Try again."
+    },
+    "detail": {
+      "eyebrow": "Course",
+      "decks": "Decks",
+      "noDecks": "No decks yet. Create one to start reviewing this course.",
+      "newDeck": "New deck",
+      "notes": "Notes",
+      "noNotes": "No notes yet in this course.",
+      "settings": "Settings",
+      "delete": "Delete course",
+      "deleteConfirm": "Delete this course?",
+      "deleteBody": "Subscribers with review progress keep their own copy; decks and cards in the course are deleted. This can't be undone.",
+      "subscribed": "Subscribed"
+    },
+    "list": {
+      "subscribed": "Subscribed"
+    }
+  },
+  "dashboard": {
+    "emptyTitle": "Create your first course to start organizing",
+    "emptyBody": "Courses group your notes and decks around a subject. Create one and everything you add to it stays organized.",
+    "courseEyebrow": "Course",
+    "openCourse": "Open course",
+    "publicProfileLabel": "Your public profile",
+    "copyHandle": "Copy handle",
+    "publicProfileHint": "Share this link so others can find your public notes and courses."
   },
   "review": {
     "sessionTitle": "Review: {deck}",
@@ -272,6 +392,7 @@
     },
     "inlineEdit": "Edit card",
     "inlineEditDesc": "Changes will apply to your next review of this card.",
+    "editCard": "Edit card",
     "endConfirm": {
       "title": "End session?",
       "body": "You have {count} cards remaining. Leaving now will save your progress for later.",
@@ -300,5 +421,69 @@
       "calculus": "Calculus",
       "formatting": "Formatting"
     }
+  },
+  "publicProfile": {
+    "breadcrumb": "Breadcrumb",
+    "meta": {
+      "description": "{handle}'s public profile on FormuFlash — courses and notes."
+    },
+    "sections": {
+      "courses": "Courses",
+      "notes": "Notes",
+      "noCourses": "No public courses yet.",
+      "noNotes": "No public notes yet.",
+      "decks": "Decks",
+      "noDecks": "No public decks yet."
+    },
+    "stats": {
+      "courses": "{count} courses",
+      "notes": "{count} notes"
+    },
+    "error": "Something went wrong loading this profile.",
+    "course": {
+      "subscribers": "Subscribers",
+      "forks": "Forks",
+      "metaDescription": "Course {name} by {handle} on FormuFlash"
+    },
+    "detail": {
+      "dueCount": "{count} due",
+      "subscribers": "Subscribers",
+      "forks": "Forks",
+      "emptyCards": "No cards yet."
+    },
+    "cardEditor": {
+      "front": "Front",
+      "back": "Back"
+    },
+    "deck": {
+      "metaDescription": "Deck {title} by {handle} on FormuFlash"
+    },
+    "preview": {
+      "card": "Card {n}"
+    },
+    "share": {
+      "subscribe": "Subscribe",
+      "subscribed": "Subscribed",
+      "unsubscribe": "Unsubscribe",
+      "fork": "Fork",
+      "forking": "Forking…",
+      "forkConfirmTitle": "Fork this {type}?",
+      "forkConfirmBody": "You'll get a personal copy you can edit. Your review progress ({statesCarried} cards) carries over. You'll be cut off from future edits by the author. This cancels your subscription.",
+      "forkConfirmBodyNoProgress": "You'll get a personal copy you can edit. You'll be cut off from future edits by the author. This cancels your subscription.",
+      "forkSuccess": "Forked! {statesCarried} cards' progress carried over.",
+      "forkSuccessNoProgress": "Forked! You now have your own copy.",
+      "unsubscribeConfirm": "Remove this {type} from your library?",
+      "unsubscribeConfirmBody": "You'll stop receiving updates from the author. Your review progress is kept.",
+      "signInToSubscribe": "Sign in to subscribe",
+      "signInToFork": "Sign in to fork",
+      "course": "course",
+      "deck": "deck"
+    }
+  },
+  "publicNote": {
+    "backToProfile": "← Back to {handle}",
+    "viewOnFormuFlash": "View on FormuFlash",
+    "unpublished": "Unpublished",
+    "error": "Something went wrong loading this note."
   }
 }

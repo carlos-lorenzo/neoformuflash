@@ -30,7 +30,15 @@ import type { Streak } from './decks';
 /* ------------------------------------------------------------------ */
 
 export type ReviewQueueCard = {
-  card: { id: string; frontJson: NoteDoc; backJson: NoteDoc; contentVersion: number };
+  card: {
+    id: string;
+    frontJson: NoteDoc;
+    backJson: NoteDoc;
+    contentVersion: number;
+    /** The card's confidence rating, threaded through so the inline-edit
+     *  overlay doesn't wipe it on save (phase-03b F4). */
+    confidence: Database['public']['Enums']['review_rating'] | null;
+  };
   state: SrsState | null;
   changed: boolean;
   previews: Record<Rating, string>;
@@ -182,7 +190,7 @@ export async function startReview(
 
       const { data: allCards } = await supabase
         .from('cards')
-        .select('id, front_json, back_json, content_version')
+        .select('id, front_json, back_json, content_version, confidence')
         .eq('deck_id', deckId)
         .order('position', { ascending: true });
 
@@ -213,7 +221,7 @@ export async function startReview(
   // Fetch card content in one query
   const { data: cardsContent } = await supabase
     .from('cards')
-    .select('id, front_json, back_json, content_version')
+    .select('id, front_json, back_json, content_version, confidence')
     .in('id', mergedIds);
 
   const contentMap = new Map((cardsContent ?? []).map((c) => [c.id, c]));
@@ -250,6 +258,7 @@ export async function startReview(
         frontJson: content.front_json as unknown as NoteDoc,
         backJson: content.back_json as unknown as NoteDoc,
         contentVersion: content.content_version,
+        confidence: content.confidence as Database['public']['Enums']['review_rating'] | null,
       },
       state,
       changed,

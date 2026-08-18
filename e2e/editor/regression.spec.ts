@@ -24,14 +24,20 @@ test.describe('editor regressions', () => {
 
     await page.goto(`/app/notes/${note.id}`);
     await editorLocator(page).click();
+    // The title h1 is auto-inserted as the first block (Notion-style).
+    // Navigate to the empty body paragraph below it.
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(100); // let the new paragraph settle
     await page.keyboard.type('/');
     await expect(page.getByRole('listbox')).toBeVisible();
 
-    await page.keyboard.press('ArrowDown'); // Paragraph → Heading 1
-    await page.keyboard.press('Enter');
-    await expect(editorLocator(page).locator('h1')).toHaveCount(1);
+    // Select Heading 1 directly from the menu.
+    await page.getByRole('option', { name: 'Heading 1' }).click();
+    await expect(page.getByRole('listbox')).toBeHidden();
 
     // Focus returned to the editor — the next keystrokes land in the doc.
+    await expect(editorLocator(page)).toBeFocused();
     await page.keyboard.type('Lecture one');
     await expect(editorLocator(page).locator('h1').filter({ hasText: 'Lecture one' })).toBeVisible();
 
@@ -46,6 +52,9 @@ test.describe('editor regressions', () => {
 
     await page.goto(`/app/notes/${note.id}`);
     await editorLocator(page).click();
+    // Navigate to the empty body paragraph below the auto-inserted title h1.
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
     await page.keyboard.type('/');
     await expect(page.getByRole('listbox')).toBeVisible();
 
@@ -67,15 +76,21 @@ test.describe('editor regressions', () => {
 
     await page.goto(`/app/notes/${note.id}`);
     await editorLocator(page).click();
+    // Navigate to the empty body paragraph below the auto-inserted title h1.
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
     await page.keyboard.type('/');
     await expect(page.getByRole('listbox')).toBeVisible();
+    await page.waitForTimeout(100); // let the listbox stabilize
 
-    await page.keyboard.type('equ'); // filters to Equation only
+    await page.keyboard.type('block eq'); // filters to Block equation
     await page.keyboard.press('Enter');
+    await expect(page.getByRole('listbox')).toBeHidden();
 
     // Equation hands focus to the MathInput dialog (display mode).
+    await page.getByRole('dialog').locator('input').waitFor();
     await expect(page.getByRole('dialog').locator('input')).toBeFocused();
-    await page.keyboard.type('E=mc^2');
+    await page.getByRole('dialog').locator('input').fill('E=mc^2');
     await page.keyboard.press('Enter');
     // The blockMath nodeview uses .katex (not .katex-display) — match the
     // existing editor-display-math test which asserts either class.
@@ -113,22 +128,29 @@ test.describe('editor regressions', () => {
     const user = await seedUserWithProfile('reg-multi');
     await signIn(context, user);
 
-    await page.goto('/app/notes');
-    await expect(page.getByRole('button', { name: 'New note' })).toBeVisible();
+    // Need a course first (phase-03c: notes created inside a course)
+    await page.goto('/app/courses/new');
+    await expect(page.getByRole('button', { name: 'Create course' })).toBeVisible();
+    await page.getByRole('button', { name: 'Create course' }).click();
+    await page.waitForURL(/\/app\/courses\/[0-9a-f]{8}-/);
+    const courseId = page.url().split('/').pop();
 
-    await page.getByRole('button', { name: 'New note' }).click();
+    await page.goto(`/app/courses/${courseId}`);
+    // Header button (first of two "New note" on the page — the other is in empty state)
+    await expect(page.getByRole('button', { name: 'New note' }).first()).toBeVisible();
+    await page.getByRole('button', { name: 'New note' }).first().click();
     await page.waitForURL(/\/app\/notes\/[0-9a-f]{8}-/);
     const firstId = page.url().split('/').pop();
 
     // The header keeps the button reachable once the list is non-empty.
-    await page.goto('/app/notes');
-    await expect(page.getByRole('button', { name: 'New note' })).toBeVisible();
-    await page.getByRole('button', { name: 'New note' }).click();
+    await page.goto(`/app/courses/${courseId}`);
+    await expect(page.getByRole('button', { name: 'New note' }).first()).toBeVisible();
+    await page.getByRole('button', { name: 'New note' }).first().click();
     await page.waitForURL(/\/app\/notes\/[0-9a-f]{8}-/);
     const secondId = page.url().split('/').pop();
     expect(secondId).not.toBe(firstId);
 
-    await page.goto('/app/notes');
+    await page.goto(`/app/courses/${courseId}`);
     await expect(page.locator('a[href^="/app/notes/"]')).toHaveCount(2);
 
     await user.cleanup();

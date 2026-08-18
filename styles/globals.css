@@ -174,28 +174,59 @@
 }
 
 /*
+ * Editor min-height: 400px (100 * 4px grid). The editor canvas needs a minimum
+ * height for comfortable editing; this is not a spacing value but a layout
+ * constraint.
+ */
+@utility min-h-editor {
+  min-height: 400px;
+}
+
+/* Notion-style editor: borderless, no background box, seamless with page */
+.tiptap .ProseMirror {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  min-height: 400px;
+}
+
+/* Ensure the editor content area has no box styling */
+.tiptap {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+/* Save indicator fixed positioning */
+.save-indicator-fixed {
+  position: fixed;
+  top: var(--spacing-4);
+  right: var(--spacing-4);
+  z-index: 50;
+}
+
+/*
+ * Outline sidebar width: 256px (64 * 4px). Matches --container-outline.
+ * Max height: 256px.
+ */
+@utility w-outline {
+  width: var(--container-outline);
+}
+@utility max-h-outline {
+  max-height: var(--container-outline);
+}
+
+/*
  * Card flip: 200ms Y-axis rotation using --ease-in-out (§7).
  * The front face rotates away; the back face starts rotated 180° and
  * rotates into view. Both faces have backface-visibility: hidden so
  * only one is visible at any time.
+ *
+ * The five @utility blocks below (perspective-1000, transform-style-3d,
+ * backface-hidden, rotate-y-180, rotate-y-0) were deleted in phase 03b
+ * — they compiled to zero CSS and were unused. The working flip uses the
+ * raw .flip-* classes below.
  */
-@utility perspective-1000 {
-  perspective: 1000px;
-}
-@utility transform-style-3d {
-  transform-style: preserve-3d;
-}
-@utility backface-hidden {
-  backface-visibility: hidden;
-}
-@utility rotate-y-180 {
-  transform: rotateY(180deg);
-}
-@utility rotate-y-0 {
-  transform: rotateY(0deg);
-}
-
-/* Card flip raw classes (backup for @utility definitions that may not compile) */
 .flip-container {
   perspective: 1000px;
 }
@@ -305,6 +336,14 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Tailwind Preflight sets `display: block` on svg; our icon components use
+   * `inline-block` to sit inline with text. Restore inline behaviour so icons
+   * scale with font size. Must come after Preflight so use a class to increase
+   * specificity. */
+  svg.icon-inline {
+    display: inline;
+  }
+
   /* Focus ring on every interactive element, no exceptions (§4).
    * Asserted by a Playwright test that tabs through each page. */
   :focus-visible {
@@ -341,8 +380,13 @@
  *
  * Equations are excluded — KaTeX ships its own CSS that already handles
  * display math sizing and positioning.
+ *
+ * The :is(.tiptap, .note-doc-view) selector block applies the SAME typography
+ * to the editor AND the reader. A flashcard that renders differently from the
+ * editor it was typed in is its own bug class — coupling them here prevents
+ * drift. If a rule must differ, scope it to one class explicitly.
  */
-.tiptap {
+:is(.tiptap, .note-doc-view) {
   font-family: var(--font-serif);
   font-size: var(--text-read-base);
   line-height: var(--text-read-base--line-height);
@@ -351,7 +395,7 @@
 
 /* ---- headings ---- */
 
-.tiptap h1 {
+:is(.tiptap, .note-doc-view) h1 {
   font-size: var(--text-read-h1);
   line-height: var(--text-read-h1--line-height);
   font-weight: var(--font-weight-semibold);
@@ -359,7 +403,12 @@
   margin-bottom: var(--spacing-2);
 }
 
-.tiptap h2 {
+/* Notion-style title: first h1 in editor has no top margin, blends with content */
+:is(.tiptap) h1:first-child {
+  margin-top: 0;
+}
+
+:is(.tiptap, .note-doc-view) h2 {
   font-size: var(--text-read-h2);
   line-height: var(--text-read-h2--line-height);
   font-weight: var(--font-weight-semibold);
@@ -367,7 +416,7 @@
   margin-bottom: var(--spacing-2);
 }
 
-.tiptap h3 {
+:is(.tiptap, .note-doc-view) h3 {
   font-size: var(--text-read-h3);
   line-height: var(--text-read-h3--line-height);
   font-weight: var(--font-weight-semibold);
@@ -375,45 +424,45 @@
   margin-bottom: var(--spacing-2);
 }
 
-.tiptap :is(h1, h2, h3):first-child {
+:is(.tiptap, .note-doc-view) :is(h1, h2, h3):first-child {
   margin-top: 0;
 }
 
 /* ---- paragraphs ---- */
 
-.tiptap p {
+:is(.tiptap, .note-doc-view) p {
   margin-bottom: var(--spacing-2);
 }
 
-.tiptap > :last-child {
+:is(.tiptap, .note-doc-view) > :last-child {
   margin-bottom: 0;
 }
 
 /* ---- lists ---- */
 
-.tiptap ul {
+:is(.tiptap, .note-doc-view) ul {
   list-style-type: disc;
   margin: var(--spacing-2) 0;
   padding-left: var(--spacing-6);
 }
 
-.tiptap ol {
+:is(.tiptap, .note-doc-view) ol {
   list-style-type: decimal;
   margin: var(--spacing-2) 0;
   padding-left: var(--spacing-6);
 }
 
-.tiptap li {
+:is(.tiptap, .note-doc-view) li {
   margin-bottom: var(--spacing-1);
 }
 
-.tiptap li::marker {
+:is(.tiptap, .note-doc-view) li::marker {
   color: var(--text-secondary);
 }
 
 /* ---- blockquote ---- */
 
-.tiptap blockquote {
+:is(.tiptap, .note-doc-view) blockquote {
   border-left: var(--spacing-px) solid var(--border-subtle);
   padding-left: var(--spacing-4);
   margin: var(--spacing-2) 0;
@@ -422,7 +471,7 @@
 
 /* ---- code ---- */
 
-.tiptap pre {
+:is(.tiptap, .note-doc-view) pre {
   font-family: var(--font-mono);
   font-size: var(--text-read-sm);
   background: var(--bg-inset);
@@ -433,7 +482,7 @@
   overflow-x: auto;
 }
 
-.tiptap code {
+:is(.tiptap, .note-doc-view) code {
   font-family: var(--font-mono);
   font-size: var(--text-read-sm);
   background: var(--bg-inset);
@@ -441,23 +490,35 @@
   padding: var(--spacing-px) var(--spacing-1);
 }
 
-.tiptap pre code {
+:is(.tiptap, .note-doc-view) pre code {
   background: none;
   padding: 0;
 }
 
 /* ---- inline formatting ---- */
 
-.tiptap strong {
+:is(.tiptap, .note-doc-view) strong {
   font-weight: var(--font-weight-semibold);
 }
 
-.tiptap em {
+:is(.tiptap, .note-doc-view) em {
   font-style: italic;
 }
 
-.tiptap a {
+:is(.tiptap, .note-doc-view) a {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: var(--spacing-px);
+}
+
+/* ---- display/inline math wrappers (from note-doc-view.tsx) ---- */
+
+:is(.tiptap, .note-doc-view) :is(.display-math, [data-type='block-math']) {
+  margin: var(--spacing-3) 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+:is(.tiptap, .note-doc-view) .inline-math {
+  font-family: var(--font-serif);
 }

@@ -9,8 +9,10 @@
 import { getSessionUser } from '@/lib/supabase/session';
 import { startReview, gradeCard, undoGrade, saveInlineEdit as saveInlineEditDb, acknowledgeChange } from '@/lib/db/review';
 import { getStreak } from '@/lib/db/decks';
+import { extractText } from '@neoformuflash/contracts';
+import { proseToUnion } from '@/lib/editor/serialize';
 import type { ReviewQueueCard } from '@/lib/db/review';
-import type { SrsState, NoteDoc } from '@neoformuflash/contracts';
+import type { SrsState } from '@neoformuflash/contracts';
 
 /* ------------------------------------------------------------------ */
 /*  Start review session                                               */
@@ -44,9 +46,10 @@ export async function submitReview(input: {
   cardId: string;
   rating: 'again' | 'hard' | 'good' | 'easy';
   responseTimeMs: number;
+  editedDuringReview: boolean;
 }): Promise<{
   ok: boolean;
-  value?: { learning: boolean; queue: unknown[]; reviewedCount: number; streak: { current: number; longest: number; lastActiveDate: string | null } };
+  value?: { learning: boolean; remainingCount: number; streak: { current: number; longest: number; lastActiveDate: string | null } };
   errors?: Record<string, string>;
 }> {
   const user = await getSessionUser();
@@ -56,11 +59,17 @@ export async function submitReview(input: {
     cardId: input.cardId,
     rating: input.rating,
     elapsedMs: input.responseTimeMs,
-    editedDuringReview: false,
+    editedDuringReview: input.editedDuringReview,
   });
   if (!res.ok) return { ok: false, errors: { form: res.code } };
 
-  // Transform the grade result to what the client expects
+  // Re-run startReview to get the TRUE remaining count. The client's local
+  // queue is only the initial SESSION_CAP window; a card graded 'again' is
+  // re-added to the queue, so the server count is what decides whether the
+  // session is actually over. The old `queue: []` made every grade look like
+  // the last one — session-complete fired after each card (phase-03b defect 1).
+  const remaining = await startReview(user.id, input.deckId);
+
   const learning = res.value.next.phase === 'learning' || res.value.next.phase === 'relearning';
   const streakResult = await getStreak(user.id);
   const streak = streakResult.ok && streakResult.value
@@ -70,8 +79,7 @@ export async function submitReview(input: {
     ok: true,
     value: {
       learning,
-      queue: [], // client reloads from server
-      reviewedCount: 1,
+      remainingCount: remaining.ok ? remaining.value.cards.length : 0,
       streak
     }
   };
@@ -164,19 +172,26 @@ export async function saveInlineEdit(input: {
   cardId: string;
   frontJson: unknown;
   backJson: unknown;
-  frontText: string;
-  backText: string;
   confidence: 'again' | 'hard' | 'good' | 'easy' | null;
 }): Promise<{ ok: boolean; value?: { savedAt: string; contentVersion: number }; errors?: Record<string, string> }> {
   const user = await getSessionUser();
   if (!user) return { ok: false, errors: { form: 'error.unexpected' } };
 
+  // Re-validate the content server-side (D3 — same convention as saveNote):
+  // the client JSON is untrusted and the client-supplied text is discarded in
+  // favour of extractText over the validated union. A forged front_text would
+  // otherwise control the content_version change signal subscribers depend on.
+  const front = proseToUnion(input.frontJson);
+  if (!front.ok) return { ok: false, errors: { form: front.code } };
+  const back = proseToUnion(input.backJson);
+  if (!back.ok) return { ok: false, errors: { form: back.code } };
+
   const res = await saveInlineEditDb(user.id, {
     cardId: input.cardId,
-    frontJson: input.frontJson as NoteDoc,
-    backJson: input.backJson as NoteDoc,
-    frontText: input.frontText,
-    backText: input.backText,
+    frontJson: front.value,
+    backJson: back.value,
+    frontText: extractText(front.value),
+    backText: extractText(back.value),
     confidence: input.confidence,
   });
   if (!res.ok) return { ok: false, errors: { form: res.code } };

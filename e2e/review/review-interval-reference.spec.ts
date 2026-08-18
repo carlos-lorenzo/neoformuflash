@@ -134,8 +134,8 @@ for (const rating of ['again', 'hard', 'good', 'easy'] as const) {
       now
     );
 
-    // Navigate to the review session
-    await page.goto(`/review/${deck.id}`);
+    // Navigate to the review session (course-scoped, phase-03c)
+    await page.goto(`/app/courses/${deck.courseId}/review/${deck.id}`);
     await page.waitForSelector('text=Front of card 1', { timeout: 10000 });
 
     // Click the card to reveal the back

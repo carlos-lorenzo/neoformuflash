@@ -126,7 +126,7 @@ function ChevronIcon({ className }: { className?: string }) {
     <svg
       aria-hidden="true"
       viewBox="0 0 16 16"
-      className={cn('size-4', className)}
+      className={cn('size-4 icon-inline', className)}
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CardInput, UpdateCardInput } from './schemas';
+import { CardInput, UpdateCardInput, CreateCourseInput, UpdateCourseInput } from './schemas';
 import type { NoteDoc } from './content';
 
 /*
  * Phase 03 additions only. The rest of schemas.ts is exercised through the
  * suites that consume it (signup, notes) — this file covers the card
  * confidence field and the new update input, per the phase-03 spec.
+ * Phase 03b adds the course inputs: a contracts change with no migration
+ * (every table, policy, FK and grant courses needs already exists in 0003).
  */
 
 const doc: NoteDoc = { type: 'doc', content: [] };
@@ -92,5 +94,53 @@ describe('UpdateCardInput', () => {
   it('has no contentVersion field — that column is trigger-owned (ADR-002 §8)', () => {
     const parsed = UpdateCardInput.parse({ ...ids, contentVersion: 99 });
     expect('contentVersion' in parsed).toBe(false);
+  });
+});
+
+describe('CreateCourseInput', () => {
+  const valid = { name: 'Calculus II', language: 'es', visibility: 'public' };
+
+  it('accepts name + language + visibility', () => {
+    expect(CreateCourseInput.safeParse(valid).success).toBe(true);
+  });
+
+  it('accepts optional code / institution / degree', () => {
+    const parsed = CreateCourseInput.safeParse({
+      ...valid,
+      code: 'MAT-202',
+      institutionId: '86c36ab6-a387-4a48-aeee-4c51471571cb',
+      degreeId: '04437728-f8d6-4be1-8700-6642972ec513',
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects a blank name with a stable catalog code', () => {
+    const result = CreateCourseInput.safeParse({ ...valid, name: '  ' });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues[0]?.message).toBe('content.course.nameRequired');
+  });
+
+  it('rejects a malformed institution id, never prose', () => {
+    const result = CreateCourseInput.safeParse({ ...valid, institutionId: 'nope' });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues[0]?.message).toBe('content.course.institutionInvalid');
+  });
+});
+
+describe('UpdateCourseInput', () => {
+  it('accepts id alone: every field is optional', () => {
+    expect(UpdateCourseInput.safeParse({ id: '86c36ab6-a387-4a48-aeee-4c51471571cb' }).success).toBe(true);
+  });
+
+  it('allows clearing code to null', () => {
+    const parsed = UpdateCourseInput.parse({
+      id: '86c36ab6-a387-4a48-aeee-4c51471571cb',
+      code: null,
+    });
+    expect(parsed.code).toBeNull();
+  });
+
+  it('rejects a missing id', () => {
+    expect(UpdateCourseInput.safeParse({ name: 'X' }).success).toBe(false);
   });
 });

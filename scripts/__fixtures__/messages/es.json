@@ -1,0 +1,11 @@
+{
+  "review": {
+    "grade": {
+      "again": "De nuevo",
+      "hard": "Difícil"
+    }
+  },
+  "shortcuts": {
+    "undo": "Deshacer"
+  }
+}

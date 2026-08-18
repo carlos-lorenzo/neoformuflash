@@ -1,0 +1,31 @@
+/*
+ * FIXTURE globals for scripts/assert-classes-compile.test.ts.
+ * Defines every project custom class so the amnesty guard passes.
+ */
+.flipped {
+  transform: rotateY(180deg);
+}
+.ruled-grid {
+  background-image: none;
+}
+.measure {
+  max-width: 68ch;
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.note-doc-view {
+  font-family: var(--font-serif);
+}
+.tiptap {
+  font-family: var(--font-serif);
+}
+.katex {
+  font-size: 1.03em;
+}
+.display-math {
+  overflow-x: auto;
+}
+.inline-math {
+  display: inline;
+}

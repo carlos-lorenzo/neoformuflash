@@ -3,6 +3,7 @@
 
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import type { Route } from 'next';
 import type { DeckRow } from '@/lib/db/decks';
 import type { CardSummary } from '@/lib/db/cards';
 import { CardList } from './card-list';
@@ -13,15 +14,29 @@ export async function DeckDetail({
   deck,
   canEdit,
   cards,
+  courseName,
 }: {
   deck: DeckRow;
   canEdit: boolean;
   cards: CardSummary[];
+  courseName?: string | null;
 }) {
   const t = await getTranslations('decks');
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8">
+    <div className="mx-auto w-full max-w-measure px-4 py-8">
+      {courseName ? (
+        <div className="mb-4 flex items-center gap-1 text-ui-sm text-secondary">
+          <Link
+            href={`/app/courses/${deck.courseId}`}
+            className="hover:underline"
+          >
+            {courseName}
+          </Link>
+          <span aria-hidden="true">/</span>
+        </div>
+      ) : null}
+
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="truncate text-ui-lg font-semibold text-primary">{deck.title}</h1>
@@ -29,31 +44,44 @@ export async function DeckDetail({
             {t('detail.cardCount', { count: cards.length })}
           </p>
         </div>
-        <Link
-          href={`/review/${deck.id}`}
-          className="shrink-0 rounded-sm bg-accent px-4 py-2 text-ui-base font-medium text-on-accent hover:bg-accent-hover"
-        >
-          {t('detail.study')}
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href={`/app/decks/${deck.id}/preview` as Route}
+            className="rounded-sm border border-subtle px-4 py-2 text-ui-base font-medium text-secondary hover:text-primary"
+          >
+            {t('detail.preview')}
+          </Link>
+          <Link
+            href={`/app/courses/${deck.courseId}/review/${deck.id}`}
+            className="rounded-sm bg-accent px-4 py-2 text-ui-base font-medium text-on-accent hover:bg-accent-hover"
+          >
+            {t('detail.study')}
+          </Link>
+        </div>
       </div>
 
       {canEdit ? (
-        <section className="mb-8 rounded-md border border-subtle p-4">
-          <h2 className="mb-4 text-ui-sm font-semibold text-secondary">
-            {t('detail.settings')}
-          </h2>
-          <DeckForm
-            deck={{
-              id: deck.id,
-              title: deck.title,
-              visibility: deck.visibility,
-              desiredRetention: deck.desiredRetention,
-              newCardsPerDay: deck.newCardsPerDay,
-            }}
-          />
-          <div className="mt-4 border-t border-subtle pt-4">
-            <DeleteDeckButton deckId={deck.id} />
-          </div>
+        <section className="mb-8">
+          <details className="rounded-md border border-subtle">
+            <summary className="flex items-center justify-between cursor-pointer select-none p-4">
+              <span className="text-ui-sm font-semibold text-secondary">{t('detail.settings')}</span>
+              <span className="text-ui-xs text-tertiary">›</span>
+            </summary>
+            <div className="p-4 border-t border-subtle">
+              <DeckForm
+                deck={{
+                  id: deck.id,
+                  title: deck.title,
+                  visibility: deck.visibility,
+                  desiredRetention: deck.desiredRetention,
+                  newCardsPerDay: deck.newCardsPerDay,
+                }}
+              />
+              <div className="mt-4 border-t border-subtle pt-4">
+                <DeleteDeckButton deckId={deck.id} />
+              </div>
+            </div>
+          </details>
         </section>
       ) : null}
 

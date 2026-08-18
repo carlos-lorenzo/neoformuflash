@@ -11,6 +11,13 @@ import { execFileSync } from 'node:child_process';
 
 let cachedEnv: Record<string, string> | null = null;
 
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
 function localEnv(): Record<string, string> {
   if (cachedEnv) return cachedEnv;
 
@@ -71,18 +78,37 @@ function equation(latex: string): Record<string, unknown> {
  * Seed a deck owned by `userId` with `count` new cards. Each card has plain
  * text on the front and a mix of text + a display equation on the back, so
  * both the card surface and the grading row render real content.
+ *
+ * Phase 03c: every deck belongs to a course. This helper creates a course
+ * first, then the deck inside it.
  */
 export async function seedDeckWithCards(
   userId: string,
   count: number,
-): Promise<SeededDeck> {
+): Promise<SeededDeck & { courseId: string }> {
   const admin = adminClient();
-  const slug = `e2e-review-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+  // Create a course first
+  const courseSlug = slugify(`e2e-review-course-${Date.now()}`);
+  const { data: course, error: courseError } = await admin
+    .from('courses')
+    .insert({
+      owner_id: userId,
+      slug: courseSlug,
+      name: 'Review course',
+      language: 'en',
+      visibility: 'public',
+    })
+    .select('id')
+    .single();
+  if (courseError) throw new Error(`course seed failed: ${courseError.message}`);
+
+  const slug = `e2e-review-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const { data: deck, error: deckError } = await admin
     .from('decks')
     .insert({
       owner_id: userId,
+      course_id: course.id,
       slug,
       title: 'Review deck',
       visibility: 'public',
@@ -118,10 +144,12 @@ export async function seedDeckWithCards(
 
   return {
     id: deck.id as string,
+    courseId: course.id as string,
     cards: cardIds,
     cleanup: async () => {
       await admin.from('cards').delete().eq('deck_id', deck.id);
       await admin.from('decks').delete().eq('id', deck.id);
+      await admin.from('courses').delete().eq('id', course.id);
     },
   };
 }

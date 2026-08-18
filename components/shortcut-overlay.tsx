@@ -104,7 +104,7 @@ function resolveLabel(
   key: string
 ): string {
   try {
-    return t(key);
+    return t(key); // i18n-dynamic-key
   } catch {
     return key;
   }

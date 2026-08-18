@@ -1,5 +1,20 @@
 # Phase 03 — Review engine
 
+> **Merged at `28d7e5a`, then partially superseded by `specs/phase-03b-remediation.md` (2026-08-08).**
+> This file remains the record of what phase 03 intended. Four things below are no longer current:
+>
+> 1. **Migration numbering.** This spec names `0009_review_engine.sql`; it actually landed as
+>    `0010_review_engine.sql` (`0009` is `0009_keyboard_shortcuts.sql`). 03b's is `0011_courses.sql`.
+> 2. **"Files I may touch".** 03b grants `components/ui/**`, `components/editor/**`,
+>    `lib/shortcuts/**`, `styles/globals.css` and `scripts/**`, all of which this spec restricted.
+> 3. **Courses.** Listed here as out of scope; in scope in 03b, as a required hierarchy.
+> 4. **Acceptance criteria 7, 8, 9, 10, 12, 13, 14, 15** were accepted without e2e coverage
+>    (`e2e/decks/` was never created), and 10/11/12 were passing against hardcoded constants
+>    (`edited_during_review`, `queue: []`). 03b re-proves them. See `specs/EVOLUTION.md`, 2026-08-08.
+>
+> `components/decks/deck-stats.tsx` in the inventory below was never built; streak rendering
+> lives inline in the deck list and detail.
+
 ## Context
 
 Phase 02 shipped the structured note editor; the SRS half of the product (FSRS-6, `card_states`, `review_logs`, `apply_review`, `acknowledge_card_change`) has been frozen in `packages/contracts/` + `supabase/migrations/` since phase 01 but nothing in `app/`, `components/`, or `lib/` reads or writes it. Phase 03 makes reviews real: decks, cards, a focused phone-first review session, and a read-only NoteDoc renderer (which phase 04 reuses for public notes).

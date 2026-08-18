@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import type { Database } from '@neoformuflash/contracts/db';
 
@@ -34,6 +35,21 @@ export async function createSupabaseServerClient() {
           }
         },
       },
+    }
+  );
+}
+
+/*
+ * A pure anon client that never reads cookies — for public pages that must
+ * ignore any signed-in session. This guarantees the same visibility as a
+ * logged-out visitor.
+ */
+export function createSupabaseAnonClient() {
+  return createClient<Database>(
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
     }
   );
 }

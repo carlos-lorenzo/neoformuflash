@@ -19,7 +19,7 @@ export function Violations() {
 
       {/* SHOULD NOT FLAG: read from the catalog */}
       <p>{t('login.title')}</p>
-      <input placeholder={t('login.placeholder')} />
+      <input placeholder={t('common.close')} />
 
       {/* SHOULD NOT FLAG: punctuation and separators are not language */}
       <span>·</span>

@@ -15,11 +15,14 @@ export {
   TITLE_MAX,
   CreateNoteInput,
   UpdateNoteInput,
+  CreateCourseInput,
+  UpdateCourseInput,
   CreateDeckInput,
   CardInput,
   UpdateCardInput,
   ReviewSubmission,
   ApiKeyInput,
+  UpdateNoteSeoInput,
 } from './schemas';
 
 export {
@@ -51,3 +54,5 @@ export type {
 
 export { SubscribeInput, ForkInput } from './sharing';
 export type { CourseLineage, ForkResult } from './sharing';
+
+export type { PublicProfile, PublicCourse, PublicDeck, PublicNote, UpdateNoteSeoInput as UpdateNoteSeoInputType } from './public';

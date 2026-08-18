@@ -11,6 +11,9 @@ import { deleteDeck } from '@/app/app/decks/actions';
 
 export function DeleteDeckButton({ deckId }: { deckId: string }) {
   const t = useTranslations('decks');
+  // Root-scoped hook for shared chrome copy (cancel/close).
+  const tc = useTranslations('common');
+  const tError = useTranslations('error');
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,10 +23,20 @@ export function DeleteDeckButton({ deckId }: { deckId: string }) {
     startTransition(async () => {
       const res = await deleteDeck({ id: deckId });
       if (res.errors?.form) {
-        setError(res.errors.form);
+        // Resolve catalog keys with static t() calls — a dynamic t(code) is
+        // invisible to lint:i18n's key existence check (see course-form.tsx).
+        setError(
+          res.errors.form === 'deck.hasSubscribers'
+            ? t('detail.hasSubscribers')
+            : tError('unexpected'),
+        );
         return;
       }
-      router.push('/app/decks');
+      if (res.courseId) {
+        router.push(`/app/courses/${res.courseId}`);
+      } else {
+        router.push('/app');
+      }
     });
   }
 
@@ -37,11 +50,11 @@ export function DeleteDeckButton({ deckId }: { deckId: string }) {
         open={open}
         onOpenChange={setOpen}
         title={t('detail.deleteConfirm')}
-        closeLabel={t('common.cancel')}
+        closeLabel={tc('cancel')}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setOpen(false)}>
-              {t('common.cancel')}
+              {tc('cancel')}
             </Button>
             <Button variant="destructiveFilled" onClick={confirm} loading={pending}>
               {t('detail.delete')}

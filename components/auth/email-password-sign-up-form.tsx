@@ -24,7 +24,7 @@ export function EmailPasswordSignUpForm({ className }: { className?: string }) {
   });
 
   /** Translate a catalog key returned by the server action. */
-  const message = (key: string | undefined) => (key ? t(key) : undefined);
+  const message = (key: string | undefined) => (key ? t(key) /* i18n-dynamic-key */ : undefined);
 
   if (state.status === 'check-email' && state.email) {
     return (

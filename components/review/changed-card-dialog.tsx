@@ -20,6 +20,8 @@ export function ChangedCardDialog({
   onStartOver,
 }: ChangedCardDialogProps) {
   const t = useTranslations('review');
+  // Root-scoped hook for shared chrome copy (cancel/close).
+  const tc = useTranslations('common');
 
   return (
     <Dialog
@@ -27,7 +29,7 @@ export function ChangedCardDialog({
       onOpenChange={onClose}
       title={t('changedCard.title')}
       description={t('changedCard.body')}
-      closeLabel={t('common.close')}
+      closeLabel={tc('close')}
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => { onClose(); onKeep(); }}>

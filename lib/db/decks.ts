@@ -43,6 +43,7 @@ export type DeckRow = {
   desiredRetention: number | null;
   newCardsPerDay: number;
   courseId: string | null;
+  course: { id: string; slug: string; name: string; visibility: string; deletedAt: string | null } | null;
   subscriberCount: number;
   forkCount: number;
   createdAt: string;
@@ -170,6 +171,116 @@ export async function listDecks(userId: string): Promise<Result<DeckSummary[]>> 
  * The caller decides whether the user is the owner (canEdit) based on
  * the returned ownerId — not by a separate query.
  */
+/**
+ * Get a public deck by owner handle and deck slug.
+ * Returns null if the deck doesn't exist or is private.
+ * Used by the public deck page at /@handle/deck-slug.
+ *
+ * `decks` has no `deleted_at` column (0003) — deck removal is a hard delete,
+ * unlike courses. Filtering on it here returned an error on every request.
+ * Parent-course containment is enforced by decks_select_public (0007), so a
+ * deck under a private or deleted course is already filtered out by RLS.
+ */
+export async function getPublicDeckBySlug(
+  handle: string,
+  deckSlug: string
+): Promise<Result<DeckRow | null>> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from('decks')
+    .select(`
+      id, owner_id, title, slug, visibility, desired_retention, new_cards_per_day,
+      course_id, subscriber_count, fork_count, created_at,
+      owner:profiles!decks_owner_id_fkey!inner(handle),
+      course:courses!decks_course_id_fkey(id, slug, name, visibility, deleted_at)
+    `)
+    .eq('slug', deckSlug)
+    .eq('owner.handle', handle)
+    .neq('visibility', 'private')
+    .maybeSingle();
+
+  if (error) return err('error.unexpected', error);
+  if (!data) return ok(null);
+
+  let courseInfo: DeckRow['course'] = null;
+  if (data.course && data.course.visibility !== 'private' && data.course.deleted_at === null) {
+    courseInfo = {
+      id: data.course.id,
+      slug: data.course.slug,
+      name: data.course.name,
+      visibility: data.course.visibility,
+      deletedAt: data.course.deleted_at,
+    };
+  }
+
+  const result: DeckRow = {
+    id: data.id,
+    ownerId: data.owner_id,
+    title: data.title,
+    slug: data.slug,
+    visibility: data.visibility,
+    desiredRetention: data.desired_retention,
+    newCardsPerDay: data.new_cards_per_day,
+    courseId: data.course_id,
+    course: courseInfo,
+    subscriberCount: data.subscriber_count,
+    forkCount: data.fork_count,
+    createdAt: data.created_at,
+  };
+
+  return ok(result);
+}
+
+/**
+ * Get a public deck by owner handle and deck slug, returning a PublicDeck shape.
+ * Includes ownerId for ownership checks on public pages.
+ */
+export async function getPublicDeckBySlugPublic(
+  handle: string,
+  deckSlug: string
+): Promise<Result<{ id: string; slug: string; title: string; subscriberCount: number; forkCount: number; ownerId: string; course: { id: string; slug: string; name: string } | null } | null>> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from('decks')
+    .select(`
+      id, owner_id, title, slug, subscriber_count, fork_count,
+      owner:profiles!decks_owner_id_fkey!inner(handle),
+      course:courses!decks_course_id_fkey(id, slug, name, visibility, deleted_at)
+    `)
+    .eq('slug', deckSlug)
+    .eq('owner.handle', handle)
+    .neq('visibility', 'private')
+    .maybeSingle();
+
+  if (error) return err('error.unexpected', error);
+  if (!data) return ok(null);
+
+  let courseInfo: { id: string; slug: string; name: string } | null = null;
+  if (data.course && data.course.visibility !== 'private' && data.course.deleted_at === null) {
+    courseInfo = {
+      id: data.course.id,
+      slug: data.course.slug,
+      name: data.course.name,
+    };
+  }
+
+  return ok({
+    id: data.id,
+    ownerId: data.owner_id,
+    title: data.title,
+    slug: data.slug,
+    subscriberCount: data.subscriber_count,
+    forkCount: data.fork_count,
+    course: courseInfo,
+  });
+}
+
+/**
+ * Get a deck by id. The caller decides whether the user is the owner
+ * (canEdit) based on the returned ownerId — not by a separate query.
+ */
 export async function getDeck(
   _userId: string,
   deckId: string,
@@ -194,6 +305,7 @@ export async function getDeck(
     desiredRetention: data.desired_retention,
     newCardsPerDay: data.new_cards_per_day,
     courseId: data.course_id,
+    course: null, // course not joined here
     subscriberCount: data.subscriber_count,
     forkCount: data.fork_count,
     createdAt: data.created_at,
@@ -229,6 +341,37 @@ export async function getStreak(userId: string): Promise<Result<Streak | null>> 
 const MAX_SLUG_RETRIES = 3;
 
 /* ------------------------------------------------------------------ */
+/**
+ * The owner's decks inside a single course. Lightweight — no due/new counts,
+ * which is the course detail's job only at a glance. Course-first hierarchy
+ * (phase-03b H); decks outside a course are still readable (H5).
+ */
+export async function listCourseDecks(courseId: string, userId: string): Promise<Result<DeckSummary[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from('decks')
+    .select('id, title, slug, visibility, desired_retention, new_cards_per_day, course_id, created_at')
+    .eq('course_id', courseId)
+    .eq('owner_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) return err('error.unexpected', error);
+
+  return ok((data ?? []).map((row) => ({
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    visibility: row.visibility as Visibility,
+    desiredRetention: row.desired_retention,
+    newCardsPerDay: row.new_cards_per_day,
+    courseId: row.course_id,
+    createdAt: row.created_at,
+    dueCount: 0,
+    newCount: 0,
+  })));
+}
+
 /*  Create                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -241,7 +384,7 @@ const MAX_SLUG_RETRIES = 3;
  */
 export async function createDeckRow(
   userId: string,
-  input: { title: string; visibility: Visibility; desiredRetention: number | null; newCardsPerDay: number },
+  input: { title: string; visibility: Visibility; desiredRetention: number | null; newCardsPerDay: number; courseId?: string | null },
 ): Promise<Result<{ id: string }>> {
   const supabase = await createSupabaseServerClient();
 
@@ -263,7 +406,7 @@ export async function createDeckRow(
         visibility: input.visibility,
         desired_retention: input.desiredRetention,
         new_cards_per_day: input.newCardsPerDay,
-        course_id: null,
+        course_id: input.courseId ?? null,
         note_id: null,
       })
       .select('id')
@@ -354,4 +497,30 @@ export async function deleteDeckRow(
   }
 
   return ok(undefined);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Subscription checks                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Check if the user is subscribed to a deck.
+ * Runs under the caller's RLS (createSupabaseServerClient), so it only
+ * sees the caller's own subscription row.
+ */
+export async function checkDeckSubscription(
+  userId: string,
+  deckId: string,
+): Promise<Result<boolean>> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from('deck_subscriptions')
+    .select('user_id')
+    .eq('deck_id', deckId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) return err('error.unexpected', error);
+  return ok(!!data);
 }

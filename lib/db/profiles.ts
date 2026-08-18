@@ -1,4 +1,5 @@
 import type { Locale, SignupProfileInput } from '@neoformuflash/contracts';
+import type { PublicProfile, PublicCourse, PublicNote, NoteDoc } from '@neoformuflash/contracts';
 import { err, ok, type Result } from '@/lib/result';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -129,4 +130,124 @@ export async function updateProfileLocale(userId: string, locale: Locale): Promi
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from('profiles').update({ locale }).eq('id', userId);
   return error ? err('error.unexpected', error) : ok(null);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Public profile access (phase 04)                                  */
+/* ------------------------------------------------------------------ */
+
+const PUBLIC_PROFILE_SELECT = 'id, slug, handle, display_name, avatar_url, locale';
+
+function toPublicProfile(row: Record<string, unknown>): PublicProfile {
+  return {
+    id: row.id as string,
+    slug: row.slug as string,
+    handle: row.handle as string,
+    displayName: row.display_name as string,
+    avatarUrl: (row.avatar_url as string | null) ?? null,
+    locale: row.locale as PublicProfile['locale'],
+  };
+}
+
+/**
+ * Get a public profile by handle. Returns null if the profile doesn't exist
+ * or has no public content (the RLS policy filters these out).
+ */
+export async function getPublicProfile(handle: string): Promise<Result<PublicProfile | null>> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(PUBLIC_PROFILE_SELECT)
+    .eq('handle', handle)
+    .maybeSingle();
+
+  if (error) return err('error.unexpected', error);
+  if (!data) return ok(null);
+
+  return ok(toPublicProfile(data));
+}
+
+/**
+ * List public/unlisted courses for a profile owner.
+ * Only courses with visibility <> 'private' and deleted_at IS NULL.
+ */
+export async function listPublicCoursesByOwner(ownerId: string): Promise<Result<PublicCourse[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from('courses')
+    .select('id, owner_id, slug, name, code, subscriber_count, fork_count')
+    .eq('owner_id', ownerId)
+    .neq('visibility', 'private')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+
+  if (error) return err('error.unexpected', error);
+
+  return ok(
+    (data ?? []).map((row) => ({
+      id: row.id,
+      ownerId: row.owner_id,
+      slug: row.slug,
+      name: row.name,
+      code: row.code,
+      subscriberCount: row.subscriber_count,
+      forkCount: row.fork_count,
+    })),
+  );
+}
+
+/**
+ * List published public/unlisted notes for a profile owner.
+ * Respects the same visibility containment as notes_select_public.
+ */
+export async function listPublicNotesByOwner(ownerId: string): Promise<Result<PublicNote[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from('notes')
+    .select(`
+      id, slug, title, content_text, content_json, language, og_title, og_description, og_image_url, published_at,
+      course:courses(id, slug, name, visibility, deleted_at)
+    `)
+    .eq('owner_id', ownerId)
+    .neq('visibility', 'private')
+    .not('published_at', 'is', null) // published_at IS NOT NULL for 'public' notes
+    // Left join, not !inner: a note with no course is still public.
+    // The filter must be scoped with referencedTable, or PostgREST parses
+    // `course.visibility` as a column on `notes` and rejects the logic tree.
+    .or('visibility.neq.private,visibility.is.null', { referencedTable: 'course' })
+    .is('course.deleted_at', null)
+    .order('published_at', { ascending: false });
+
+  if (error) return err('error.unexpected', error);
+
+  return ok(
+    (data ?? []).map((row) => {
+      const courseInfo = (row.course ?? null) as
+        | { id: string; slug: string; name: string; visibility: string; deleted_at: string | null }
+        | null;
+
+      return {
+        id: row.id,
+        slug: row.slug,
+        title: row.title,
+        contentText: row.content_text,
+        contentJson: row.content_json as unknown as NoteDoc,
+        language: row.language,
+        ogTitle: row.og_title,
+        ogDescription: row.og_description,
+        ogImageUrl: row.og_image_url,
+        publishedAt: row.published_at,
+        course: courseInfo
+          ? {
+              id: courseInfo.id,
+              slug: courseInfo.slug,
+              name: courseInfo.name,
+            }
+          : null,
+      };
+    }),
+  );
 }

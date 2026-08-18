@@ -560,6 +560,9 @@ export type Database = {
           created_at: string
           id: string
           language: string
+          og_description: string | null
+          og_image_url: string | null
+          og_title: string | null
           owner_id: string
           published_at: string | null
           slug: string
@@ -575,6 +578,9 @@ export type Database = {
           created_at?: string
           id?: string
           language?: string
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
           owner_id: string
           published_at?: string | null
           slug: string
@@ -590,6 +596,9 @@ export type Database = {
           created_at?: string
           id?: string
           language?: string
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
           owner_id?: string
           published_at?: string | null
           slug?: string
@@ -836,6 +845,16 @@ export type Database = {
         Returns: undefined
       }
       claim_profile_slug: { Args: { p_base: string }; Returns: string }
+      copy_course_for_user: {
+        Args: { p_course_id: string; p_user_id: string }
+        Returns: Database["public"]["CompositeTypes"]["fork_result"]
+        SetofOptions: {
+          from: "*"
+          to: "fork_result"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_profile: {
         Args: {
           p_avatar_url: string
@@ -865,6 +884,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_course: { Args: { p_course_id: string }; Returns: undefined }
       fork_course: {
         Args: { p_course_id: string }
         Returns: Database["public"]["CompositeTypes"]["fork_result"]

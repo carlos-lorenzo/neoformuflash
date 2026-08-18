@@ -11,34 +11,28 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { useTranslations } from 'next-intl';
 import { useEditor, EditorContent } from '@tiptap/react';
 import type { Editor } from '@tiptap/core';
-import type { Node } from '@tiptap/pm/model';
-import StarterKit from '@tiptap/starter-kit';
-import { InlineMath, BlockMath } from '@tiptap/extension-mathematics';
-import Placeholder from '@tiptap/extension-placeholder';
+import { buildEditorExtensions } from '@/lib/editor/tiptap-extensions';
+import { findMathAtClick } from '@/lib/editor/math-click';
+import { deriveTitle } from '@/lib/editor/derive-title';
 import { unionToProse } from '@/lib/editor/serialize';
 import { saveNote } from '@/app/app/notes/actions';
 import { useActiveScope } from '@/lib/shortcuts/use-scope';
 import { useShortcut } from '@/lib/shortcuts/use-shortcut';
 import type { NoteRow } from '@/lib/db/notes';
+import { NoteDocView } from '@/components/note/note-doc-view';
 import { SaveIndicator, type SaveStatus } from './save-indicator';
-import { NoteTitleInput } from './note-title-input';
 import { MathInput } from './math-input';
+import Link from 'next/link';
 import { SlashMenu } from './slash-menu';
+import { SeoForm } from './seo-form';
+import { PublishForm } from './publish-form';
 import './katex-client';
 
 /*
- * KaTeX runs with trust off so \href / \includegraphics cannot smuggle markup
- * (specs/EVOLUTION.md names Tiptap as the anticipated XSS vector).
- */
-const KATEX_OPTIONS = { throwOnError: false, trust: false, strict: false } as const;
-
-/*
- * The extension's input rules convert literal `$$…$$` text into math nodes —
+ * The extension's input rules convert literal `$$...$$` text into math nodes —
  * that would bypass the MathInput's validation. The `$` state machine below
- * owns the trigger, so the rules are disabled here.
+ * owns the trigger, so the rules are disabled in the shared config.
  */
-const InlineMathNoRules = InlineMath.extend({ addInputRules() { return []; } });
-const BlockMathNoRules = BlockMath.extend({ addInputRules() { return []; } });
 
 const AUTOSAVE_MS = 800;
 
@@ -73,32 +67,12 @@ function useIsTablet(): boolean {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Tiptap runs outside React — the math extensions' onClick needs the */
-/*  editor at click time, but a React ref can't be read inside the     */
-/*  render-created extension closure (react-hooks/refs). These module  */
-/*  handles are synced by effects and read only at event time.         */
-/* ------------------------------------------------------------------ */
-
-type MathOpener = (mode: 'inline' | 'display', pos: number, latex: string, position: PanelPosition) => void;
-
-let editorHandle: Editor | null = null;
-let mathOpener: MathOpener = () => {};
-
-function mathOnClick(mode: 'inline' | 'display'): (node: Node, pos: number) => void {
-  return (node, pos) => {
-    const ed = editorHandle;
-    if (!ed) return;
-    const coords = ed.view.coordsAtPos(pos);
-    mathOpener(mode, pos, node.attrs.latex as string, { top: coords.bottom, left: coords.left });
-  };
-}
-
-/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function NoteEditor({ note }: { note: NoteRow }) {
+export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow; courseName?: string | null; isOwner?: boolean }) {
   const t = useTranslations('editor');
+  const tn = useTranslations('notes');
   const isTablet = useIsTablet();
   useActiveScope('editor');
 
@@ -115,106 +89,6 @@ export function NoteEditor({ note }: { note: NoteRow }) {
   const retriedRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingDollarRef = useRef(false);
-
-  /* ---------------- sync module handle for math clicks ---------------- */
-
-  useEffect(() => {
-    mathOpener = (mode, pos, latex, position) => {
-      setMathPanel({ mode, initial: latex, editPos: pos, position });
-    };
-  }, []);
-
-  /* ---------------- autosave ---------------- */
-
-  const persist = useCallback(async () => {
-    const ed = editorRef.current;
-    if (!ed) return;
-    setSaveStatus('saving');
-    /*
-     * ed.getJSON() can carry ProseMirror-internal attrs on math nodes that
-     * Next.js serializes as client references — a server action then throws
-     * "cannot dot into a temporary client reference". Round-tripping through
-     * JSON produces plain serializable data (AC8 depends on this).
-     */
-    const contentJson = JSON.parse(JSON.stringify(ed.getJSON())) as Record<string, unknown>;
-    const args = { id: note.id, title: titleRef.current, contentJson };
-
-    /*
-     * saveNote can reject (network abort / fetch failure) as well as return
-     * {errors} from the server. Both must land in the same retry/error path
-     * so the status never stays stuck at 'saving'.
-     */
-    const doSave = async () => {
-      try { return await saveNote(args); } catch { return { errors: { form: 'error.network' } } as const; }
-    };
-
-    let result = await doSave();
-    // One immediate retry, then surface the error with a manual retry (AC6).
-    if (result.errors && !retriedRef.current) {
-      retriedRef.current = true;
-      result = await doSave();
-    }
-    if (result.errors) {
-      retriedRef.current = false;
-      dirtyRef.current = true;
-      setSaveStatus('error');
-      return;
-    }
-    retriedRef.current = false;
-    dirtyRef.current = false;
-    setSaveStatus('saved');
-  }, [note.id]);
-
-  const scheduleSave = useCallback(() => {
-    dirtyRef.current = true;
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      setSaveStatus('offline');
-      return;
-    }
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      void persist();
-    }, AUTOSAVE_MS);
-  }, [persist]);
-
-  // Offline → online: flush whatever was buffered.
-  useEffect(() => {
-    const handleOnline = () => {
-      if (dirtyRef.current) void persist();
-    };
-    const handleOffline = () => setSaveStatus('offline');
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [persist]);
-
-  // Unmount: flush the pending save.
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (dirtyRef.current && editorRef.current) {
-        void saveNote({
-          id: note.id,
-          title: titleRef.current,
-          contentJson: JSON.parse(JSON.stringify(editorRef.current.getJSON())) as Record<string, unknown>,
-        });
-      }
-    };
-  }, [note.id]);
-
-  // ⌘S — force save, bypassing the debounce (shortcuts.md editor table).
-  useShortcut(
-    'editor',
-    'mod+s',
-    () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      void persist();
-    },
-    { label: 'shortcuts.forceSave', requireModified: true },
-  );
 
   /* ---------------- math + slash flows ---------------- */
 
@@ -303,194 +177,359 @@ export function NoteEditor({ note }: { note: NoteRow }) {
         if (isAtStartOfEmptyBlock(ed)) {
           event.preventDefault();
           const coords = ed.view.coordsAtPos(ed.state.selection.from);
-          setSlashPosition({ top: coords.bottom, left: coords.left });
           setSlashOpen(true);
+          setSlashPosition({ top: coords.bottom, left: coords.left });
           return true;
         }
-        return false;
       }
 
       return false;
     },
-    [isAtStartOfEmptyBlock, openDisplayMath, openInlineMath],
+    [openDisplayMath, openInlineMath, isAtStartOfEmptyBlock],
   );
 
-  /* ---------------- Tiptap ---------------- */
+  const handleSlashClose = useCallback(() => {
+    setSlashOpen(false);
+  }, []);
+
+  const handleSlashCancel = useCallback(() => {
+    setSlashOpen(false);
+    // Escape cancels cleanly (AC2): leave the `/` as literal text and return
+    // focus to the editor so the student keeps typing where they left off.
+    editorRef.current?.chain().focus().insertContent('/').run();
+  }, []);
+
+  /* ---------------- autosave ---------------- */
+
+  const persist = useCallback(async () => {
+    const ed = editorRef.current;
+    if (!ed) return;
+    setSaveStatus('saving');
+    /*
+     * ed.getJSON() can carry ProseMirror-internal attrs on math nodes that
+     * Next.js serializes as client references — a server action then throws
+     * "cannot dot into a temporary client reference". Round-tripping through
+     * JSON produces plain serializable data (AC8 depends on this).
+     */
+    const contentJson = JSON.parse(JSON.stringify(ed.getJSON())) as Record<string, unknown>;
+    const args = { id: note.id, title: titleRef.current, contentJson };
+
+    /*
+     * saveNote can reject (network abort / fetch failure) as well as return
+     * {errors} from the server. Both must land in the same retry/error path
+     * so the status never stays stuck at 'saving'.
+     */
+    const doSave = async () => {
+      try { return await saveNote(args); } catch { return { errors: { form: 'error.network' } } as const; }
+    };
+
+    let result = await doSave();
+    // One immediate retry, then surface the error with a manual retry (AC6).
+    if (result.errors && !retriedRef.current) {
+      retriedRef.current = true;
+      result = await doSave();
+    }
+    if (result.errors) {
+      retriedRef.current = false;
+      dirtyRef.current = true;
+      setSaveStatus('error');
+      return;
+    }
+    retriedRef.current = false;
+    dirtyRef.current = false;
+    setSaveStatus('saved');
+  }, [note.id]);
+
+  const scheduleSave = useCallback(() => {
+    dirtyRef.current = true;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setSaveStatus('offline');
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      void persist();
+    }, AUTOSAVE_MS);
+  }, [persist]);
+
+  /* ---------------- offline queue ---------------- */
+
+  useEffect(() => {
+    const handleOnline = () => {
+      if (dirtyRef.current) void persist();
+    };
+    const handleOffline = () => setSaveStatus('offline');
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [persist]);
+
+  // Unmount: flush the pending save.
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (dirtyRef.current && editorRef.current) {
+        void saveNote({
+          id: note.id,
+          title: titleRef.current,
+          contentJson: JSON.parse(JSON.stringify(editorRef.current.getJSON())) as Record<string, unknown>,
+        });
+      }
+    };
+  }, [note.id]);
+
+  // ⌘S — force save, bypassing the debounce (shortcuts.md editor table).
+  useShortcut(
+    'editor',
+    'mod+s',
+    () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      void persist();
+    },
+    { label: 'shortcuts.forceSave', requireModified: true },
+  );
+
+  /* ---------------- outline (tablet+) ---------------- */
+
+  // Rebuilt from the editor's own callbacks (onCreate/onUpdate) rather than an
+  // effect keyed on `editorRef.current?.state.doc.content` — reading a ref
+  // during render to build the deps array trips react-hooks/refs.
+  const rebuildOutline = useCallback((ed: Editor) => {
+    const items: OutlineItem[] = [];
+    ed.state.doc.descendants((node, pos) => {
+      if (node.type.name.startsWith('heading')) {
+        const level = parseInt(node.type.name.slice(-1), 10);
+        const text = node.textContent.slice(0, 80);
+        items.push({ level, text, pos });
+      }
+    });
+    setOutline(items);
+  }, []);
 
   const extensions = useMemo(
-    () => [
-      Placeholder.configure({ placeholder: t('placeholder') }),
-      StarterKit.configure({
-        hardBreak: false,
-        horizontalRule: false,
-        link: false,
-        strike: false,
-        underline: false,
-      }),
-      InlineMathNoRules.configure({
-        katexOptions: { ...KATEX_OPTIONS },
-        onClick: mathOnClick('inline'),
-      }),
-      BlockMathNoRules.configure({
-        katexOptions: { ...KATEX_OPTIONS },
-        onClick: mathOnClick('display'),
-      }),
-    ],
-    [t],
+    () => buildEditorExtensions(t('notePlaceholder')),
+    [t]
   );
 
-  // PM's doc schema is `block+` — an empty doc has no renderable height, so a
-  // fresh note starts with one empty paragraph. The editor's TrailingNode
-  // plugin keeps the last block present from then on.
-  const initialContent = note.contentJson.content.length > 0
-    ? unionToProse(note.contentJson)
-    : { type: 'doc', content: [{ type: 'paragraph' }] };
+  // Build initial editor content. If the note has an empty body, prepend the
+  // title as a Notion-style first h1 block followed by an empty paragraph —
+  // built synchronously so the editor never mutates after mount (which would
+  // race with user keystrokes).
+  const initialContent = useMemo(() => {
+    const content = unionToProse(note.contentJson);
+    const hasBody = content.content && content.content.length > 0;
+
+    if (!hasBody) {
+      return {
+        type: 'doc' as const,
+        content: [
+          { type: 'heading', attrs: { level: 1 }, content: note.title ? [{ type: 'text', text: note.title }] : undefined },
+          { type: 'paragraph' },
+        ],
+      };
+    }
+    return content;
+  }, [note.contentJson, note.title]);
 
   const editor = useEditor({
     extensions,
     content: initialContent,
     immediatelyRender: false,
-    editable: isTablet,
+    autofocus: 'end',
+    editable: isTablet && isOwner,
     editorProps: {
-      attributes: {
-        // Consistent on-grid internal padding — overrides ProseMirror's
-        // default CSS which gives inconsistent (off-grid) spacing. px-3
-        // (12px) horizontal, py-2 (8px) vertical — both in spacing set {3,2}.
-        class: 'px-3 py-2',
-      },
+      attributes: { class: 'w-full min-h-editor' },
       handleKeyDown: handleEditorKeyDown,
-    },
-    onUpdate: ({ editor: ed }) => {
-      // Derive the outline from headings (for the ≥1440px rail).
-      const items: OutlineItem[] = [];
-      ed.state.doc.descendants((node, pos) => {
-        if (node.type.name === 'heading') {
-          items.push({ level: node.attrs.level as number, text: node.textContent, pos });
-        }
+      // Clicking a rendered math node opens its edit panel. Event handler, so
+      // reading the panel state is fine — see lib/editor/math-click.ts.
+      handleClick: (view, pos, event) => {
+        const hit = findMathAtClick(view, pos, event.target);
+        if (!hit) return false;
+        const coords = view.coordsAtPos(hit.pos);
+        setMathPanel({
+          mode: hit.mode,
+          initial: hit.node.attrs.latex as string,
+          editPos: hit.pos,
+          position: { top: coords.bottom, left: coords.left },
+        });
         return true;
-      });
-      setOutline(items);
+      },
+    },
+    onUpdate: ({ editor }) => {
+      rebuildOutline(editor);
       scheduleSave();
+
+      // Sync title from first non-empty block (heading or paragraph)
+      const { doc } = editor.state;
+      const newTitle = deriveTitle(doc.toJSON());
+      if (newTitle !== titleRef.current) {
+        titleRef.current = newTitle;
+        setTitle(newTitle);
+      }
+    },
+    onCreate: ({ editor }) => {
+      editorRef.current = editor;
+      rebuildOutline(editor);
+    },
+    onDestroy: () => {
+      editorRef.current = null;
     },
   });
 
-  // Keep refs in sync with the latest render (refs must not be mutated in render).
-  useEffect(() => {
-    editorRef.current = editor;
-  }, [editor]);
-
-  // Same for the module handle the math extensions read at click time.
-  useEffect(() => {
-    editorHandle = editor ?? null;
-    return () => {
-      editorHandle = null;
-    };
-  }, [editor]);
-
-  // `editable` is only read at editor creation, but useSyncExternalStore's
-  // server snapshot (false) is what wins on the hydration render. Sync the
-  // real value once the editor exists (AC10 depends on this flip).
+  // Sync editable state with tablet breakpoint
   useEffect(() => {
     editor?.setEditable(isTablet);
   }, [editor, isTablet]);
 
-  useEffect(() => {
-    titleRef.current = title;
-  }, [title]);
-
   /* ---------------- render ---------------- */
 
-  const onTitleChange = useCallback(
-    (value: string) => {
-      setTitle(value);
-      scheduleSave();
-    },
-    [scheduleSave],
-  );
+  if (!isTablet) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-base">
+        {/* Breadcrumb at top - seamlessly integrated with document */}
+        {courseName ? (
+          <nav
+            className="mx-auto max-w-measure px-4 py-2 text-ui-sm text-secondary"
+            aria-label={tn('breadcrumb')}
+          >
+            <Link
+              href={`/app/courses/${note.courseId}`}
+              className="hover:underline"
+            >
+              {courseName}
+            </Link>
+            <span aria-hidden="true"> / </span>
+            <span aria-current="page">{title}</span>
+          </nav>
+        ) : null}
+        <div className="mx-auto w-full max-w-measure flex-1 overflow-auto px-4 py-4">
+          {/* Title — integrated as the first block (Notion style) */}
+          <h1 className="font-serif text-read-h1 font-semibold text-primary">{title}</h1>
 
-  const closeSlashMenu = useCallback(() => {
-    setSlashOpen(false);
-  }, []);
-
-  const cancelSlashMenu = useCallback(() => {
-    // Esc leaves the `/` as literal text (AC2).
-    setSlashOpen(false);
-    editorRef.current?.chain().focus().insertContent('/').run();
-  }, []);
-
-  return (
-    <div className="relative flex min-h-screen min-w-0">
-      {/* Reading surface: measure-capped, ruled margin line at the 68ch edge (§8). */}
-      <div className="relative mx-auto w-full max-w-measure px-4 py-12">
-        <div className="mb-8 flex items-center justify-between">
-          <NoteTitleInput value={title} onChange={onTitleChange} />
-          <SaveIndicator status={saveStatus} onRetry={() => void persist()} />
+          {/* Read-only message at 390px */}
+          <div className="mt-2 mb-4 rounded-md border border-subtle bg-raised px-4 py-3 text-ui-sm text-secondary">
+            {t('mobileReadonly')}
+          </div>
+          <NoteDocView doc={note.contentJson} />
         </div>
 
-        {/* 390px gate: read-only + clear message (AC10, design-system §6). */}
-        {!isTablet && (
-          <div className="mb-4 rounded-md border border-subtle bg-raised px-4 py-3 text-ui-sm text-secondary tablet:hidden">
-            {t('mobileReadonly')}
+        {/* Save indicator fixed top-right */}
+        <SaveIndicator
+          status={saveStatus}
+          className="fixed top-4 right-4 z-50"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-dvh flex-col bg-base">
+      {/* Breadcrumb at top - seamlessly integrated with document */}
+      {courseName ? (
+        <nav
+          className="mx-auto max-w-measure px-4 py-2 text-ui-sm text-secondary"
+          aria-label={tn('breadcrumb')}
+        >
+          <Link
+            href={`/app/courses/${note.courseId}`}
+            className="hover:underline"
+          >
+            {courseName}
+          </Link>
+          <span aria-hidden="true"> / </span>
+          <span aria-current="page">{title}</span>
+        </nav>
+      ) : null}
+
+      {/* Editor canvas - borderless, seamless with page background */}
+      <div className="flex-1 overflow-auto p-4">
+        <div className="mx-auto w-full max-w-measure">
+          <div className="prose prose-sm max-w-none">
+            <EditorContent
+              editor={editor}
+              className="w-full min-h-editor"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Slash menu */}
+      {slashOpen && editor && (
+        <SlashMenu
+          editor={editor}
+          position={slashPosition}
+          onClose={handleSlashClose}
+          onCancel={handleSlashCancel}
+          onInsertInlineEquation={openInlineMath}
+          onInsertBlockEquation={openDisplayMath}
+        />
+      )}
+
+      {/* Math input panel */}
+      {mathPanel && (
+        <MathInput
+          mode={mathPanel.mode}
+          initialLatex={mathPanel.initial}
+          position={mathPanel.position}
+          onCommit={(latex) => commitMath(latex, mathPanel)}
+          onCancel={() => {
+            setMathPanel(null);
+            // Return focus to editor after cancel (same microtask pattern as slash menu).
+            void Promise.resolve().then(() => {
+              editorRef.current?.chain().focus().run();
+            });
+          }}
+        />
+      )}
+
+      {/* Sidebar: outline + SEO (tablet+) */}
+      <aside className="fixed right-4 bottom-4 z-20 w-outline max-h-outline overflow-auto rounded-lg border border-subtle bg-raised p-2 shadow-dialog animate-dialog">
+        {outline.length > 0 && (
+          <div className="mb-4">
+            <p className="text-ui-xs font-medium tracking-ui text-tertiary uppercase mb-2">{t('outline')}</p>
+            <ul className="flex flex-col gap-1">
+              {outline.map((item) => (
+                <li
+                  key={item.pos}
+                  className="text-ui-sm text-secondary hover:text-primary cursor-pointer pl-2"
+                  onClick={() => editorRef.current?.commands.scrollIntoView()}
+                >
+                  {'  '.repeat(item.level - 1)}{item.text}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
-        <EditorContent editor={editor} />
+        {isOwner && (
+          <>
+            {/* SEO form - only on tablet+ where editor is editable */}
+            <SeoForm
+              noteId={note.id}
+              initial={{
+                ogTitle: '',
+                ogDescription: '',
+                ogImageUrl: '',
+              }}
+            />
 
-        {/* Ruled margin hairline at the measure edge (§8 signature). */}
-        <div
-          aria-hidden="true"
-          className="absolute bottom-0 left-[68ch] top-0 w-px bg-subtle opacity-50"
-        />
+            {/* Publish form - only on tablet+ where editor is editable */}
+            <PublishForm
+              noteId={note.id}
+              isPublished={note.publishedAt !== null}
+            />
+          </>
+        )}
+      </aside>
 
-        {/* Floating panels — anchored to cursor coordinates, fixed-position. */}
-        {slashOpen && editor && (
-          <SlashMenu
-            editor={editor}
-            position={slashPosition}
-            onClose={closeSlashMenu}
-            onCancel={cancelSlashMenu}
-            onInsertEquation={openDisplayMath}
-          />
-        )}
-        {mathPanel && (
-          <MathInput
-            mode={mathPanel.mode}
-            initialLatex={mathPanel.initial}
-            position={mathPanel.position}
-            onCommit={(latex) => commitMath(latex, mathPanel)}
-            onCancel={() => {
-              // Escape cancels cleanly (AC3/AC5): return focus to the editor
-              // so the student keeps typing where they left off. A microtask
-              // runs after React commits the unmount (which would otherwise
-              // move focus to <body>) but before the next keystroke task.
-              setMathPanel(null);
-              void Promise.resolve().then(() => {
-                editorRef.current?.chain().focus().run();
-              });
-            }}
-          />
-        )}
-
-        {/* Outline rail — ≥1440px only (design-system §6). */}
-        {outline.length > 0 && (
-          <nav
-            aria-label={t('outline')}
-            className="fixed right-6 top-24 hidden max-w-outline flex-col gap-1 desktop:flex"
-          >
-            {outline.map((item) => (
-              <button
-                key={item.pos}
-                type="button"
-                onClick={() => editor?.chain().focus().setTextSelection(item.pos).scrollIntoView().run()}
-                className="truncate text-left text-ui-xs text-tertiary hover:text-primary"
-                style={{ paddingLeft: `${(item.level - 1) * 8}px` }}
-              >
-                {item.text}
-              </button>
-            ))}
-          </nav>
-        )}
-      </div>
+      {/* Save indicator fixed top-right */}
+      <SaveIndicator
+        status={saveStatus}
+        className="fixed top-4 right-4 z-50"
+      />
     </div>
   );
 }

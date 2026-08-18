@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/assert-build-safe.mjs",
+    "build": "next build && node scripts/assert-build-safe.mjs && node scripts/assert-classes-compile.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit && pnpm --filter @neoformuflash/contracts typecheck",
     "lint": "eslint . --max-warnings 0 && pnpm lint:tokens && pnpm lint:i18n && pnpm lint:contrast",
@@ -42,6 +42,7 @@
     "next-intl": "^4.13.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hook-form": "^7.85.0",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.3.1"
   },

@@ -10,7 +10,8 @@
     "saving": "Guardando",
     "retry": "Reintentar",
     "close": "Cerrar",
-    "loading": "Cargando"
+    "loading": "Cargando",
+    "settings": "Ajustes"
   },
   "landing": {
     "signIn": "Entrar con Google",
@@ -114,6 +115,8 @@
     "dashboard": "Inicio",
     "notes": "Apuntes",
     "decks": "Mazos",
+    "allDecks": "Todos los mazos",
+    "courses": "Asignaturas",
     "review": "Repasar",
     "settings": "Ajustes",
     "signOut": "Salir",
@@ -143,52 +146,100 @@
     "close": "Cerrar",
     "commandPalette": "Paleta de comandos",
     "goHome": "Ir al inicio",
-    "goNotes": "Ir a apuntes",
+    "goCourses": "Ir a asignaturas",
     "forceSave": "Guardar ahora",
     "toggleBold": "Negrita",
     "toggleItalic": "Cursiva",
-    "exitMath": "Salir de las matemáticas"
+    "exitMath": "Salir de las matemáticas",
+    "list": {
+      "next": "Siguiente",
+      "previous": "Anterior",
+      "open": "Abrir",
+      "study": "Estudiar",
+      "createCourse": "Crear asignatura",
+      "createDeck": "Crear baraja",
+      "createNote": "Crear apunte"
+    },
+    "review": {
+      "undo": "Deshacer",
+      "revealOrGood": "Mostrar / Bien",
+      "gradeAgain": "Otra vez",
+      "gradeHard": "Difícil",
+      "gradeGood": "Bien",
+      "gradeEasy": "Fácil",
+      "inlineEdit": "Editar tarjeta",
+      "endSession": "Terminar sesión"
+    },
+    "editor": {
+      "inlineMath": "Matemáticas en línea",
+      "displayMath": "Matemáticas en bloque",
+      "save": "Guardar",
+      "saveAndNew": "Guardar y nueva",
+      "cancel": "Cancelar"
+    }
   },
   "notes": {
-    "untitled": "Sin título",
-    "newNote": "Nueva nota",
-    "listTitle": "Apuntes",
-    "emptyTitle": "Tus primeros apuntes empiezan aquí",
-    "emptyBody": "Empieza a transcribir una clase y aparecerá aquí cuando cierres la pestaña.",
-    "updatedAt": "Editado {date}",
-    "notFound": "Este apunte no existe.",
-    "unsupportedBlock": "Este apunte contiene contenido que este editor no puede mostrar.",
-    "error": "Algo ha fallado al cargar tus apuntes. Vuelve a intentarlo."
+    "seo": {
+      "ogTitleTooLong": "El título OG debe tener 120 caracteres o menos.",
+      "ogDescriptionTooLong": "La descripción OG debe tener 255 caracteres o menos.",
+      "ogImageUrlInvalid": "La URL de la imagen OG debe ser una URL válida.",
+      "ogImageUrlTooLong": "La URL de la imagen OG debe tener 2048 caracteres o menos.",
+      "ogImageUrlMustBeHttps": "La URL de la imagen OG debe usar HTTPS.",
+      "title": "Metadatos SEO",
+      "description": "Personaliza cómo aparece este apunte cuando se comparte en redes sociales. Todos los campos son opcionales.",
+      "ogTitleLabel": "Título OG",
+      "ogTitlePlaceholder": "Por defecto, título del apunte",
+      "ogDescriptionLabel": "Descripción OG",
+      "ogDescriptionPlaceholder": "Por defecto, extracto del apunte",
+      "ogImageUrlLabel": "URL de imagen OG",
+      "ogImageUrlPlaceholder": "https://ejemplo.com/imagen.png",
+      "ogImageUrlError": "Debe ser una URL HTTPS válida",
+      "saveButton": "Guardar metadatos SEO",
+      "savingButton": "Guardando…",
+      "saved": "Guardado"
+    },
+    "publish": {
+      "published": "Publicado",
+      "unpublished": "No publicado",
+      "publishButton": "Publicar apunte",
+      "unpublishButton": "Despublicar apunte",
+      "publishedToast": "Apunte publicado",
+      "unpublishedToast": "Apunte despublicado",
+      "publishDesc": "Publicar hace visible este apunte en tu perfil público y en la página de la asignatura.",
+      "unpublishDesc": "Despublicar oculta este apunte de las páginas públicas. Puedes volver a publicarlo más tarde."
+    },
+    "error": "Algo salió mal al cargar este apunte.",
+    "newNote": "Nuevo apunte",
+    "breadcrumb": "Apunte"
   },
   "editor": {
-    "placeholder": "Empieza a escribir… `/` para bloques, `$` para matemáticas",
+    "inlineMath": "Matemáticas en línea",
+    "displayMath": "Matemáticas en bloque",
+    "save": "Guardar tarjeta",
+    "saved": "Tarjeta guardada",
+    "notePlaceholder": "Empieza a escribir — o escribe / para un comando",
     "titlePlaceholder": "Sin título",
-    "saved": "Guardado",
-    "saving": "Guardando…",
-    "saveFailed": "No se ha podido guardar",
-    "retry": "Reintentar guardado",
-    "offline": "Sin conexión — los cambios se guardan en esta pantalla hasta que te reconectes.",
-    "mobileReadonly": "Abre en una pantalla más grande para editar",
-    "editFormula": "Editar fórmula",
+    "readOnlyTitle": "Solo lectura",
+    "readOnlyBody": "Esta nota se está editando en otro lugar.",
+    "mobileReadonly": "Solo lectura",
     "outline": "Esquema",
-    "selection": {
-      "bold": "Negrita",
-      "italic": "Cursiva",
-      "code": "Código en línea"
-    },
+    "saveFailed": "No se pudo guardar",
+    "retry": "Reintentar",
+    "offline": "Sin conexión — los cambios se sincronizarán al volver",
+    "slashPlaceholder": "Escribe para filtrar…",
+    "noMatches": "Ningún comando coincide",
     "blocks": {
       "paragraph": "Párrafo",
       "heading1": "Título 1",
       "heading2": "Título 2",
       "heading3": "Título 3",
-      "bulletList": "Lista",
+      "bulletList": "Lista con viñetas",
       "orderedList": "Lista numerada",
       "codeBlock": "Bloque de código",
       "blockquote": "Cita",
-      "equation": "Ecuación"
-    },
-    "slashPlaceholder": "Filtrar…",
-    "noMatches": "No hay bloques que coincidan"
+      "inlineEquation": "Ecuación en línea",
+      "blockEquation": "Ecuación en bloque"
+    }
   },
   "decks": {
     "listTitle": "Mazos",
@@ -216,6 +267,7 @@
     },
     "detail": {
       "study": "Estudiar",
+      "preview": "Vista previa",
       "settings": "Ajustes del mazo",
       "cards": "Tarjetas",
       "cardCount": "{count, plural, =0 {Sin tarjetas} one {# tarjeta} other {# tarjetas}}",
@@ -232,6 +284,7 @@
       "confidence": "Confianza",
       "confidenceHint": "Tu indicador de dificultad para esta tarjeta.",
       "save": "Guardar tarjeta",
+      "saveAndNew": "Guardar y nueva",
       "saved": "Tarjeta guardada",
       "editTitle": "Editar tarjeta",
       "invalidLatex": "Esta fórmula no se puede renderizar"
@@ -240,9 +293,15 @@
       "sortPosition": "Ordenar por posición",
       "sortConfidenceAsc": "Ordenar por confianza ↑",
       "sortConfidenceDesc": "Ordenar por confianza ↓",
+      "showAnswers": "Mostrar respuestas",
+      "hideAnswers": "Ocultar respuestas",
       "delete": "Eliminar tarjeta",
       "deleteConfirm": "¿Eliminar esta tarjeta?",
       "hasSubscribers": "Esta tarjeta tiene suscriptores y no se puede eliminar."
+    },
+    "preview": {
+      "backToDeck": "Volver al mazo",
+      "card": "Tarjeta {n}"
     },
     "grade": {
       "again": "Otra vez",
@@ -250,7 +309,68 @@
       "good": "Bien",
       "easy": "Fácil"
     },
-    "error": "Algo salió mal al cargar tus mazos."
+    "error": "Algo salió mal al cargar tus mazos.",
+    "create": {
+      "chooseCourse": "Elige una asignatura para este mazo",
+      "createCourseFirst": "Crea una asignatura primero"
+    }
+  },
+  "courses": {
+    "listTitle": "Asignaturas",
+    "createCourse": "Crear asignatura",
+    "emptyTitle": "Organiza tu estudio por asignaturas",
+    "emptyBody": "Una asignatura agrupa tus apuntes y mazos en torno a una materia. Crea una y todo lo que añadas se mantendrá organizado.",
+    "shortcutHint": "Pulsa c para crear tu primera asignatura",
+    "error": "Algo salió mal al cargar tus asignaturas.",
+    "notFound": "Esta asignatura no existe.",
+    "privateRequiresPro": "Las asignaturas privadas requieren una suscripción activa.",
+    "picker": {
+      "label": "Asignatura",
+      "placeholder": "Elige una asignatura",
+      "empty": "Aún no hay asignaturas",
+      "none": "Sin asignatura (mazo independiente)",
+      "create": "Crear una asignatura"
+    },
+    "form": {
+      "name": "Nombre de la asignatura",
+      "namePlaceholder": "p. ej. Cálculo II",
+      "code": "Código de asignatura",
+      "codePlaceholder": "p. ej. MAT-202",
+      "codeHint": "Opcional. El código que usa tu universidad para esta asignatura.",
+      "language": "Idioma del contenido",
+      "visibility": "Visibilidad",
+      "visibilityPublic": "Pública",
+      "visibilityUnlisted": "Oculta",
+      "visibilityPrivate": "Privada",
+      "submit": "Crear asignatura",
+      "save": "Guardar asignatura",
+      "saveFailed": "No se ha podido guardar la asignatura. Inténtalo de nuevo."
+    },
+    "detail": {
+      "eyebrow": "Asignatura",
+      "decks": "Mazos",
+      "noDecks": "Aún no hay mazos. Crea uno para empezar a repasar esta asignatura.",
+      "newDeck": "Nuevo mazo",
+      "notes": "Apuntes",
+      "noNotes": "Aún no hay apuntes en esta asignatura.",
+      "settings": "Ajustes",
+      "delete": "Eliminar asignatura",
+      "deleteConfirm": "¿Eliminar esta asignatura?",
+      "deleteBody": "Las personas suscritas con progreso conservan su propia copia; los mazos y tarjetas de la asignatura se eliminan. Esta acción no se puede deshacer.",
+      "subscribed": "Suscrito"
+    },
+    "list": {
+      "subscribed": "Suscrito"
+    }
+  },
+  "dashboard": {
+    "emptyTitle": "Crea tu primera asignatura para empezar a organizar",
+    "emptyBody": "Las asignaturas agrupan tus apuntes y mazos en torno a una materia. Crea una y todo lo que añadas se mantendrá organizado.",
+    "courseEyebrow": "Asignatura",
+    "openCourse": "Abrir asignatura",
+    "publicProfileLabel": "Tu perfil público",
+    "copyHandle": "Copiar usuario",
+    "publicProfileHint": "Comparte este enlace para que otros encuentren tus apuntes y asignaturas públicas."
   },
   "review": {
     "sessionTitle": "Repaso: {deck}",
@@ -272,6 +392,7 @@
     },
     "inlineEdit": "Editar tarjeta",
     "inlineEditDesc": "Los cambios se aplicarán en tu próximo repaso de esta tarjeta.",
+    "editCard": "Editar tarjeta",
     "endConfirm": {
       "title": "¿Terminar sesión?",
       "body": "Te quedan {count} tarjetas. Si sales ahora se guardará tu progreso para más tarde.",
@@ -300,5 +421,69 @@
       "calculus": "Cálculo",
       "formatting": "Formato"
     }
+  },
+  "publicProfile": {
+    "breadcrumb": "Ruta de navegación",
+    "meta": {
+      "description": "Perfil público de {handle} en FormuFlash — asignaturas y apuntes."
+    },
+    "sections": {
+      "courses": "Asignaturas",
+      "notes": "Apuntes",
+      "noCourses": "Aún no hay asignaturas públicas.",
+      "noNotes": "Aún no hay apuntes públicos.",
+      "decks": "Mazos",
+      "noDecks": "Aún no hay mazos públicos."
+    },
+    "stats": {
+      "courses": "{count} asignaturas",
+      "notes": "{count} apuntes"
+    },
+    "error": "Algo salió mal al cargar este perfil.",
+    "course": {
+      "subscribers": "Suscriptores",
+      "forks": "Bifurcaciones",
+      "metaDescription": "Curso {name} de {handle} en FormuFlash"
+    },
+    "detail": {
+      "dueCount": "{count} pendientes",
+      "subscribers": "Suscriptores",
+      "forks": "Bifurcaciones",
+      "emptyCards": "Aún no hay tarjetas."
+    },
+    "cardEditor": {
+      "front": "Frente",
+      "back": "Reverso"
+    },
+    "deck": {
+      "metaDescription": "Mazo {title} de {handle} en FormuFlash"
+    },
+    "preview": {
+      "card": "Tarjeta {n}"
+    },
+    "share": {
+      "subscribe": "Suscribirse",
+      "subscribed": "Suscrito",
+      "unsubscribe": "Cancelar suscripción",
+      "fork": "Bifurcar",
+      "forking": "Bifurcando…",
+      "forkConfirmTitle": "¿Bifurcar este {type}?",
+      "forkConfirmBody": "Obtendrás una copia personal que puedes editar. Tu progreso de repaso ({statesCarried} tarjetas) se conserva. Quedarás desconectado de futuras ediciones del autor. Esto cancela tu suscripción.",
+      "forkConfirmBodyNoProgress": "Obtendrás una copia personal que puedes editar. Quedarás desconectado de futuras ediciones del autor. Esto cancela tu suscripción.",
+      "forkSuccess": "¡Bifurcado! Se conservó el progreso de {statesCarried} tarjetas.",
+      "forkSuccessNoProgress": "¡Bifurcado! Ahora tienes tu propia copia.",
+      "unsubscribeConfirm": "¿Eliminar este {type} de tu biblioteca?",
+      "unsubscribeConfirmBody": "Dejarás de recibir actualizaciones del autor. Tu progreso de repaso se conserva.",
+      "signInToSubscribe": "Inicia sesión para suscribirte",
+      "signInToFork": "Inicia sesión para bifurcar",
+      "course": "asignatura",
+      "deck": "mazo"
+    }
+  },
+  "publicNote": {
+    "backToProfile": "← Volver a {handle}",
+    "viewOnFormuFlash": "Ver en FormuFlash",
+    "unpublished": "Sin publicar",
+    "error": "Algo salió mal al cargar este apunte."
   }
 }

@@ -92,10 +92,31 @@ A standalone deck (`decks.course_id is null`) is shareable in its own right. Req
 
 **Deck scope closes upward as well.** The original `fork_deck` cancelled only the deck-level subscription; a caller subscribed to course C that contains deck D stayed subscribed to C after forking D, so the queue still served the empty source D through C alongside D′ with their full history. Since 0008 `fork_deck` also cancels a course-level subscription on the source deck's parent course — the symmetric half of `fork_course`'s downward closure.
 
+### 11. Deleting a course auto-forks the subscribers who have progress
+
+*Added 2026-08-08 by phase 03b. Supersedes the "course deletion policy" deferral below.*
+
+Phase 01 shipped `courses` with no DELETE policy and no DELETE grant, and deferred the question. Phase 03b makes the course hierarchy **required** — every deck and note is created inside one — and that promotes deletion from cosmetic to blocking: a user who creates a wrong course would otherwise be stuck with it forever, on the primary nav entry.
+
+**A course is hard-deleted, and every subscriber holding review progress is forked first.**
+
+Decision 5 already establishes what subscribe and fork mean: a subscriber holds a live reference that tracks the author's edits, a forker holds a detached copy that does not. Deleting the upstream is the one event that forces the question for someone who chose "live". Silently destroying their scheduling state is not an option — decision 1 exists precisely so one person's content can carry many people's progress. So the delete converts each affected subscriber into a forker, which is the state they would have chosen had they known the course was going away, and leaves the copy theirs to delete in turn.
+
+**Only subscribers with `card_states` on the course's cards are forked.** A subscriber who never studied it has nothing to preserve, and pushing an unasked-for course into their library is a worse outcome than dropping the subscription. This also keeps the mechanism cheap: the work is proportional to people who actually used the thing.
+
+**`0008`'s subscriber-progress trigger is the proof, not an obstacle.** `decks_protect_subscriber_progress` blocks deleting any deck where a user other than the owner holds `card_states`. Auto-fork re-points each beneficiary's rows onto their own copy, so by the time the delete runs no foreign progress references the original and it passes the existing guard untouched. If the fork logic is ever wrong, **the delete fails loudly instead of silently destroying progress**. Do not weaken that trigger to make deletion "simpler" — it is the invariant that makes this safe.
+
+Two implementation constraints, both learned the hard way elsewhere in this schema:
+
+- `fork_course` cannot be reused directly: it reads `auth.uid()` as the forker, whereas here the *owner* is the caller and the beneficiary is someone else. The deep-copy body is extracted into a helper taking an explicit user id, and `fork_course` calls it with `auth.uid()`. Duplicating the copy logic is how `fork_course` acquired its `published_at` bug (fixed in `0008`) in the first place.
+- The `card_states` re-point must pin `cs.user_id` per beneficiary. These functions are `security definer` and bypass RLS; an unpinned `UPDATE` re-points *every* user's progress into one person's copy. `0008` carries the same warning on `fork_course` for the same reason, and the per-beneficiary loop here makes it easier to forget and worse to omit.
+
+`courses.deleted_at` is left in place but **unused** — dropping it would be churn on a column three RLS policies filter on, and the filters are harmless against a value nothing sets. A later phase must not build a second, soft-delete path beside this one.
+
 ---
 
 ## Deferred and out of scope
 
 - **Per-user FSRS weight optimisation** is V2. `fsrs_parameters` exists now so adding it later needs no migration, but the optimisation job is a phase-07+ concern.
-- **Course deletion policy** (`courses.deleted_at`, non-cascading) is deferred to phase 06; the column ships in phase 01 so it is not a later ALTER on a hot table.
+- ~~**Course deletion policy** (`courses.deleted_at`, non-cascading) is deferred to phase 06.~~ **Decided in phase 03b — see decision 11.** Hard delete with auto-fork, not the soft delete this line anticipated. The `deleted_at` column still ships from phase 01 and is now unused.
 - **Reserved-slug denylist for course/note slugs** is namespaced per-owner (`unique (owner_id, slug)`), so squatting is not possible — but a course slugged `settings` under a public profile URL could still collide with a future route. Phase 04 owns public URL structure; flagged, not decided.

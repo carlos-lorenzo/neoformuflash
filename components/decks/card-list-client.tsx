@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useActiveScope } from '@/lib/shortcuts/use-scope';
 import { cn } from '@/lib/cn';
 import type { CardSummary } from '@/lib/db/cards';
+import { NoteDocPreview } from '@/components/note/note-doc-preview';
 
 type SortKey = 'position' | 'confidence_asc' | 'confidence_desc';
 
@@ -31,6 +32,7 @@ export function CardListClient({
 }) {
   const t = useTranslations('decks');
   const [sort, setSort] = useState<SortKey>(initialSort);
+  const [showAnswers, setShowAnswers] = useState(false);
 
   useActiveScope('list');
 
@@ -71,6 +73,17 @@ export function CardListClient({
         {sortButton('position', t('cardList.sortPosition'))}
         {sortButton('confidence_asc', t('cardList.sortConfidenceAsc'))}
         {sortButton('confidence_desc', t('cardList.sortConfidenceDesc'))}
+        <button
+          type="button"
+          onClick={() => setShowAnswers((v) => !v)}
+          aria-pressed={showAnswers}
+          className={cn(
+            'ml-auto rounded-sm px-2 py-1 text-ui-xs tracking-ui',
+            showAnswers ? 'bg-inset text-primary' : 'text-secondary hover:text-primary'
+          )}
+        >
+          {showAnswers ? t('cardList.hideAnswers') : t('cardList.showAnswers')}
+        </button>
       </div>
 
       <ul className="flex flex-col divide-y divide-subtle">
@@ -85,8 +98,13 @@ export function CardListClient({
               )}
             >
               <span className="min-w-0 flex-1 truncate text-ui-base text-primary">
-                {card.frontText || '—'}
+                <NoteDocPreview doc={card.frontJson} />
               </span>
+              {showAnswers ? (
+                <span className="min-w-0 flex-1 truncate text-ui-sm text-secondary">
+                  <NoteDocPreview doc={card.backJson} />
+                </span>
+              ) : null}
               {card.confidence ? (
                 <span
                   className={cn(

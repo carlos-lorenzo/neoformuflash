@@ -23,6 +23,10 @@ export function ShortcutManager({ children, enabled }: ShortcutManagerProps) {
         label: 'shortcuts.goHome',
         onPress: () => router.push('/app'),
       },
+      c: {
+        label: 'shortcuts.goCourses',
+        onPress: () => router.push('/app/courses'),
+      },
     }),
     [router]
   );
