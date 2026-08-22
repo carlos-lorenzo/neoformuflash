@@ -13,22 +13,22 @@ interface GoogleResponse<T> {
 const noteDocSchema = {
   type: SchemaType.OBJECT,
   properties: {
-    type: { type: SchemaType.STRING, const: 'doc' },
+    type: { type: SchemaType.STRING, enum: ['doc'], format: 'enum' },
     content: {
       type: SchemaType.ARRAY,
       items: {
         type: SchemaType.OBJECT,
         properties: {
-          type: { type: SchemaType.STRING, enum: ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'blockquote', 'displayMath'] },
+          type: { type: SchemaType.STRING, enum: ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'codeBlock', 'blockquote', 'displayMath'], format: 'enum' },
           content: {
             type: SchemaType.ARRAY,
             items: {
               type: SchemaType.OBJECT,
               properties: {
-                type: { type: SchemaType.STRING, enum: ['text', 'inlineMath'] },
+                type: { type: SchemaType.STRING, enum: ['text', 'inlineMath'], format: 'enum' },
                 text: { type: SchemaType.STRING },
                 latex: { type: SchemaType.STRING },
-                marks: { type: SchemaType.OBJECT, additionalProperties: { type: SchemaType.BOOLEAN } },
+                // marks removed - not supported in Gemini responseSchema (empty OBJECT with additionalProperties is invalid)
               },
               required: ['type'],
             },
@@ -38,6 +38,7 @@ const noteDocSchema = {
           level: { type: SchemaType.INTEGER },
           language: { type: SchemaType.STRING, nullable: true },
         },
+        // content is required for block nodes that have children (not displayMath)
         required: ['type'],
       },
     },
@@ -52,7 +53,7 @@ const cardInputArraySchema = {
     properties: {
       frontJson: { type: SchemaType.OBJECT },
       backJson: { type: SchemaType.OBJECT },
-      confidence: { type: SchemaType.STRING, enum: ['again', 'hard', 'good', 'easy'] },
+      confidence: { type: SchemaType.STRING, enum: ['again', 'hard', 'good', 'easy'], format: 'enum' },
       position: { type: SchemaType.INTEGER },
     },
     required: ['frontJson', 'backJson', 'confidence', 'position'],

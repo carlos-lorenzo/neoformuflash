@@ -45,13 +45,13 @@ export function unionToProse(doc: NoteDoc): ProseNode {
 function blockToProse(node: BlockNode): ProseNode {
   switch (node.type) {
     case 'paragraph': {
-      const content = inlinesToProse(node.content);
+      const content = inlinesToProse(node.content ?? []);
       return content.length > 0
         ? { type: 'paragraph', content }
         : { type: 'paragraph' };
     }
     case 'heading': {
-      const content = inlinesToProse(node.content);
+      const content = inlinesToProse(node.content ?? []);
       const base: ProseNode = { type: 'heading', attrs: { level: node.level } };
       if (content.length > 0) base.content = content;
       return base;
@@ -59,24 +59,29 @@ function blockToProse(node: BlockNode): ProseNode {
     case 'codeBlock': {
       const attrs: Record<string, unknown> = {};
       if (node.language != null) attrs.language = node.language;
-      const content = node.content.map((t) => ({ type: 'text', text: t.text }));
+      const content = (node.content ?? []).map((t) => ({ type: 'text', text: t.text }));
       return Object.keys(attrs).length > 0
         ? { type: 'codeBlock', attrs, content }
         : { type: 'codeBlock', content };
     }
     case 'bulletList':
-      return { type: 'bulletList', content: node.content.map(listItemToProse) };
+      return { type: 'bulletList', content: (node.content ?? []).map(listItemToProse) };
     case 'orderedList':
-      return { type: 'orderedList', content: node.content.map(listItemToProse) };
+      return { type: 'orderedList', content: (node.content ?? []).map(listItemToProse) };
     case 'blockquote':
-      return { type: 'blockquote', content: node.content.map(blockToProse) };
+      return { type: 'blockquote', content: (node.content ?? []).map(blockToProse) };
     case 'displayMath':
       return { type: 'blockMath', attrs: { latex: node.latex } };
   }
 }
 
-function listItemToProse(item: { content: BlockNode[] }): ProseNode {
-  return { type: 'listItem', content: item.content.map(blockToProse) };
+function listItemToProse(item: { content?: BlockNode[] }): ProseNode {
+  const content = (item.content ?? []).map(blockToProse);
+  // ProseMirror requires listItem to have at least one child node
+  if (content.length === 0) {
+    return { type: 'listItem', content: [{ type: 'paragraph' }] };
+  }
+  return { type: 'listItem', content };
 }
 
 function inlinesToProse(nodes: InlineNode[]): ProseNode[] {

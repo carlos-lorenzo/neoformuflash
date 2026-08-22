@@ -53,7 +53,8 @@ function readLatex(node: unknown): string {
   return '';
 }
 
-function inlineToArray(nodes: InlineNode[]): React.ReactNode[] {
+function inlineToArray(nodes: InlineNode[] | undefined | null): React.ReactNode[] {
+  if (!nodes || !Array.isArray(nodes)) return [];
   return nodes.map((node, i) => {
     if (node.type === 'text') {
       return <span key={i}>{renderTextMarks(node.text, node.marks)}</span>;
@@ -86,7 +87,7 @@ function renderBlock(node: BlockNode): React.ReactNode {
       return <p key={`h${node.level}`} className="note-heading">{content}</p>;
     }
     case 'codeBlock': {
-      const code = node.content.map((n) => n.text).join('\n');
+      const code = (node.content ?? []).map((n) => n.text).join('\n');
       return (
         <pre key="code"><code>{code}</code></pre>
       );
@@ -96,9 +97,9 @@ function renderBlock(node: BlockNode): React.ReactNode {
         <ul key="ul">
           {node.content.map((li, i) => (
             <li key={i}>
-              {li.content.map((block, j) => (
+              {li.content?.map((block, j) => (
                 <Fragment key={j}>{renderBlock(block)}</Fragment>
-              ))}
+              )) ?? []}
             </li>
           ))}
         </ul>
@@ -109,9 +110,9 @@ function renderBlock(node: BlockNode): React.ReactNode {
         <ol key="ol">
           {node.content.map((li, i) => (
             <li key={i}>
-              {li.content.map((block, j) => (
+              {li.content?.map((block, j) => (
                 <Fragment key={j}>{renderBlock(block)}</Fragment>
-              ))}
+              )) ?? []}
             </li>
           ))}
         </ol>
@@ -120,9 +121,9 @@ function renderBlock(node: BlockNode): React.ReactNode {
     case 'blockquote': {
       return (
         <blockquote key="bq">
-          {node.content.map((block, i) => (
+          {node.content?.map((block, i) => (
             <Fragment key={i}>{renderBlock(block)}</Fragment>
-          ))}
+          )) ?? []}
         </blockquote>
       );
     }

@@ -86,6 +86,8 @@ export async function POST(req: NextRequest) {
 
   if (!result.ok) {
     // Return error codes that clients can map to translations
+    // Log the actual cause for debugging (schema validation, provider 4xx/5xx, network, etc.)
+    console.error('[copilot] provider error:', result.cause);
     return NextResponse.json({ error: result.code }, { status: 500 });
   }
 
