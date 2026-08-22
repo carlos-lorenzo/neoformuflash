@@ -268,6 +268,52 @@ export async function createNoteRow(
   userId: string,
   input: { title: string; courseId?: string | null },
 ): Promise<Result<{ id: string }>> {
+  return createNoteRowInternal(userId, {
+    title: input.title,
+    courseId: input.courseId,
+    contentJson: undefined,
+    contentText: undefined,
+    language: 'es',
+    visibility: 'public',
+  });
+}
+
+/**
+ * Create a note with full content (used by AI PDF-to-note flow).
+ * Same slug logic as createNoteRow but accepts full content.
+ */
+export async function createNoteRowWithContent(
+  userId: string,
+  input: {
+    title: string;
+    courseId?: string | null;
+    contentJson: NoteDoc;
+    contentText: string;
+    language?: string;
+    visibility?: string;
+  }
+): Promise<Result<{ id: string }>> {
+  return createNoteRowInternal(userId, {
+    title: input.title,
+    courseId: input.courseId,
+    contentJson: input.contentJson,
+    contentText: input.contentText,
+    language: input.language ?? 'en',
+    visibility: input.visibility ?? 'private',
+  });
+}
+
+async function createNoteRowInternal(
+  userId: string,
+  input: {
+    title: string;
+    courseId?: string | null;
+    contentJson?: NoteDoc;
+    contentText?: string;
+    language: string;
+    visibility: string;
+  }
+): Promise<Result<{ id: string }>> {
   const supabase = await createSupabaseServerClient();
 
   const { data: base, error: slugErr } = await supabase.rpc('slugify', {
@@ -286,10 +332,10 @@ export async function createNoteRow(
         course_id: input.courseId ?? null,
         slug,
         title: input.title,
-        content_json: EMPTY_DOC as unknown as Database['public']['Tables']['notes']['Insert']['content_json'],
-        content_text: '',
-        language: 'es',
-        visibility: 'public',
+        content_json: (input.contentJson ?? EMPTY_DOC) as unknown as Database['public']['Tables']['notes']['Insert']['content_json'],
+        content_text: input.contentText ?? '',
+        language: input.language,
+        visibility: input.visibility as Database['public']['Tables']['notes']['Insert']['visibility'],
       })
       .select('id')
       .single();

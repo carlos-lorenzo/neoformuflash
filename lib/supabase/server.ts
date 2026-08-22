@@ -55,6 +55,23 @@ export function createSupabaseAnonClient() {
 }
 
 /*
+ * Service-role client for operations that must bypass RLS and column grants.
+ *
+ * EXTREMELY RESTRICTED: only the AI key storage (lib/db/ai-keys.ts) and the
+ * Stripe webhook may import this. Any other import is a blocking security
+ * finding per specs/01-contracts.md.
+ */
+export function createSupabaseServiceClient() {
+  return createClient<Database>(
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+    }
+  );
+}
+
+/*
  * @supabase/ssr defaults to `{ sameSite: 'lax', httpOnly: false }` with no
  * `secure` flag at all, so the access AND refresh tokens travel over plain http
  * if the origin is ever reachable that way. `secure` is set here rather than

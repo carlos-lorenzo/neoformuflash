@@ -290,3 +290,28 @@ function blocksToUnion(nodes: ProseNode[]): Result<BlockNode[]> {
   }
   return ok(result);
 }
+
+/**
+ * Extract plain text from a NoteDoc for search indexing / content_text.
+ * Recursively walks the doc tree and concatenates text nodes.
+ */
+export function extractText(doc: NoteDoc): string {
+  const parts: string[] = [];
+
+  function walk(nodes: (BlockNode | InlineNode)[]) {
+    for (const node of nodes) {
+      if (node.type === 'text' && typeof node.text === 'string') {
+        parts.push(node.text);
+      } else if (node.type === 'inlineMath' && typeof node.latex === 'string') {
+        parts.push(node.latex);
+      } else if (node.type === 'displayMath' && typeof node.latex === 'string') {
+        parts.push(node.latex);
+      } else if ('content' in node && Array.isArray(node.content)) {
+        walk(node.content as (BlockNode | InlineNode)[]);
+      }
+    }
+  }
+
+  walk(doc.content);
+  return parts.join(' ');
+}

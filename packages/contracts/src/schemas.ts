@@ -222,6 +222,8 @@ const AiProvider: z.ZodType<Database['public']['Enums']['ai_provider']> = z.enum
   'anthropic',
 ]);
 
+export type AiProvider = z.infer<typeof AiProvider>;
+
 export const ApiKeyInput = z.object({
   provider: AiProvider,
   // Raw key from the user. Encrypted server-side before it ever reaches
@@ -260,3 +262,40 @@ export const UpdateNoteSeoInput = z.object({
     }),
 });
 export type UpdateNoteSeoInput = z.infer<typeof UpdateNoteSeoInput>;
+
+/*
+ * Phase 05: AI layer input schemas. These are app-layer request shapes
+ * (not DB row shapes), so they live in schemas.ts only — no db.ts regeneration.
+ */
+
+export const GenerateCardsInput = z.object({
+  noteId: z.uuid('content.note.invalid'),
+  courseId: z.uuid('content.course.invalid').nullable(),
+  target: z.enum(['new_deck', 'existing_deck']),
+  deckId: z.uuid('content.deck.invalid').nullable(), // required when target==='existing_deck'
+  provider: AiProvider,
+}).refine((v) => v.target !== 'existing_deck' || v.deckId !== null, {
+  error: 'ai.generateCards.deckRequired',
+  path: ['deckId'],
+});
+export type GenerateCardsInput = z.infer<typeof GenerateCardsInput>;
+
+export const PdfToNoteInput = z.object({
+  courseId: z.uuid('content.course.invalid').nullable(),
+  title: z
+    .string()
+    .trim()
+    .min(1, 'content.title.required')
+    .max(TITLE_MAX, 'content.title.tooLong'),
+  provider: AiProvider,
+});
+export type PdfToNoteInput = z.infer<typeof PdfToNoteInput>;
+
+export const CopilotInput = z.object({
+  noteId: z.uuid('content.note.invalid'),
+  action: z.enum(['generate', 'explain', 'summarize', 'rephrase', 'continue', 'fix_latex']),
+  prompt: z.string().max(4000, 'ai.prompt.tooLong').optional(), // free-text when action==='generate'
+  selectionText: z.string().nullable(), // the current editor selection, or null for whole-doc
+  provider: AiProvider,
+});
+export type CopilotInput = z.infer<typeof CopilotInput>;

@@ -16,6 +16,7 @@ import { findMathAtClick } from '@/lib/editor/math-click';
 import { deriveTitle } from '@/lib/editor/derive-title';
 import { unionToProse } from '@/lib/editor/serialize';
 import { saveNote } from '@/app/app/notes/actions';
+import { getApiKeyStatusAction } from '@/app/app/settings/ai-keys/actions';
 import { useActiveScope } from '@/lib/shortcuts/use-scope';
 import { useShortcut } from '@/lib/shortcuts/use-shortcut';
 import type { NoteRow } from '@/lib/db/notes';
@@ -24,6 +25,8 @@ import { SaveIndicator, type SaveStatus } from './save-indicator';
 import { MathInput } from './math-input';
 import Link from 'next/link';
 import { SlashMenu } from './slash-menu';
+import { CopilotMenu } from '@/components/ai/copilot-menu';
+import { SelectionToolbar } from './selection-toolbar';
 import { SeoForm } from './seo-form';
 import { PublishForm } from './publish-form';
 import './katex-client';
@@ -35,6 +38,14 @@ import './katex-client';
  */
 
 const AUTOSAVE_MS = 800;
+
+function SparklesIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </svg>
+  );
+}
 
 type PanelPosition = { top: number; left: number };
 
@@ -82,6 +93,48 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashPosition, setSlashPosition] = useState<PanelPosition>({ top: 0, left: 0 });
   const [outline, setOutline] = useState<OutlineItem[]>([]);
+
+  // Copilot state
+  const [hasAiKey, setHasAiKey] = useState(false);
+  const [aiProviders, setAiProviders] = useState<Array<'openai' | 'anthropic' | 'google'>>([]);
+  const [copilotOpen, setCopilotOpen] = useState(false);
+  const [copilotAction, setCopilotAction] = useState<'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex' | null>(null);
+  const [copilotSelection, setCopilotSelection] = useState<string | null>(null);
+  const [copilotProvider, setCopilotProvider] = useState<'openai' | 'anthropic' | 'google' | null>(null);
+
+  // Check AI key status on mount (only shows AI actions when a key exists)
+  useEffect(() => {
+    if (!isOwner) return;
+    getApiKeyStatusAction()
+      .then((res) => {
+        if (res.ok) {
+          const providers = (['openai', 'anthropic', 'google'] as const).filter(
+            (p) => res.value.hasKeys[p]
+          );
+          if (providers.length > 0) {
+            setHasAiKey(true);
+            setAiProviders(providers);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [isOwner]);
+
+  // Track selection changes for copilot context. The selection snapshot is
+  // updated via a Tiptap callback attached in onCreate (using the editor
+  // instance captured there, never editorRef — which keeps the immutability
+  // lint rule from flagging the editorRef writes in onCreate/onDestroy).
+  const handleSelectionUpdate = useCallback((editor: Editor) => {
+    const { from, to } = editor.state.selection;
+    const text = from !== to ? editor.state.doc.textBetween(from, to, ' ') : null;
+    setCopilotSelection(text);
+  }, []);
+
+  const closeCopilot = useCallback(() => {
+    setCopilotOpen(false);
+    setCopilotAction(null);
+    setCopilotProvider(null);
+  }, []);
 
   const editorRef = useRef<Editor | null>(null);
   const titleRef = useRef(title);
@@ -170,11 +223,22 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
         return false;
       }
 
-      // `/` — slash menu, only at the start of an empty block (AC2).
-      // The `/` is prevented from entering the doc; a plain non-empty-block
-      // `/` falls through and stays literal text.
+      // `/` — slash menu or AI copilot.
+      // When text is selected, `/` opens the copilot menu for the selection
+      // (instead of inserting literal `/` and overwriting the selection).
+      // On an empty block, `/` opens the slash menu (AC2).
       if (event.key === '/') {
-        if (isAtStartOfEmptyBlock(ed)) {
+        const { from, to } = ed.state.selection;
+        const hasSelection = from !== to;
+
+        if (hasSelection) {
+          event.preventDefault();
+          const selText = ed.state.doc.textBetween(from, to, ' ');
+          setCopilotSelection(selText);
+          setCopilotAction('explain');
+          setCopilotOpen(true);
+          return true;
+        } else if (isAtStartOfEmptyBlock(ed)) {
           event.preventDefault();
           const coords = ed.view.coordsAtPos(ed.state.selection.from);
           setSlashOpen(true);
@@ -292,6 +356,19 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
     { label: 'shortcuts.forceSave', requireModified: true },
   );
 
+  // ⌘J — open AI Copilot for generating new content (no selection needed).
+  // This allows users to generate content from scratch without selecting text first.
+  useShortcut(
+    'editor',
+    'mod+j',
+    () => {
+      if (hasAiKey && editor) {
+        openCopilot('generate');
+      }
+    },
+    { label: 'shortcuts.openCopilot', requireModified: true },
+  );
+
   /* ---------------- outline (tablet+) ---------------- */
 
   // Rebuilt from the editor's own callbacks (onCreate/onUpdate) rather than an
@@ -372,12 +449,35 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
     },
     onCreate: ({ editor }) => {
       editorRef.current = editor;
+      editor.on('selectionUpdate', () => handleSelectionUpdate(editor));
       rebuildOutline(editor);
     },
     onDestroy: () => {
       editorRef.current = null;
     },
   });
+
+  // Open the copilot menu with the current selection. Defined after `editor` so
+  // the immutable-refs lint rule doesn't flag the editorRef writes above.
+  const openCopilot = useCallback((
+    action: 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex',
+    provider?: 'openai' | 'anthropic' | 'google'
+  ) => {
+    if (!editor) return;
+
+    const { from, to } = editor.state.selection;
+    const selText = from !== to ? editor.state.doc.textBetween(from, to, ' ') : null;
+
+    setCopilotAction(action);
+    setSlashOpen(false);
+    setCopilotSelection(selText);
+    if (provider) {
+      setCopilotProvider(provider);
+    } else if (aiProviders.length > 0 && !copilotProvider) {
+      setCopilotProvider(aiProviders[0] as 'openai' | 'anthropic' | 'google');
+    }
+    setCopilotOpen(true);
+  }, [editor, aiProviders, copilotProvider]);
 
   // Sync editable state with tablet breakpoint
   useEffect(() => {
@@ -465,7 +565,16 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
           onCancel={handleSlashCancel}
           onInsertInlineEquation={openInlineMath}
           onInsertBlockEquation={openDisplayMath}
+          hasAiKey={hasAiKey}
+          availableProviders={aiProviders}
+          defaultProvider={aiProviders[0]}
+          onOpenCopilot={openCopilot}
         />
+      )}
+
+      {/* Selection toolbar (floating, appears on selection) */}
+      {isTablet && editor && hasAiKey && (
+        <SelectionToolbar editor={editor} onAskAI={() => openCopilot('explain')} />
       )}
 
       {/* Math input panel */}
@@ -530,6 +639,32 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
         status={saveStatus}
         className="fixed top-4 right-4 z-50"
       />
+
+      {/* Copilot trigger button (fixed top-left) - only on tablet+ where editor is editable */}
+      {isTablet && isOwner && hasAiKey && (
+        <button
+          type="button"
+          onClick={() => openCopilot('generate')}
+          className="fixed top-4 left-4 z-50 flex h-11 items-center gap-2 rounded-md border border-subtle bg-overlay px-3 text-ui-sm text-secondary hover:text-primary hover:bg-raised transition-colors shadow-overlay animate-dialog"
+          aria-label={t('openCopilot')}
+        >
+          <SparklesIcon className="size-4" />
+          <span>{t('openCopilot')}</span>
+        </button>
+      )}
+
+      {/* Copilot menu */}
+      {copilotOpen && copilotAction && editor && (
+        <CopilotMenu
+          editor={editor}
+          selectionText={copilotSelection}
+          onClose={closeCopilot}
+          isOpen={copilotOpen}
+          noteId={note.id}
+          availableProviders={aiProviders}
+          defaultProvider={copilotProvider ?? aiProviders[0]}
+        />
+      )}
     </div>
   );
 }

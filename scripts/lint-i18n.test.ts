@@ -39,7 +39,6 @@ describe('lint:i18n — hardcoded literals', () => {
   });
 
   it.each([
-    ['catalog lookups', "t('login.title')"],
     ['punctuation and separators', '·'],
     ['bare numbers', '42'],
     ['className values', 'rounded-md'],
@@ -47,6 +46,14 @@ describe('lint:i18n — hardcoded literals', () => {
     ['lines marked i18n-exempt', 'FormuFlash'],
   ])('does not flag %s', (_label, notExpected) => {
     expect(fixture.output).not.toContain(notExpected);
+  });
+
+  it('does not flag catalog lookups (t()) as hardcoded literals', () => {
+    // The linter now also checks key existence, so t('login.title') appears
+    // in the output as a "missing key" finding, not as a "literal text" finding.
+    // This test verifies that t() calls are not incorrectly flagged as hardcoded literals.
+    expect(fixture.output).not.toContain("t('login.title')\n    literal text in JSX");
+    expect(fixture.output).not.toContain("t('common.close')\n    literal text in JSX");
   });
 
   it.each([
@@ -60,6 +67,8 @@ describe('lint:i18n — hardcoded literals', () => {
     const findingLines = fixture.output
       .split('\n')
       .filter((line) => line.includes('scripts/__fixtures__/i18n-violations.tsx:'));
+    // 4 hardcoded literals. t('login.title') and t('common.close') resolve against
+    // the real project catalog (they are present in messages/en.json).
     expect(findingLines).toHaveLength(4);
   });
 });

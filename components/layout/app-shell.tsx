@@ -65,6 +65,12 @@ export async function AppShell({ children, actions, collapsed = false, keyboardS
           </Link>
         </nav>
 
+        <nav aria-label={t('settings')} className="flex flex-col gap-1 p-2">
+          <Link href="/app/settings/ai-keys" className={navLinkClass}>
+            <span className={cn('truncate', collapsed && 'tablet:sr-only')}>{t('aiKeys')}</span>
+          </Link>
+        </nav>
+
         <div className="border-t border-subtle p-2">
           <SidebarToggle collapsed={collapsed} />
         </div>
@@ -91,6 +97,9 @@ export async function AppShell({ children, actions, collapsed = false, keyboardS
           </Link>
           <Link href="/app/courses" className={mobileNavLinkClass}>
             <span className="truncate">{t('courses')}</span>
+          </Link>
+          <Link href="/app/settings/ai-keys" className={mobileNavLinkClass}>
+            <span className="truncate">{t('aiKeys')}</span>
           </Link>
         </nav>
       </div>

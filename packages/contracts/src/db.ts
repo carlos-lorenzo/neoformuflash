@@ -784,26 +784,35 @@ export type Database = {
         Row: {
           ciphertext: string
           created_at: string
+          is_valid: boolean | null
           iv: string
           last_four: string
           provider: Database["public"]["Enums"]["ai_provider"]
+          usage: Json | null
           user_id: string
+          validated_at: string | null
         }
         Insert: {
           ciphertext: string
           created_at?: string
+          is_valid?: boolean | null
           iv: string
           last_four: string
           provider: Database["public"]["Enums"]["ai_provider"]
+          usage?: Json | null
           user_id: string
+          validated_at?: string | null
         }
         Update: {
           ciphertext?: string
           created_at?: string
+          is_valid?: boolean | null
           iv?: string
           last_four?: string
           provider?: Database["public"]["Enums"]["ai_provider"]
+          usage?: Json | null
           user_id?: string
+          validated_at?: string | null
         }
         Relationships: [
           {

@@ -30,11 +30,23 @@ type SlashMenuProps = {
   onInsertInlineEquation: () => void;
   /** Opens the block-equation MathInput — the slash alternative to `$$`. */
   onInsertBlockEquation: () => void;
+  /** Whether user has any AI key configured (controls AI item visibility). */
+  hasAiKey: boolean;
+  /** Available AI providers (for default selection in copilot). */
+  availableProviders?: Array<'openai' | 'anthropic' | 'google'>;
+  /** Default AI provider (first available). */
+  defaultProvider?: 'openai' | 'anthropic' | 'google';
+  /** Opens the copilot menu for the given action. */
+  onOpenCopilot?: (
+    action: 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex',
+    provider?: 'openai' | 'anthropic' | 'google'
+  ) => void;
 };
 
-export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineEquation, onInsertBlockEquation }: SlashMenuProps) {
+export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineEquation, onInsertBlockEquation, hasAiKey, onOpenCopilot, defaultProvider }: SlashMenuProps) {
   const t = useTranslations('editor.blocks');
   const tp = useTranslations('editor');
+  const ai = useTranslations('ai.copilot');
   const [filter, setFilter] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,8 +64,19 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineE
       { id: 'blockquote', label: t('blockquote'), action: () => editor.chain().focus().toggleBlockquote().run() },
       { id: 'inlineEquation', label: t('inlineEquation'), action: onInsertInlineEquation, focusesOwnInput: true },
       { id: 'blockEquation', label: t('blockEquation'), action: onInsertBlockEquation, focusesOwnInput: true },
+      // AI actions (only shown when user has an AI key)
+      ...(hasAiKey && onOpenCopilot
+        ? [
+            { id: 'ai-generate', label: ai('actions.generate'), action: () => onOpenCopilot('generate', defaultProvider) },
+            { id: 'ai-explain', label: ai('actions.explain'), action: () => onOpenCopilot('explain', defaultProvider) },
+            { id: 'ai-summarize', label: ai('actions.summarize'), action: () => onOpenCopilot('summarize', defaultProvider) },
+            { id: 'ai-rephrase', label: ai('actions.rephrase'), action: () => onOpenCopilot('rephrase', defaultProvider) },
+            { id: 'ai-continue', label: ai('actions.continue'), action: () => onOpenCopilot('continue', defaultProvider) },
+            { id: 'ai-fix-latex', label: ai('actions.fix_latex'), action: () => onOpenCopilot('fix_latex', defaultProvider) },
+          ]
+        : []),
     ],
-    [editor, t, onInsertInlineEquation, onInsertBlockEquation],
+    [editor, t, ai, onInsertInlineEquation, onInsertBlockEquation, hasAiKey, onOpenCopilot, defaultProvider],
   );
 
   const filtered = useMemo(() => {

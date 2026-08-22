@@ -150,11 +150,27 @@
   --container-sidebar-rail: var(--sidebar-width-collapsed); /* 56px icon rail */
   --container-outline: var(--outline-rail-width); /* 200px, ≥1440px only */
 
+  /* Max-width utilities mapped to container tokens */
+  --max-w-auth: var(--container-auth);
+  --max-w-measure: var(--container-measure);
+  --max-w-review: var(--container-review);
+  --max-w-sidebar: var(--container-sidebar);
+  --max-w-sidebar-rail: var(--container-sidebar-rail);
+  --max-w-outline: var(--container-outline);
+
   /* §6 breakpoints, named not numbered. 390px is the mobile-first base. */
   --breakpoint-*: initial;
   --breakpoint-tablet: 768px; /* reader, review, browse */
   --breakpoint-laptop: 1024px; /* full editor, single sidebar */
   --breakpoint-desktop: 1440px; /* full editor, sidebar + optional outline rail */
+
+  /* Dialog size presets (for copilot menu and other dialogs) */
+  --container-md: 448px;  /* 28rem */
+  --container-lg: 512px;  /* 32rem */
+  --container-xl: 576px;  /* 36rem */
+  --max-w-md: var(--container-md);
+  --max-w-lg: var(--container-lg);
+  --max-w-xl: var(--container-xl);
 }
 
 /*
@@ -214,6 +230,17 @@
 }
 @utility max-h-outline {
   max-height: var(--container-outline);
+}
+
+/* Dialog max-width utilities */
+@utility max-w-md {
+  max-width: var(--max-w-md);
+}
+@utility max-w-lg {
+  max-width: var(--max-w-lg);
+}
+@utility max-w-xl {
+  max-width: var(--max-w-xl);
 }
 
 /*

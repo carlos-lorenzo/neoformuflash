@@ -119,6 +119,7 @@
     "courses": "Asignaturas",
     "review": "Repasar",
     "settings": "Ajustes",
+    "aiKeys": "Claves API",
     "signOut": "Salir",
     "expandSidebar": "Abrir el menú",
     "collapseSidebar": "Cerrar el menú"
@@ -176,7 +177,8 @@
       "save": "Guardar",
       "saveAndNew": "Guardar y nueva",
       "cancel": "Cancelar"
-    }
+    },
+    "openCopilot": "Abrir Copiloto IA"
   },
   "notes": {
     "seo": {
@@ -239,7 +241,12 @@
       "blockquote": "Cita",
       "inlineEquation": "Ecuación en línea",
       "blockEquation": "Ecuación en bloque"
-    }
+    },
+    "selectionToolbar": {
+      "toolbarLabel": "Barra de selección",
+      "askAI": "Preguntar a la IA"
+    },
+    "openCopilot": "Abrir Copiloto IA"
   },
   "decks": {
     "listTitle": "Mazos",
@@ -485,5 +492,198 @@
     "viewOnFormuFlash": "Ver en FormuFlash",
     "unpublished": "Sin publicar",
     "error": "Algo salió mal al cargar este apunte."
+  },
+  "ai": {
+    "keys": {
+      "title": "Claves API",
+      "description": "Trae tu propia clave para las funciones de IA. Las claves se encriptan y nunca se envían a nuestros servidores salvo para llamar al proveedor.",
+      "empty": "Aún no hay claves API configuradas.",
+      "emptyDescription": "Añade una clave de OpenAI, Anthropic o Google para activar las funciones de IA.",
+      "add": "Añadir",
+      "delete": "Eliminar",
+      "deleting": "Eliminando…",
+      "saving": "Guardando…",
+      "saved": "Clave guardada",
+      "provider": {
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "google": "Google"
+      },
+      "proHint": "Pro tiene clave compartida",
+      "selectProvider": "Selecciona un proveedor",
+      "keyPlaceholder": "sk-… / tu clave aquí",
+      "keyRequired": "Introduce tu clave API",
+      "addKeyTitle": "Añadir clave de {provider}",
+      "addKeyDescription": "Tu clave se encripta antes de guardarla. Nunca la vemos en texto plano después de este punto.",
+      "addDialog": {
+        "title": "Añadir clave API",
+        "description": "Pega tu clave de proveedor abajo. Se encripta en reposo con AES-256-GCM.",
+        "provider": {
+          "label": "Proveedor"
+        },
+        "key": {
+          "label": "Clave API"
+        }
+      },
+      "deleteConfirmTitle": "¿Eliminar clave?",
+      "deleteConfirmDescription": "Esto deshabilitará las funciones de IA que usen tu clave de {provider}.",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "error": {
+        "unexpected": "No se pudo guardar la clave. Inténtalo de nuevo.",
+        "invalid": "Formato de clave inválido."
+      },
+      "storedKeys": "Claves guardadas",
+      "recentActivity": "Actividad reciente",
+      "status": {
+        "valid": "Válida",
+        "invalid": "Inválida"
+      },
+      "usage": {
+        "label": "Uso",
+        "unknown": "Desconocido"
+      },
+      "validatedAt": "Validada {date}",
+      "refresh": {
+        "tooltip": "Actualizar info de uso"
+      }
+    },
+    "copilot": {
+      "title": "Copiloto IA",
+      "description": "Pide a la IA que te ayude con tu nota.",
+      "actions": {
+        "generate": "Generar",
+        "explain": "Explicar",
+        "summarize": "Resumir",
+        "rephrase": "Reescribir",
+        "continue": "Continuar",
+        "fix_latex": "Arreglar LaTeX"
+      },
+      "prompt": "Indicación",
+      "promptPlaceholder": "Describe qué generar…",
+      "selectTextFirst": "Selecciona texto en el editor primero para esta acción.",
+      "run": "Ejecutar",
+      "running": "Pensando…",
+      "actionsLabel": "Acciones de IA",
+      "actionDescriptions": {
+        "generate": "Crear contenido nuevo a partir de una indicación",
+        "explain": "Explicar el texto seleccionado",
+        "summarize": "Condensar el texto seleccionado",
+        "rephrase": "Reescribir para mayor claridad",
+        "continue": "Continuar escribiendo",
+        "fix_latex": "Reparar formato matemático"
+      },
+      "provider": {
+        "label": "Proveedor",
+        "placeholder": "Elige un proveedor",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "google": "Google"
+      },
+      "error": "Algo salió mal.",
+      "dismissError": "Descartar error",
+      "retry": "Reintentar",
+      "replaceSelection": "Reemplazar selección",
+      "insertAtCursor": "Insertar en cursor",
+      "insertAfterSelection": "Insertar después de la selección",
+      "discard": "Descartar",
+      "close": "Cerrar"
+    },
+    "pdf": {
+      "button": "Subir PDF",
+      "title": "PDF → Nota",
+      "description": "Sube un PDF de clase y lo estructuraremos en una nota con matemáticas, listas y encabezados.",
+      "file": {
+        "label": "Archivo PDF",
+        "selected": "Seleccionado: {name}",
+        "choose": "Elegir archivo PDF"
+      },
+      "titleField": {
+        "label": "Título de la nota",
+        "placeholder": "Clase 1 — Cinemática"
+      },
+      "provider": {
+        "label": "Proveedor",
+        "placeholder": "Elige un proveedor",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "google": "Google"
+      },
+      "cancel": "Cancelar",
+      "generate": "Generar nota",
+      "processing": "Procesando…",
+      "error": {
+        "needsVision": "Este PDF parece escaneado o basado en imágenes. La extracción por visión viene pronto — puedes pegar el texto manualmente.",
+        "pdfEmpty": "No pudimos extraer texto de este PDF.",
+        "failed": "No se pudo generar la nota. Inténtalo de nuevo.",
+        "network": "Error de red. Comprueba tu conexión.",
+        "unexpected": "Algo salió mal. Inténtalo de nuevo."
+      }
+    },
+    "cards": {
+      "button": "Generar tarjetas",
+      "title": "Nota → Tarjetas",
+      "description": "Genera tarjetas de repaso desde esta nota usando IA.",
+      "target": {
+        "label": "Dónde poner las tarjetas",
+        "placeholder": "Elige un destino",
+        "newDeck": "Mazo nuevo",
+        "existingDeck": "Mazo existente"
+      },
+      "deckId": {
+        "label": "ID del mazo",
+        "placeholder": "Pega el ID del mazo"
+      },
+      "provider": {
+        "label": "Proveedor",
+        "placeholder": "Elige un proveedor",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "google": "Google"
+      },
+      "cancel": "Cancelar",
+      "generate": "Generar",
+      "processing": "Generando…",
+      "error": {
+        "ai_noKey": "Añade una clave API primero.",
+        "ai_providerError": "El proveedor de IA falló. Inténtalo de nuevo.",
+        "ai_invalidOutput": "La IA devolvió salida inválida. Inténtalo de nuevo.",
+        "ai_emptyNote": "Esta nota está vacía.",
+        "content_deck_notFound": "Mazo no encontrado.",
+        "failed": "No se pudieron generar tarjetas. Inténtalo de nuevo.",
+        "network": "Error de red. Comprueba tu conexión.",
+        "unexpected": "Algo salió mal. Inténtalo de nuevo."
+      }
+    },
+    "jobs": {
+      "empty": "Aún no hay trabajos de IA.",
+      "kind": {
+        "pdf_to_notes": "PDF → Nota",
+        "copilot": "Copiloto",
+        "notes_to_cards": "Nota → Tarjetas"
+      },
+      "status": {
+        "pending": "Pendiente",
+        "running": "Ejecutando",
+        "done": "Hecho",
+        "error": "Error"
+      }
+    },
+    "noKey": "Añade una clave API para usar funciones de IA.",
+    "errors": {
+      "noKey": "Añade una clave API para usar funciones de IA.",
+      "invalidKey": "La clave API no es válida o ha expirado. Vuelve a añadirla.",
+      "providerError": "El proveedor de IA falló. Inténtalo de nuevo.",
+      "invalidOutput": "La IA devolvió salida inválida. Inténtalo de nuevo.",
+      "decryptionFailed": "Error al descifrar tu clave API. Vuelve a añadirla.",
+      "unexpected": "Algo salió mal. Inténtalo de nuevo.",
+      "missingFields": "Faltan campos requeridos.",
+      "invalidInput": "Entrada inválida.",
+      "pdfExtractionFailed": "Error al extraer texto del PDF.",
+      "needsVision": "Este PDF parece escaneado o basado en imágenes. La extracción de visión llegará pronto — puedes pegar el texto manualmente.",
+      "pdfEmpty": "No pudimos extraer texto de este PDF.",
+      "jobCreationFailed": "Error al crear el trabajo de procesamiento.",
+      "noteCreationFailed": "Error al crear la nota."
+    }
   }
 }

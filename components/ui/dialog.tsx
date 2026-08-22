@@ -5,6 +5,8 @@
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { cn } from '@/lib/cn';
 
+type DialogSize = 'auth' | 'md' | 'lg' | 'xl';
+
 export type DialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -16,6 +18,8 @@ export type DialogProps = {
   closeLabel: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** Dialog width preset. Default: 'auth' (400px). */
+  size?: DialogSize;
 };
 
 export function Dialog({
@@ -26,7 +30,15 @@ export function Dialog({
   closeLabel,
   children,
   footer,
+  size = 'auth',
 }: DialogProps) {
+  const sizeClass = {
+    auth: 'max-w-auth',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+  }[size];
+
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
@@ -39,7 +51,8 @@ export function Dialog({
 
         <RadixDialog.Content
           className={cn(
-            'animate-dialog fixed top-1/2 left-1/2 z-50 w-full max-w-auth -translate-x-1/2 -translate-y-1/2',
+            'animate-dialog fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2',
+            sizeClass,
             'rounded-lg border border-subtle bg-overlay p-6 shadow-dialog'
           )}
         >

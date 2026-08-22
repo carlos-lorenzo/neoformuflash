@@ -121,7 +121,9 @@ test.describe('dashboard empty state', () => {
     await expect(heading).not.toHaveText(/^no\s/i);
 
     // The action is a button (submits form to create course), not a link (navigates to /app/notes)
-    const actions = page.getByRole('main').getByRole('button');
+    // Scope to the empty state's action area (the form with CreateCourseButton)
+    const emptyState = page.getByRole('main').locator('.ruled-grid');
+    const actions = emptyState.getByRole('button');
     await expect(actions).toHaveCount(1);
     await expect(actions.first()).toBeEnabled();
 

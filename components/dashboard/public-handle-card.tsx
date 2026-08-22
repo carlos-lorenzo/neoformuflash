@@ -23,6 +23,10 @@ function CopyIcon() {
 export function PublicHandleCard({ handle }: { handle: string }) {
   const t = useTranslations('dashboard');
 
+  const copyHandle = () => {
+    navigator.clipboard.writeText(`@${handle}`);
+  };
+
   return (
     <div className="rounded-md border border-subtle bg-raised p-4">
       <p className="text-ui-sm font-semibold text-secondary">{t('publicProfileLabel')}</p>
@@ -32,9 +36,9 @@ export function PublicHandleCard({ handle }: { handle: string }) {
         </code>
         <button
           type="button"
-          onClick={() => navigator.clipboard.writeText(`@${handle}`)}
+          onClick={copyHandle}
           aria-label={t('copyHandle')}
-          className="flex size-8 items-center justify-center rounded-sm bg-inset text-secondary transition-colors hover:bg-subtle hover:text-primary"
+          className="flex size-11 items-center justify-center rounded-sm bg-inset text-secondary transition-colors hover:bg-subtle hover:text-primary"
         >
           <CopyIcon />
         </button>

@@ -68,7 +68,8 @@ describe('grant discipline (AC18)', () => {
           and table_name = 'user_api_keys' and privilege_type = 'SELECT'`
     );
     const columns = rows.map((r) => r.column_name).sort();
-    expect(columns).toEqual(['created_at', 'last_four', 'provider', 'user_id']);
+    // Includes new columns from 0013: usage, validated_at, is_valid
+    expect(columns).toEqual(['created_at', 'is_valid', 'last_four', 'provider', 'usage', 'user_id', 'validated_at']);
   });
 
   it('every security definer function in public pins search_path', async () => {

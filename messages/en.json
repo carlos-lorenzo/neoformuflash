@@ -119,6 +119,7 @@
     "courses": "Courses",
     "review": "Review",
     "settings": "Settings",
+    "aiKeys": "API Keys",
     "signOut": "Sign out",
     "expandSidebar": "Open the menu",
     "collapseSidebar": "Close the menu"
@@ -176,7 +177,8 @@
       "save": "Save",
       "saveAndNew": "Save and new",
       "cancel": "Cancel"
-    }
+    },
+    "openCopilot": "Open AI Copilot"
   },
   "notes": {
     "seo": {
@@ -239,7 +241,12 @@
       "blockquote": "Quote",
       "inlineEquation": "Inline equation",
       "blockEquation": "Block equation"
-    }
+    },
+    "selectionToolbar": {
+      "toolbarLabel": "Selection toolbar",
+      "askAI": "Ask AI"
+    },
+    "openCopilot": "Open AI Copilot"
   },
   "decks": {
     "listTitle": "Decks",
@@ -485,5 +492,198 @@
     "viewOnFormuFlash": "View on FormuFlash",
     "unpublished": "Unpublished",
     "error": "Something went wrong loading this note."
+  },
+  "ai": {
+    "keys": {
+      "title": "API Keys",
+      "description": "Bring your own key for AI features. Keys are encrypted and never sent to our servers except to call the provider.",
+      "empty": "No API keys configured yet.",
+      "emptyDescription": "Add a key from OpenAI, Anthropic, or Google to enable AI features.",
+      "add": "Add",
+      "delete": "Delete",
+      "deleting": "Deleting…",
+      "saving": "Saving…",
+      "saved": "Key saved",
+      "provider": {
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "google": "Google"
+      },
+      "proHint": "Pro gets a pooled key",
+      "selectProvider": "Select a provider",
+      "keyPlaceholder": "sk-… / your key here",
+      "keyRequired": "Enter your API key",
+      "addKeyTitle": "Add {provider} key",
+      "addKeyDescription": "Your key is encrypted before storage. We never see it in plaintext after this point.",
+      "addDialog": {
+        "title": "Add API key",
+        "description": "Paste your provider key below. It's encrypted at rest with AES-256-GCM.",
+        "provider": {
+          "label": "Provider"
+        },
+        "key": {
+          "label": "API key"
+        }
+      },
+      "deleteConfirmTitle": "Delete key?",
+      "deleteConfirmDescription": "This will disable AI features using your {provider} key.",
+      "cancel": "Cancel",
+      "save": "Save",
+      "error": {
+        "unexpected": "Could not save key. Try again.",
+        "invalid": "Invalid key format."
+      },
+      "storedKeys": "Stored Keys",
+      "recentActivity": "Recent Activity",
+      "status": {
+        "valid": "Valid",
+        "invalid": "Invalid"
+      },
+      "usage": {
+        "label": "Usage",
+        "unknown": "Unknown"
+      },
+      "validatedAt": "Validated {date}",
+      "refresh": {
+        "tooltip": "Refresh usage info"
+      }
+    },
+    "copilot": {
+      "title": "AI Copilot",
+      "description": "Ask the AI to help with your note.",
+      "actions": {
+        "generate": "Generate",
+        "explain": "Explain",
+        "summarize": "Summarize",
+        "rephrase": "Rephrase",
+        "continue": "Continue",
+        "fix_latex": "Fix LaTeX"
+      },
+      "prompt": "Prompt",
+      "promptPlaceholder": "Describe what to generate…",
+      "selectTextFirst": "Select some text in the editor first for this action.",
+      "run": "Run",
+      "running": "Thinking…",
+      "actionsLabel": "AI actions",
+      "actionDescriptions": {
+        "generate": "Create new content from a prompt",
+        "explain": "Break down the selected text",
+        "summarize": "Condense the selected text",
+        "rephrase": "Rewrite for clarity",
+        "continue": "Write what comes next",
+        "fix_latex": "Repair math formatting"
+      },
+      "provider": {
+        "label": "Provider",
+        "placeholder": "Choose a provider",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "google": "Google"
+      },
+      "error": "Something went wrong.",
+      "dismissError": "Dismiss error",
+      "retry": "Retry",
+      "replaceSelection": "Replace selection",
+      "insertAtCursor": "Insert at cursor",
+      "insertAfterSelection": "Insert after selection",
+      "discard": "Discard",
+      "close": "Close"
+    },
+    "pdf": {
+      "button": "Upload PDF",
+      "title": "PDF → Note",
+      "description": "Upload a lecture PDF and we'll structure it into a note with math, lists, and headings.",
+      "file": {
+        "label": "PDF file",
+        "selected": "Selected: {name}",
+        "choose": "Choose PDF file"
+      },
+      "titleField": {
+        "label": "Note title",
+        "placeholder": "Lecture 1 — Kinematics"
+      },
+      "provider": {
+        "label": "Provider",
+        "placeholder": "Choose a provider",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "google": "Google"
+      },
+      "cancel": "Cancel",
+      "generate": "Generate note",
+      "processing": "Processing…",
+      "error": {
+        "needsVision": "This PDF looks scanned or image-based. Vision extraction is coming soon — you can paste the text manually.",
+        "pdfEmpty": "We couldn't extract any text from this PDF.",
+        "failed": "Couldn't generate the note. Try again.",
+        "network": "Network error. Check your connection.",
+        "unexpected": "Something went wrong. Try again."
+      }
+    },
+    "cards": {
+      "button": "Generate cards",
+      "title": "Note → Cards",
+      "description": "Generate flashcards from this note using AI.",
+      "target": {
+        "label": "Where to put the cards",
+        "placeholder": "Choose a target",
+        "newDeck": "New deck",
+        "existingDeck": "Existing deck"
+      },
+      "deckId": {
+        "label": "Deck ID",
+        "placeholder": "Paste the deck ID"
+      },
+      "provider": {
+        "label": "Provider",
+        "placeholder": "Choose a provider",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "google": "Google"
+      },
+      "cancel": "Cancel",
+      "generate": "Generate",
+      "processing": "Generating…",
+      "error": {
+        "ai_noKey": "Add an API key first.",
+        "ai_providerError": "The AI provider failed. Try again.",
+        "ai_invalidOutput": "The AI returned invalid output. Try again.",
+        "ai_emptyNote": "This note is empty.",
+        "content_deck_notFound": "Deck not found.",
+        "failed": "Couldn't generate cards. Try again.",
+        "network": "Network error. Check your connection.",
+        "unexpected": "Something went wrong. Try again."
+      }
+    },
+    "jobs": {
+      "empty": "No AI jobs yet.",
+      "kind": {
+        "pdf_to_notes": "PDF → Note",
+        "copilot": "Copilot",
+        "notes_to_cards": "Note → Cards"
+      },
+      "status": {
+        "pending": "Pending",
+        "running": "Running",
+        "done": "Done",
+        "error": "Error"
+      }
+    },
+    "noKey": "Add an API key to use AI features.",
+    "errors": {
+      "noKey": "Add an API key to use AI features.",
+      "invalidKey": "The API key is invalid or expired. Please re-add it.",
+      "providerError": "The AI provider failed. Try again.",
+      "invalidOutput": "The AI returned invalid output. Try again.",
+      "decryptionFailed": "Failed to decrypt your API key. Please re-add it.",
+      "unexpected": "Something went wrong. Try again.",
+      "missingFields": "Missing required fields.",
+      "invalidInput": "Invalid input provided.",
+      "pdfExtractionFailed": "Failed to extract text from PDF.",
+      "needsVision": "This PDF looks scanned or image-based. Vision extraction is coming soon — you can paste the text manually.",
+      "pdfEmpty": "We couldn't extract any text from this PDF.",
+      "jobCreationFailed": "Failed to create processing job.",
+      "noteCreationFailed": "Failed to create note."
+    }
   }
 }

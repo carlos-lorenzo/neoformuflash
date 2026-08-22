@@ -23,7 +23,11 @@ export {
   ReviewSubmission,
   ApiKeyInput,
   UpdateNoteSeoInput,
+  GenerateCardsInput,
+  PdfToNoteInput,
+  CopilotInput,
 } from './schemas';
+export type { AiProvider } from './schemas';
 
 export {
   schedule,
