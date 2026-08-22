@@ -17,9 +17,26 @@ export interface KeyValidationResult {
     limit?: number;
     remaining?: number;
     resetAt?: string;
+    /** Provider currency for balance-style quotas (DeepSeek returns CNY/USD). */
+    currency?: string;
+    /** Provider says the account has enough balance to serve requests. */
+    isAvailable?: boolean;
   };
+  /** Stable code the UI maps to a translated message. */
+  errorCode?: KeyValidationErrorCode;
   error?: string;
 }
+
+/**
+ * Stable validation outcomes. The UI translates these; `error` stays as the raw
+ * provider text for the settings page's diagnostic line.
+ */
+export type KeyValidationErrorCode =
+  | 'invalidKey'
+  | 'insufficientBalance'
+  | 'rateLimited'
+  | 'providerUnreachable'
+  | 'unknown';
 
 /**
  * Validate an OpenAI API key by listing models.
@@ -130,6 +147,75 @@ export async function validateGoogleKey(apiKey: string): Promise<KeyValidationRe
 }
 
 /**
+ * Validate a DeepSeek API key against GET /user/balance.
+ *
+ * This is the cheapest check available and the only one that reports quota:
+ * it costs no tokens, distinguishes "bad key" (401) from "valid key, empty
+ * wallet" (is_available === false), and returns the balance we surface in the
+ * settings page. A completion request could only tell us the first of those,
+ * and it would burn credit on an account we already suspect is empty.
+ */
+export async function validateDeepSeekKey(apiKey: string): Promise<KeyValidationResult> {
+  let response: Response;
+  try {
+    response = await fetch('https://api.deepseek.com/user/balance', {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { valid: false, errorCode: 'providerUnreachable', error: message };
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    return { valid: false, errorCode: 'invalidKey', error: 'Invalid API key' };
+  }
+  if (response.status === 429) {
+    return { valid: true, errorCode: 'rateLimited', error: 'Rate limited' };
+  }
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    return {
+      valid: false,
+      errorCode: 'unknown',
+      error: `DeepSeek validation failed (${response.status}): ${body.slice(0, 200)}`,
+    };
+  }
+
+  const data = (await response.json().catch(() => null)) as {
+    is_available?: boolean;
+    balance_infos?: Array<{
+      currency?: string;
+      total_balance?: string;
+      granted_balance?: string;
+      topped_up_balance?: string;
+    }>;
+  } | null;
+
+  if (!data) {
+    return { valid: false, errorCode: 'unknown', error: 'DeepSeek returned an unreadable balance response' };
+  }
+
+  // balance_infos is one entry per currency. The first is the account's
+  // settlement currency, which is what the dashboard bills against.
+  const info = data.balance_infos?.[0];
+  const remaining = info?.total_balance !== undefined ? Number(info.total_balance) : undefined;
+
+  const usage: KeyValidationResult['usage'] = {
+    remaining: Number.isFinite(remaining) ? remaining : undefined,
+    currency: info?.currency,
+    isAvailable: data.is_available,
+  };
+
+  // The key authenticated, so it is valid and worth storing — but with an empty
+  // wallet every generation will fail, so the settings page needs to say so.
+  if (data.is_available === false) {
+    return { valid: true, usage, errorCode: 'insufficientBalance', error: 'Insufficient balance' };
+  }
+
+  return { valid: true, usage };
+}
+
+/**
  * Validate an API key for the given provider.
  */
 export async function validateKey(provider: AiProvider, apiKey: string): Promise<KeyValidationResult> {
@@ -140,6 +226,8 @@ export async function validateKey(provider: AiProvider, apiKey: string): Promise
       return validateAnthropicKey(apiKey);
     case 'google':
       return validateGoogleKey(apiKey);
+    case 'deepseek':
+      return validateDeepSeekKey(apiKey);
     default:
       return { valid: false, error: `Unknown provider: ${provider}` };
   }

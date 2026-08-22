@@ -19,8 +19,8 @@ interface CopilotMenuProps {
   onClose: () => void;
   isOpen: boolean;
   noteId: string;
-  availableProviders: Array<'openai' | 'anthropic' | 'google'>;
-  defaultProvider?: 'openai' | 'anthropic' | 'google';
+  availableProviders: Array<'openai' | 'anthropic' | 'google' | 'deepseek'>;
+  defaultProvider?: 'openai' | 'anthropic' | 'google' | 'deepseek';
 }
 
 type CopilotAction = 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex';
@@ -60,7 +60,7 @@ export function CopilotMenu({ editor, selectionText, onClose, isOpen, noteId, av
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ type: 'noteDoc' | 'text'; value: NoteDoc | string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google'>(() => {
+  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google' | 'deepseek'>(() => {
     if (defaultProvider && availableProviders.includes(defaultProvider)) {
       return defaultProvider;
     }
@@ -330,7 +330,7 @@ export function CopilotMenu({ editor, selectionText, onClose, isOpen, noteId, av
               placeholder={t('provider.placeholder')}
               options={providers}
               value={provider}
-              onValueChange={(v: string) => setProvider(v as 'openai' | 'anthropic' | 'google')}
+              onValueChange={(v: string) => setProvider(v as 'openai' | 'anthropic' | 'google' | 'deepseek')}
               disabled={loading}
               emptyLabel={t('provider.placeholder')}
             />

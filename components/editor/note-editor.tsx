@@ -96,11 +96,11 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
 
   // Copilot state
   const [hasAiKey, setHasAiKey] = useState(false);
-  const [aiProviders, setAiProviders] = useState<Array<'openai' | 'anthropic' | 'google'>>([]);
+  const [aiProviders, setAiProviders] = useState<Array<'openai' | 'anthropic' | 'google' | 'deepseek'>>([]);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotAction, setCopilotAction] = useState<'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex' | null>(null);
   const [copilotSelection, setCopilotSelection] = useState<string | null>(null);
-  const [copilotProvider, setCopilotProvider] = useState<'openai' | 'anthropic' | 'google' | null>(null);
+  const [copilotProvider, setCopilotProvider] = useState<'openai' | 'anthropic' | 'google' | 'deepseek' | null>(null);
 
   // Check AI key status on mount (only shows AI actions when a key exists)
   useEffect(() => {
@@ -108,7 +108,7 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
     getApiKeyStatusAction()
       .then((res) => {
         if (res.ok) {
-          const providers = (['openai', 'anthropic', 'google'] as const).filter(
+          const providers = (['openai', 'anthropic', 'google', 'deepseek'] as const).filter(
             (p) => res.value.hasKeys[p]
           );
           if (providers.length > 0) {
@@ -461,7 +461,7 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
   // the immutable-refs lint rule doesn't flag the editorRef writes above.
   const openCopilot = useCallback((
     action: 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex',
-    provider?: 'openai' | 'anthropic' | 'google'
+    provider?: 'openai' | 'anthropic' | 'google' | 'deepseek'
   ) => {
     if (!editor) return;
 
@@ -474,7 +474,7 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
     if (provider) {
       setCopilotProvider(provider);
     } else if (aiProviders.length > 0 && !copilotProvider) {
-      setCopilotProvider(aiProviders[0] as 'openai' | 'anthropic' | 'google');
+      setCopilotProvider(aiProviders[0] as 'openai' | 'anthropic' | 'google' | 'deepseek');
     }
     setCopilotOpen(true);
   }, [editor, aiProviders, copilotProvider]);

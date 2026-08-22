@@ -924,7 +924,7 @@ export type Database = {
       }
     }
     Enums: {
-      ai_provider: "openai" | "google" | "anthropic"
+      ai_provider: "openai" | "google" | "anthropic" | "deepseek"
       card_phase: "new" | "learning" | "review" | "relearning"
       review_rating: "again" | "hard" | "good" | "easy"
       visibility: "public" | "unlisted" | "private"
@@ -1062,7 +1062,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      ai_provider: ["openai", "google", "anthropic"],
+      ai_provider: ["openai", "google", "anthropic", "deepseek"],
       card_phase: ["new", "learning", "review", "relearning"],
       review_rating: ["again", "hard", "good", "easy"],
       visibility: ["public", "unlisted", "private"],

@@ -498,7 +498,7 @@
       "title": "Claves API",
       "description": "Trae tu propia clave para las funciones de IA. Las claves se encriptan y nunca se envían a nuestros servidores salvo para llamar al proveedor.",
       "empty": "Aún no hay claves API configuradas.",
-      "emptyDescription": "Añade una clave de OpenAI, Anthropic o Google para activar las funciones de IA.",
+      "emptyDescription": "Añade una clave de OpenAI, Anthropic, Google o DeepSeek para activar las funciones de IA.",
       "add": "Añadir",
       "delete": "Eliminar",
       "deleting": "Eliminando…",
@@ -507,7 +507,8 @@
       "provider": {
         "openai": "OpenAI",
         "anthropic": "Anthropic",
-        "google": "Google"
+        "google": "Google",
+        "deepseek": "DeepSeek"
       },
       "proHint": "Pro tiene clave compartida",
       "selectProvider": "Selecciona un proveedor",
@@ -541,11 +542,18 @@
       },
       "usage": {
         "label": "Uso",
-        "unknown": "Desconocido"
+        "unknown": "Desconocido",
+        "balanceRemaining": "{amount} {currency} restante",
+        "insufficient": "Saldo insuficiente"
       },
       "validatedAt": "Validada {date}",
       "refresh": {
-        "tooltip": "Actualizar info de uso"
+        "tooltip": "Actualizar estado de cuota y validación"
+      },
+      "warning": {
+        "insufficientBalance": "Saldo insuficiente — añade créditos en platform.deepseek.com",
+        "rateLimited": "Límite de tasa excedido — espera antes de reintentar",
+        "refreshFailed": "Actualización fallida — la clave puede ser inválida"
       }
     },
     "copilot": {
@@ -578,7 +586,8 @@
         "placeholder": "Elige un proveedor",
         "openai": "OpenAI",
         "anthropic": "Anthropic",
-        "google": "Google"
+        "google": "Google",
+        "deepseek": "DeepSeek"
       },
       "error": "Algo salió mal.",
       "dismissError": "Descartar error",
@@ -607,7 +616,8 @@
         "placeholder": "Elige un proveedor",
         "openai": "OpenAI",
         "anthropic": "Anthropic",
-        "google": "Google"
+        "google": "Google",
+        "deepseek": "DeepSeek"
       },
       "cancel": "Cancelar",
       "generate": "Generar nota",
@@ -639,7 +649,8 @@
         "placeholder": "Elige un proveedor",
         "openai": "OpenAI",
         "anthropic": "Anthropic",
-        "google": "Google"
+        "google": "Google",
+        "deepseek": "DeepSeek"
       },
       "cancel": "Cancelar",
       "generate": "Generar",

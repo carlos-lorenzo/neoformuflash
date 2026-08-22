@@ -11,6 +11,7 @@ import type { NoteDoc, CardInput } from '@neoformuflash/contracts';
 import * as openai from './openai';
 import * as anthropic from './anthropic';
 import * as google from './google';
+import * as deepseek from './deepseek';
 import { validateWithRepair, NoteDocSchema, GeneratedCardArraySchema, type GeneratedCard } from '@/lib/ai/validate-output';
 
 export interface PdfToNoteResult {
@@ -53,6 +54,10 @@ export async function pdfToNote(
       const r = await google.googlePdfToNote(text, apiKey);
       return { noteDoc: r.noteDoc, usage: { input_tokens: r.usage.promptTokenCount, output_tokens: r.usage.candidatesTokenCount } };
     }
+    case 'deepseek': {
+      const r = await deepseek.deepseekPdfToNote(text, apiKey);
+      return { noteDoc: r.noteDoc, usage: { input_tokens: r.usage.prompt_tokens, output_tokens: r.usage.completion_tokens } };
+    }
     default:
       return getProviderError(provider);
   }
@@ -79,6 +84,10 @@ export async function copilot(
       const r = await google.googleCopilot(action, noteDoc, selectionText, prompt, apiKey);
       return { result: r.result, usage: { input_tokens: r.usage.promptTokenCount, output_tokens: r.usage.candidatesTokenCount } };
     }
+    case 'deepseek': {
+      const r = await deepseek.deepseekCopilot(action, noteDoc, selectionText, prompt, apiKey);
+      return { result: r.result, usage: { input_tokens: r.usage.prompt_tokens, output_tokens: r.usage.completion_tokens } };
+    }
     default:
       return getProviderError(provider);
   }
@@ -101,6 +110,10 @@ export async function notesToCards(
     case 'google': {
       const r = await google.googleNotesToCards(noteDoc, apiKey);
       return { cards: r.cards, usage: { input_tokens: r.usage.promptTokenCount, output_tokens: r.usage.candidatesTokenCount } };
+    }
+    case 'deepseek': {
+      const r = await deepseek.deepseekNotesToCards(noteDoc, apiKey);
+      return { cards: r.cards, usage: { input_tokens: r.usage.prompt_tokens, output_tokens: r.usage.completion_tokens } };
     }
     default:
       return getProviderError(provider);

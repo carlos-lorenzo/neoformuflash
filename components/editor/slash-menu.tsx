@@ -33,13 +33,13 @@ type SlashMenuProps = {
   /** Whether user has any AI key configured (controls AI item visibility). */
   hasAiKey: boolean;
   /** Available AI providers (for default selection in copilot). */
-  availableProviders?: Array<'openai' | 'anthropic' | 'google'>;
+  availableProviders?: Array<'openai' | 'anthropic' | 'google' | 'deepseek'>;
   /** Default AI provider (first available). */
-  defaultProvider?: 'openai' | 'anthropic' | 'google';
+  defaultProvider?: 'openai' | 'anthropic' | 'google' | 'deepseek';
   /** Opens the copilot menu for the given action. */
   onOpenCopilot?: (
     action: 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex',
-    provider?: 'openai' | 'anthropic' | 'google'
+    provider?: 'openai' | 'anthropic' | 'google' | 'deepseek'
   ) => void;
 };
 

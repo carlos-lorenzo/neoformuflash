@@ -9,11 +9,18 @@ import type { StoredKey } from '@/lib/db/ai-keys';
 import { cn } from '@/lib/cn';
 import type { Result } from '@/lib/result';
 
+type KeyUsage = StoredKey['usage'];
+
 interface ApiKeyFormProps {
   existingKeys: StoredKey[];
-  onSave: (provider: string, apiKey: string) => Promise<Result<{ savedAt: string; usage?: { used?: number; limit?: number; remaining?: number; resetAt?: string } }>>;
+  onSave: (
+    provider: string,
+    apiKey: string
+  ) => Promise<Result<{ savedAt: string; usage?: KeyUsage; warning?: string }>>;
   onDelete: (provider: string) => Promise<Result<void>>;
-  onRefresh?: (provider: string) => Promise<Result<{ usage?: { used?: number; limit?: number; remaining?: number; resetAt?: string } }>>;
+  onRefresh?: (
+    provider: string
+  ) => Promise<Result<{ usage?: KeyUsage; isValid: boolean; warning?: string }>>;
   isPro: boolean;
 }
 
@@ -22,13 +29,18 @@ export function ApiKeyForm({ existingKeys: initialKeys, onSave, onDelete, onRefr
   const tCommon = useTranslations('common');
   const [keys, setKeys] = useState<StoredKey[]>(initialKeys);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  // Per-provider health note ("insufficient balance", "rate limited"). Held as a
+  // catalog key so the message stays translatable.
+  const [warnings, setWarnings] = useState<Record<string, string>>({});
 
-  const providers: Array<{ value: 'openai' | 'anthropic' | 'google'; label: string }> = [
+  const providers: Array<{ value: 'openai' | 'anthropic' | 'google' | 'deepseek'; label: string }> = [
     { value: 'openai', label: t('provider.openai') },
     { value: 'anthropic', label: t('provider.anthropic') },
     { value: 'google', label: t('provider.google') },
+    { value: 'deepseek', label: t('provider.deepseek') },
   ];
 
   const existingKeyMap = new Map(keys.map(k => [k.provider, k]));
@@ -40,7 +52,7 @@ export function ApiKeyForm({ existingKeys: initialKeys, onSave, onDelete, onRefr
     }
     // Optimistically update local state with the saved key info
     const newKey: StoredKey = {
-      provider: provider as 'openai' | 'anthropic' | 'google',
+      provider: provider as StoredKey['provider'],
       lastFour: apiKey.slice(-4),
       createdAt: res.value.savedAt,
       usage: res.value.usage,
@@ -54,18 +66,29 @@ export function ApiKeyForm({ existingKeys: initialKeys, onSave, onDelete, onRefr
       }
       return [newKey, ...prev];
     });
+    setWarnings(prev => ({ ...prev, [provider]: res.value.warning ?? '' }));
     return { ok: res.ok, error: undefined, usage: res.value.usage };
   }, [onSave]);
 
   const handleRefresh = useCallback(async (provider: string) => {
-    if (!onRefresh) return { ok: false, error: 'Refresh not available' };
+    if (!onRefresh) return;
+    setRefreshing(provider);
     const res = await onRefresh(provider);
-    if (res.ok && res.value?.usage) {
-      setKeys(prev => prev.map(k => k.provider === provider ? { ...k, usage: res.value.usage, isValid: true, validatedAt: new Date().toISOString() } : k));
+    if (res.ok) {
+      setKeys(prev =>
+        prev.map(k =>
+          k.provider === provider
+            ? { ...k, usage: res.value.usage, isValid: res.value.isValid, validatedAt: new Date().toISOString() }
+            : k,
+        ),
+      );
+      setWarnings(prev => ({ ...prev, [provider]: res.value.warning ?? '' }));
+    } else {
+      // A failed refresh is itself health information — surface it rather than
+      // leaving the previous (now stale) "Valid" badge unqualified.
+      setWarnings(prev => ({ ...prev, [provider]: 'ai.keys.warning.refreshFailed' }));
     }
-    const error = res.ok ? undefined : res.code;
-    const usage = res.ok ? res.value?.usage : undefined;
-    return { ok: res.ok, error, usage };
+    setRefreshing(null);
   }, [onRefresh]);
 
   const handleDelete = useCallback(async (provider: string) => {
@@ -96,9 +119,11 @@ export function ApiKeyForm({ existingKeys: initialKeys, onSave, onDelete, onRefr
             const key = existingKeyMap.get(value);
             const isValid = key?.isValid ?? true;
             const usage = key?.usage;
-            const hasUsage = usage && (usage.used !== undefined || usage.limit !== undefined);
+            const hasUsage = usage && (usage.used !== undefined || usage.limit !== undefined || usage.remaining !== undefined);
+            const isBalanceStyle = usage?.currency !== undefined; // DeepSeek returns balance in currency
             const remaining = usage?.remaining ?? (usage?.limit && usage?.used ? usage.limit - usage.used : undefined);
             const usedPercent = usage?.limit && usage?.used ? (usage.used / usage.limit) * 100 : undefined;
+            const isAvailable = usage?.isAvailable ?? true;
 
             return (
               <div key={value} className="flex items-center justify-between p-3 rounded-lg border border-subtle bg-raised">
@@ -119,26 +144,50 @@ export function ApiKeyForm({ existingKeys: initialKeys, onSave, onDelete, onRefr
                           <span className="text-ui-xs text-tertiary">
                             {t('usage.label')}
                           </span>
-                          <div className="w-[8rem] h-2 bg-inset rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary"
-                              style={{ width: `${Math.min(usedPercent ?? 0, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-ui-xs font-mono text-tertiary">
-                            {usage.used !== undefined && usage.limit !== undefined
-                              ? `${(usage.used / 1000).toFixed(1)}k / ${(usage.limit / 1000).toFixed(1)}k`
-                              : usage.used !== undefined
-                                ? `${(usage.used / 1000).toFixed(1)}k`
-                                : remaining !== undefined
-                                  ? `${(remaining / 1000).toFixed(1)}k remaining`
-                                  : t('usage.unknown')}
-                          </span>
+                          {isBalanceStyle ? (
+                            // Balance-style quota (DeepSeek): a currency amount, not a
+                            // token count, so there is no denominator to draw a bar against.
+                            <span className={cn('text-ui-xs font-mono', isAvailable ? 'text-tertiary' : 'text-danger')}>
+                              {remaining !== undefined
+                                ? t('usage.balanceRemaining', {
+                                    amount: remaining.toFixed(2),
+                                    currency: usage.currency ?? '',
+                                  })
+                                : t('usage.unknown')}
+                              {!isAvailable && <span className="ml-2">{t('usage.insufficient')}</span>}
+                            </span>
+                          ) : (
+                            // Token-based quota style (OpenAI, Anthropic, Google)
+                            <>
+                              <div className="w-[8rem] h-2 bg-inset rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${Math.min(usedPercent ?? 0, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-ui-xs font-mono text-tertiary">
+                                {usage.used !== undefined && usage.limit !== undefined
+                                  ? `${(usage.used / 1000).toFixed(1)}k / ${(usage.limit / 1000).toFixed(1)}k`
+                                  : usage.used !== undefined
+                                    ? `${(usage.used / 1000).toFixed(1)}k`
+                                    : remaining !== undefined
+                                      ? `${(remaining / 1000).toFixed(1)}k remaining`
+                                      : t('usage.unknown')}
+                              </span>
+                            </>
+                          )}
                         </div>
                       )}
                       {key.validatedAt && (
                         <span className="text-ui-xs text-tertiary">
                           {t('validatedAt', { date: new Date(key.validatedAt).toLocaleDateString() })}
+                        </span>
+                      )}
+                      {/* Health warning (insufficient balance, rate limited, etc.) */}
+                      {warnings[value] && (
+                        <span className="text-ui-xs text-warning">
+                          {/* i18n-dynamic-key */}
+                          {t(warnings[value])}
                         </span>
                       )}
                     </>
@@ -164,7 +213,7 @@ export function ApiKeyForm({ existingKeys: initialKeys, onSave, onDelete, onRefr
                           size="sm"
                           className="text-primary hover:bg-primary/10"
                           onClick={() => handleRefresh(value)}
-                          disabled={deleting === value}
+                          disabled={deleting === value || refreshing === value}
                           title={t('refresh.tooltip')}
                         >
                           ↻

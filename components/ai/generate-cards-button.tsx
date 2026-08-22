@@ -19,7 +19,7 @@ export function GenerateCardsButton({ noteId, courseId, onSuccess, onRequireKey 
   const tCommon = useTranslations('common');
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState<'new_deck' | 'existing_deck'>('new_deck');
-  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google'>('openai');
+  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google' | 'deepseek'>('openai');
   const [deckId, setDeckId] = useState('');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +77,7 @@ export function GenerateCardsButton({ noteId, courseId, onSuccess, onRequireKey 
     { value: 'openai', label: t('provider.openai') },
     { value: 'anthropic', label: t('provider.anthropic') },
     { value: 'google', label: t('provider.google') },
+    { value: 'deepseek', label: t('provider.deepseek') },
   ];
 
   const targets = [
@@ -128,7 +129,7 @@ export function GenerateCardsButton({ noteId, courseId, onSuccess, onRequireKey 
             placeholder={t('provider.placeholder')}
             options={providers}
             value={provider}
-            onValueChange={(v: string) => setProvider(v as 'openai' | 'anthropic' | 'google')}
+            onValueChange={(v: string) => setProvider(v as 'openai' | 'anthropic' | 'google' | 'deepseek')}
             disabled={processing}
             emptyLabel={t('provider.placeholder')}
           />

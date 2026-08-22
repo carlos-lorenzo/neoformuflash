@@ -20,6 +20,10 @@ export type StoredKey = {
     limit?: number;
     remaining?: number;
     resetAt?: string;
+    /** Provider currency for balance-style quotas (DeepSeek returns CNY/USD). */
+    currency?: string;
+    /** Provider says the account has enough balance to serve requests. */
+    isAvailable?: boolean;
   };
   // Validation status
   validatedAt?: string;

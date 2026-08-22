@@ -20,7 +20,7 @@ export function PdfToNoteButton({ courseId, onSuccess, onRequireKey }: PdfToNote
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
-  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google'>('openai');
+  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google' | 'deepseek'>('openai');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -99,6 +99,7 @@ export function PdfToNoteButton({ courseId, onSuccess, onRequireKey }: PdfToNote
     { value: 'openai', label: t('provider.openai') },
     { value: 'anthropic', label: t('provider.anthropic') },
     { value: 'google', label: t('provider.google') },
+    { value: 'deepseek', label: t('provider.deepseek') },
   ];
 
   return (
@@ -166,7 +167,7 @@ export function PdfToNoteButton({ courseId, onSuccess, onRequireKey }: PdfToNote
             placeholder={t('provider.placeholder')}
             options={providers}
             value={provider}
-            onValueChange={(v: string) => setProvider(v as 'openai' | 'anthropic' | 'google')}
+            onValueChange={(v: string) => setProvider(v as 'openai' | 'anthropic' | 'google' | 'deepseek')}
             disabled={uploading}
             emptyLabel={t('provider.placeholder')}
           />

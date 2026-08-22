@@ -18,7 +18,7 @@ interface AddApiKeyDialogProps {
 export function AddApiKeyDialog({ open, onOpenChange, onSave, onSuccess }: AddApiKeyDialogProps) {
   const t = useTranslations('ai.keys');
   const tCommon = useTranslations('common');
-  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google'>('openai');
+  const [provider, setProvider] = useState<'openai' | 'anthropic' | 'google' | 'deepseek'>('openai');
   const [apiKey, setApiKey] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +43,7 @@ export function AddApiKeyDialog({ open, onOpenChange, onSave, onSuccess }: AddAp
     { value: 'openai', label: t('provider.openai') },
     { value: 'anthropic', label: t('provider.anthropic') },
     { value: 'google', label: t('provider.google') },
+    { value: 'deepseek', label: t('provider.deepseek') },
   ];
 
   return (
@@ -59,7 +60,7 @@ export function AddApiKeyDialog({ open, onOpenChange, onSave, onSuccess }: AddAp
           placeholder={t('selectProvider')}
           options={providers}
           value={provider}
-          onValueChange={(v: string) => setProvider(v as 'openai' | 'anthropic' | 'google')}
+          onValueChange={(v: string) => setProvider(v as 'openai' | 'anthropic' | 'google' | 'deepseek')}
           disabled={saving}
           emptyLabel={t('selectProvider')}
         />

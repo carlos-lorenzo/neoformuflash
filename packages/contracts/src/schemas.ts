@@ -220,6 +220,7 @@ const AiProvider: z.ZodType<Database['public']['Enums']['ai_provider']> = z.enum
   'openai',
   'google',
   'anthropic',
+  'deepseek',
 ]);
 
 export type AiProvider = z.infer<typeof AiProvider>;
