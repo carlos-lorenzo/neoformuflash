@@ -6,7 +6,7 @@ import { getDeck } from '@/lib/db/decks';
 import { createCardRow } from '@/lib/db/cards';
 import { createDeckRow } from '@/lib/db/decks';
 import { getDecryptedKey } from '@/lib/db/ai-keys';
-import { notesToCards, validateWithRepair, GeneratedCardArraySchema, type GeneratedCard } from '@/lib/ai/providers';
+import { notesToCards, validateWithRepair, GeneratedCardArraySchema, type GeneratedCard, MAX_REPAIR_ATTEMPTS } from '@/lib/ai/providers';
 import { err, ok, type Result } from '@/lib/result';
 import { GenerateCardsInput, type NoteDoc } from '@neoformuflash/contracts';
 import { extractText } from '@/lib/editor/serialize';
@@ -20,13 +20,16 @@ export async function generateCardsAction(
   const parsed = GenerateCardsInput.safeParse(input);
   if (!parsed.success) return err('onboarding.invalidInput', parsed.error);
 
-  const { noteId, courseId, target, deckId: targetDeckId, provider } = parsed.data;
+  const { noteId, target, deckId: targetDeckId, provider } = parsed.data;
 
   // Verify note ownership
   const noteRes = await getNote(user.id, noteId);
   if (!noteRes.ok) return err('content.note.notFound');
   if (!noteRes.value) return err('content.note.notFound');
   if (noteRes.value.ownerId !== user.id) return err('error.unauthorized');
+
+  // Use the note's course (not the passed courseId, which may be null)
+  const noteCourseId = noteRes.value.courseId;
 
   // Get the decrypted API key
   const keyRes = await getDecryptedKey(user.id, provider);
@@ -49,6 +52,8 @@ export async function generateCardsAction(
       const res = await notesToCards(noteDoc, provider, apiKey);
       return res.cards;
     },
+    MAX_REPAIR_ATTEMPTS,
+    { provider, action: 'generate_cards', noteDoc }
   );
 
   if (!cardsRes.ok) return err(cardsRes.code, cardsRes.cause);
@@ -57,15 +62,27 @@ export async function generateCardsAction(
   let finalDeckId: string;
 
   if (target === 'new_deck') {
-    // Create a new deck
+    // Create a new deck under the note's course with matching visibility
+    // Use 'public' as default since private requires pro subscription
+    const deckVisibility: 'public' | 'unlisted' | 'private' = noteCourseId ? 'public' : 'public';
     const deckRes = await createDeckRow(user.id, {
       title: `${noteRes.value.title} — AI Cards`,
-      visibility: 'private',
+      visibility: deckVisibility,
       desiredRetention: null,
       newCardsPerDay: 20,
-      courseId,
+      courseId: noteCourseId,
     });
-    if (!deckRes.ok) return err('error.unexpected', deckRes.cause);
+    if (!deckRes.ok) {
+      console.error('[generateCardsAction] Failed to create deck:', {
+        code: deckRes.code,
+        cause: deckRes.cause,
+        userId: user.id,
+        title: `${noteRes.value.title} — AI Cards`,
+        courseId: noteCourseId,
+        visibility: deckVisibility,
+      });
+      return err('error.unexpected', deckRes.cause);
+    }
     if (!deckRes.value) return err('error.unexpected');
     finalDeckId = deckRes.value.id;
   } else {
@@ -90,7 +107,16 @@ export async function generateCardsAction(
       confidence: 'again',
       position: card.position,
     });
-    if (!cardRes.ok) return err('error.unexpected', cardRes.cause);
+    if (!cardRes.ok) {
+      console.error('[generateCardsAction] Failed to create card:', {
+        code: cardRes.code,
+        cause: cardRes.cause,
+        userId: user.id,
+        deckId: finalDeckId,
+        position: card.position,
+      });
+      return err('error.unexpected', cardRes.cause);
+    }
   }
 
   return ok({ deckId: finalDeckId });

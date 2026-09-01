@@ -217,8 +217,7 @@
   "editor": {
     "inlineMath": "In-line math",
     "displayMath": "Display math",
-    "save": "Save card",
-    "saved": "Card saved",
+    "saved": "Saved",
     "notePlaceholder": "Start typing — or type / for a command",
     "titlePlaceholder": "Untitled",
     "readOnlyTitle": "Read-only",
@@ -292,7 +291,6 @@
       "confidenceHint": "Your difficulty hint for this card.",
       "save": "Save card",
       "saveAndNew": "Save and new",
-      "saved": "Card saved",
       "editTitle": "Edit card",
       "invalidLatex": "This formula can't be rendered"
     },
@@ -565,7 +563,8 @@
         "summarize": "Summarize",
         "rephrase": "Rephrase",
         "continue": "Continue",
-        "fix_latex": "Fix LaTeX"
+        "fix_latex": "Fix LaTeX",
+        "generate_cards": "Generate Flashcards"
       },
       "prompt": "Prompt",
       "promptPlaceholder": "Describe what to generate…",
@@ -579,7 +578,8 @@
         "summarize": "Condense the selected text",
         "rephrase": "Rewrite for clarity",
         "continue": "Write what comes next",
-        "fix_latex": "Repair math formatting"
+        "fix_latex": "Repair math formatting",
+        "generate_cards": "Create flashcards from this note"
       },
       "provider": {
         "label": "Provider",
@@ -596,7 +596,31 @@
       "insertAtCursor": "Insert at cursor",
       "insertAfterSelection": "Insert after selection",
       "discard": "Discard",
-      "close": "Close"
+      "close": "Close",
+      "material": {
+        "label": "Attach material",
+        "selected": "Attached: {name}",
+        "remove": "Remove",
+        "unsupported": "Unsupported file type. Use PDF, .txt, or .md.",
+        "tooLarge": "File too large. Maximum 10 MB.",
+        "extractionFailed": "Couldn't read the file. Try a different one.",
+        "needsVision": "This PDF looks scanned. Vision extraction is coming soon — paste the text manually instead.",
+        "empty": "The file has no readable text."
+      },
+      "deckSelection": {
+        "title": "Generate Flashcards",
+        "description": "Choose where to save the generated cards",
+        "targetLabel": "Target",
+        "targetPlaceholder": "Choose target",
+        "newDeck": "New deck",
+        "existingDeck": "Existing deck",
+        "deckIdLabel": "Deck ID",
+        "deckIdPlaceholder": "Paste the deck ID",
+        "providerLabel": "Provider",
+        "providerPlaceholder": "Choose a provider",
+        "generate": "Generate",
+        "generating": "Generating…"
+      }
     },
     "pdf": {
       "button": "Upload PDF",
@@ -686,6 +710,10 @@
       "invalidKey": "The API key is invalid or expired. Please re-add it.",
       "providerError": "The AI provider failed. Try again.",
       "invalidOutput": "The AI returned invalid output. Try again.",
+      "rateLimit": "Rate limit reached. Wait a minute and try again, or switch provider.",
+      "quotaExceeded": "You've hit your provider's usage cap. Add billing or switch provider.",
+      "providerUnavailable": "The AI provider is unreachable right now. Try again in a moment.",
+      "providerTimeout": "The AI provider took too long to respond. Try again.",
       "decryptionFailed": "Failed to decrypt your API key. Please re-add it.",
       "unexpected": "Something went wrong. Try again.",
       "missingFields": "Missing required fields.",
@@ -694,7 +722,12 @@
       "needsVision": "This PDF looks scanned or image-based. Vision extraction is coming soon — you can paste the text manually.",
       "pdfEmpty": "We couldn't extract any text from this PDF.",
       "jobCreationFailed": "Failed to create processing job.",
-      "noteCreationFailed": "Failed to create note."
+      "noteCreationFailed": "Failed to create note.",
+      "materialTooLarge": "File too large. Maximum 10 MB.",
+      "materialUnsupported": "Unsupported file type. Use PDF, .txt, or .md.",
+      "materialExtractionFailed": "Couldn't read the file. Try a different one.",
+      "materialNeedsVision": "This PDF looks scanned. Vision extraction is coming soon — paste the text manually instead.",
+      "materialEmpty": "The file has no readable text."
     }
   }
 }

@@ -217,8 +217,7 @@
   "editor": {
     "inlineMath": "Matemáticas en línea",
     "displayMath": "Matemáticas en bloque",
-    "save": "Guardar tarjeta",
-    "saved": "Tarjeta guardada",
+    "saved": "Guardado",
     "notePlaceholder": "Empieza a escribir — o escribe / para un comando",
     "titlePlaceholder": "Sin título",
     "readOnlyTitle": "Solo lectura",
@@ -292,7 +291,6 @@
       "confidenceHint": "Tu indicador de dificultad para esta tarjeta.",
       "save": "Guardar tarjeta",
       "saveAndNew": "Guardar y nueva",
-      "saved": "Tarjeta guardada",
       "editTitle": "Editar tarjeta",
       "invalidLatex": "Esta fórmula no se puede renderizar"
     },
@@ -565,7 +563,8 @@
         "summarize": "Resumir",
         "rephrase": "Reescribir",
         "continue": "Continuar",
-        "fix_latex": "Arreglar LaTeX"
+        "fix_latex": "Arreglar LaTeX",
+        "generate_cards": "Generar Tarjetas"
       },
       "prompt": "Indicación",
       "promptPlaceholder": "Describe qué generar…",
@@ -579,7 +578,8 @@
         "summarize": "Condensar el texto seleccionado",
         "rephrase": "Reescribir para mayor claridad",
         "continue": "Continuar escribiendo",
-        "fix_latex": "Reparar formato matemático"
+        "fix_latex": "Reparar formato matemático",
+        "generate_cards": "Crear tarjetas de repaso desde esta nota"
       },
       "provider": {
         "label": "Proveedor",
@@ -596,7 +596,31 @@
       "insertAtCursor": "Insertar en cursor",
       "insertAfterSelection": "Insertar después de la selección",
       "discard": "Descartar",
-      "close": "Cerrar"
+      "close": "Cerrar",
+      "material": {
+        "label": "Adjuntar material",
+        "selected": "Adjunto: {name}",
+        "remove": "Quitar",
+        "unsupported": "Tipo de archivo no compatible. Use PDF, .txt o .md.",
+        "tooLarge": "Archivo demasiado grande. Máximo 10 MB.",
+        "extractionFailed": "No se pudo leer el archivo. Pruebe con otro.",
+        "needsVision": "Este PDF parece escaneado. La extracción por visión llegará pronto — pegue el texto manualmente.",
+        "empty": "El archivo no tiene texto legible."
+      },
+      "deckSelection": {
+        "title": "Generar Tarjetas",
+        "description": "Elige dónde guardar las tarjetas generadas",
+        "targetLabel": "Destino",
+        "targetPlaceholder": "Elige un destino",
+        "newDeck": "Mazo nuevo",
+        "existingDeck": "Mazo existente",
+        "deckIdLabel": "ID del mazo",
+        "deckIdPlaceholder": "Pega el ID del mazo",
+        "providerLabel": "Proveedor",
+        "providerPlaceholder": "Elige un proveedor",
+        "generate": "Generar",
+        "generating": "Generando…"
+      }
     },
     "pdf": {
       "button": "Subir PDF",
@@ -686,6 +710,10 @@
       "invalidKey": "La clave API no es válida o ha expirado. Vuelve a añadirla.",
       "providerError": "El proveedor de IA falló. Inténtalo de nuevo.",
       "invalidOutput": "La IA devolvió salida inválida. Inténtalo de nuevo.",
+      "rateLimit": "Límite de peticiones alcanzado. Espera un minuto o cambia de proveedor.",
+      "quotaExceeded": "Has alcanzado tu límite de uso del proveedor. Añade facturación o cambia de proveedor.",
+      "providerUnavailable": "El proveedor de IA no está disponible. Vuelve a intentarlo en un momento.",
+      "providerTimeout": "El proveedor de IA tardó demasiado en responder. Inténtalo de nuevo.",
       "decryptionFailed": "Error al descifrar tu clave API. Vuelve a añadirla.",
       "unexpected": "Algo salió mal. Inténtalo de nuevo.",
       "missingFields": "Faltan campos requeridos.",
@@ -694,7 +722,12 @@
       "needsVision": "Este PDF parece escaneado o basado en imágenes. La extracción de visión llegará pronto — puedes pegar el texto manualmente.",
       "pdfEmpty": "No pudimos extraer texto de este PDF.",
       "jobCreationFailed": "Error al crear el trabajo de procesamiento.",
-      "noteCreationFailed": "Error al crear la nota."
+      "noteCreationFailed": "Error al crear la nota.",
+      "materialTooLarge": "Archivo demasiado grande. Máximo 10 MB.",
+      "materialUnsupported": "Tipo de archivo no compatible. Use PDF, .txt o .md.",
+      "materialExtractionFailed": "No se pudo leer el archivo. Pruebe con otro.",
+      "materialNeedsVision": "Este PDF parece escaneado. La extracción por visión llegará pronto — pegue el texto manualmente.",
+      "materialEmpty": "El archivo no tiene texto legible."
     }
   }
 }

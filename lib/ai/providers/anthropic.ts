@@ -6,6 +6,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import type { NoteDoc, CardInput } from '@neoformuflash/contracts';
+import { noteDocSchemaDescription, cardInputArraySchemaDescription } from './deepseek';
 
 interface AnthropicResponse<T> {
   data: T;
@@ -52,22 +53,36 @@ const noteDocTool = {
   },
 } as const;
 
+/*
+ * Two bugs lived here. `frontJson`/`backJson` were a bare `{type:'object'}`
+ * with no properties, so the model had no shape to fill and emitted `{}` for
+ * both — every card failed NoteDocSchema with "expected doc". And an Anthropic
+ * tool input_schema must be an object, not an array, so the array is wrapped
+ * in `{cards:[...]}` and unwrapped after the tool_use call.
+ */
 const cardInputArrayTool = {
   name: 'output_cards',
   description: 'Output an array of CardInput objects',
   input_schema: {
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        frontJson: { type: 'object' },
-        backJson: { type: 'object' },
-        confidence: { type: 'string', enum: ['again', 'hard', 'good', 'easy'] },
-        position: { type: 'integer' },
+    type: 'object',
+    properties: {
+      cards: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            frontJson: noteDocTool.input_schema,
+            backJson: noteDocTool.input_schema,
+            confidence: { type: 'string', enum: ['again', 'hard', 'good', 'easy'] },
+            position: { type: 'integer' },
+          },
+          required: ['frontJson', 'backJson', 'confidence', 'position'],
+          additionalProperties: false,
+        },
       },
-      required: ['frontJson', 'backJson', 'confidence', 'position'],
-      additionalProperties: false,
     },
+    required: ['cards'],
+    additionalProperties: false,
   },
 } as const;
 
@@ -147,7 +162,8 @@ export async function anthropicCopilot(
   _noteDoc: NoteDoc | null,
   selectionText: string | null,
   prompt: string | undefined,
-  apiKey: string
+  apiKey: string,
+  materialText?: string | null
 ): Promise<{ result: NoteDoc | string; usage: AnthropicResponse<NoteDoc>['usage'] }> {
   const isGenerate = action === 'generate';
   const tool = isGenerate ? noteDocTool : textTool;
@@ -155,14 +171,19 @@ export async function anthropicCopilot(
   let systemPrompt = '';
   let userPrompt = '';
 
+  // Prepend reference material if provided
+  const withMaterial = (base: string) =>
+    materialText ? `Reference Material:\n${materialText}\n\n---\n\n${base}` : base;
+
   if (action === 'generate') {
     systemPrompt = `You are a helpful writing assistant for engineering students.
 Generate well-structured note content using the NoteDoc format.
 Use headings, lists, code blocks, and LaTeX math (inlineMath/displayMath) where appropriate.
+${noteDocSchemaDescription}
 The user will insert this at their cursor position.`;
-    userPrompt = prompt
+    userPrompt = withMaterial(prompt
       ? `Generate content: ${prompt}`
-      : 'Continue writing from the current context.';
+      : 'Continue writing from the current context.');
     if (selectionText) {
       userPrompt += `\n\nContext (selected text):\n${selectionText}`;
     }
@@ -170,27 +191,27 @@ The user will insert this at their cursor position.`;
     systemPrompt = `You are an expert tutor. Explain the selected text clearly for an engineering student.
 Use analogies, break down complex concepts, and include LaTeX math where needed.
 Return plain text via the output_text tool (will replace the selection).`;
-    userPrompt = `Explain this:\n\n${selectionText}`;
+    userPrompt = withMaterial(`Explain this:\n\n${selectionText}`);
   } else if (action === 'summarize') {
     systemPrompt = `Summarize the selected text concisely for an engineering student.
 Keep key concepts and formulas. Use LaTeX math where appropriate.
 Return plain text via the output_text tool (will replace the selection).`;
-    userPrompt = `Summarize this:\n\n${selectionText}`;
+    userPrompt = withMaterial(`Summarize this:\n\n${selectionText}`);
   } else if (action === 'rephrase') {
     systemPrompt = `Rephrase the selected text to be clearer and more concise.
 Preserve all mathematical meaning and LaTeX formatting.
 Return plain text via the output_text tool (will replace the selection).`;
-    userPrompt = `Rephrase this:\n\n${selectionText}`;
+    userPrompt = withMaterial(`Rephrase this:\n\n${selectionText}`);
   } else if (action === 'continue') {
     systemPrompt = `Continue writing from the selected text naturally.
 Match the style, depth, and formatting. Use LaTeX math where appropriate.
 Return plain text via the output_text tool (will be appended after the selection).`;
-    userPrompt = `Continue from this:\n\n${selectionText}`;
+    userPrompt = withMaterial(`Continue from this:\n\n${selectionText}`);
   } else if (action === 'fix_latex') {
     systemPrompt = `Fix any malformed LaTeX in the selected text.
 Ensure all inline math uses $...$ and display math uses $$...$$.
 Return corrected plain text via the output_text tool (will replace the selection).`;
-    userPrompt = `Fix LaTeX in this:\n\n${selectionText}`;
+    userPrompt = withMaterial(`Fix LaTeX in this:\n\n${selectionText}`);
   }
 
   const result = await callAnthropic<NoteDoc | { text: string }>(
@@ -210,21 +231,26 @@ export async function anthropicNotesToCards(
   apiKey: string
 ): Promise<{ cards: CardInput[]; usage: AnthropicResponse<CardInput[]>['usage'] }> {
   const systemPrompt = `You are an expert at creating flashcards from engineering notes.
-Generate CardInput objects with:
-- frontJson: NoteDoc (question side, can contain math)
-- backJson: NoteDoc (answer side, can contain math)
-- confidence: ALWAYS "again" (the card hasn't been studied yet)
-- position: array index (0, 1, 2...)
-
-Rules:
-- One concept per card
-- Front: clear question or prompt
-- Back: concise answer with formulas where needed
-- Use NoteDoc format for both sides (headings, lists, math, code)
-- Output ONLY the CardInput[] array via the output_cards tool`;
+${cardInputArraySchemaDescription}`;
 
   const userPrompt = `Create flashcards from this note:\n\n${JSON.stringify(noteDoc, null, 2)}`;
 
-  const result = await callAnthropic<CardInput[]>(systemPrompt, userPrompt, cardInputArrayTool, apiKey);
-  return { cards: result.data, usage: result.usage };
+  // The tool input_schema root is `{cards:[...]}` (Anthropic tool schemas
+  // must be objects), so unwrap the array before it reaches
+  // GeneratedCardArraySchema.
+  const result = await callAnthropic<{ cards: CardInput[] }>(systemPrompt, userPrompt, cardInputArrayTool, apiKey);
+  const cards: CardInput[] = Array.isArray(result.data?.cards) ? result.data.cards : [];
+
+  const firstCard = cards[0];
+  console.log('[anthropicNotesToCards] Raw response:', {
+    cardCount: cards.length,
+    firstCard: firstCard ? {
+      hasFrontJson: !!firstCard.frontJson,
+      hasBackJson: !!firstCard.backJson,
+      confidence: firstCard.confidence ?? null,
+      position: firstCard.position ?? null,
+    } : null,
+  });
+
+  return { cards, usage: result.usage };
 }

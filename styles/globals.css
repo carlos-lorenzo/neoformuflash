@@ -145,7 +145,7 @@
   --container-*: initial;
   --container-auth: 400px; /* refs/06-auth: 380–420px, centred, chrome stripped */
   --container-measure: var(--measure); /* 68ch reading cap */
-  --container-review: 640px; /* the review card (§7) */
+  --container-review: 800px; /* the review card (§7) */
   --container-sidebar: var(--sidebar-width); /* 240px */
   --container-sidebar-rail: var(--sidebar-width-collapsed); /* 56px icon rail */
   --container-outline: var(--outline-rail-width); /* 200px, ≥1440px only */
@@ -171,6 +171,8 @@
   --max-w-md: var(--container-md);
   --max-w-lg: var(--container-lg);
   --max-w-xl: var(--container-xl);
+  /* Max width for attached filename in button (180px ≈ 11.25rem) */
+  --max-w-file-name: 180px;
 }
 
 /*
@@ -195,7 +197,7 @@
  * constraint.
  */
 @utility min-h-editor {
-  min-height: 400px;
+  min-height: 500px;
 }
 
 /* Notion-style editor: borderless, no background box, seamless with page */
@@ -241,6 +243,9 @@
 }
 @utility max-w-xl {
   max-width: var(--max-w-xl);
+}
+@utility max-w-file-name {
+  max-width: var(--max-w-file-name);
 }
 
 /*

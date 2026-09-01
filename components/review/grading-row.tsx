@@ -40,7 +40,7 @@ export function GradingRow({
             onClick={() => !disabled && onGrade(rating)}
             disabled={disabled}
             className={cn(
-              'flex flex-col items-center gap-1 rounded-md px-2 py-3 text-ui-sm font-medium transition-colors ease-out',
+              'flex flex-col items-center gap-2 rounded-md px-2 py-4 text-ui-sm font-medium transition-colors ease-out',
               'min-h-11 min-w-11', // ≥44px touch target at 390px (§6)
               RATING_VARIANT[rating],
               {
@@ -50,7 +50,7 @@ export function GradingRow({
             )}
           >
             <span>{t(`grade.${rating}`)}</span>
-            <span className="text-ui-sm font-mono tabular-nums text-secondary">
+            <span className="text-ui-sm font-mono tabular-nums text-secondary mb-1">
               {previews[rating]}
             </span>
           </button>

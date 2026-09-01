@@ -27,6 +27,7 @@
 'use client';
 
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
 import type { Editor } from '@tiptap/core';
 import { buildEditorExtensions } from '@/lib/editor/tiptap-extensions';
@@ -259,14 +260,17 @@ export const MathEditorField = forwardRef<MathEditorFieldHandle, MathEditorField
         <div className="prose prose-sm max-w-none">
           <EditorContent editor={editor} />
         </div>
-        {mathPanel && (
-          <MathInput
-            mode={mathPanel.mode}
-            initialLatex={mathPanel.initial}
-            position={mathPanel.position}
-            onCommit={commitMath}
-            onCancel={cancelMath}
-          />
+        {mathPanel && typeof document !== 'undefined' && (
+          createPortal(
+            <MathInput
+              mode={mathPanel.mode}
+              initialLatex={mathPanel.initial}
+              position={mathPanel.position}
+              onCommit={commitMath}
+              onCancel={cancelMath}
+            />,
+            document.body
+          )
         )}
       </>
     );

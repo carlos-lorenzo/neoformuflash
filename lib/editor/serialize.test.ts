@@ -188,6 +188,142 @@ describe('serialize', () => {
     });
   });
 
+  /*
+   * Regression: AI copilot output passed the shallow NoteDocSchema gate and was
+   * handed to unionToProse, whose helpers were not total — a misplaced node fell
+   * off the end of a switch and produced `undefined` entries (and
+   * `attrs.latex: undefined`) that reached editor.insertContent() and corrupted
+   * the document. unionToProse must now degrade, never emit undefined.
+   */
+  describe('unionToProse totality (malformed input)', () => {
+    /** Every value in the tree, so a stray `undefined` anywhere is caught. */
+    function collectValues(value: unknown, out: unknown[] = []): unknown[] {
+      out.push(value);
+      if (Array.isArray(value)) {
+        for (const v of value) collectValues(v, out);
+      } else if (value && typeof value === 'object') {
+        for (const v of Object.values(value)) collectValues(v, out);
+      }
+      return out;
+    }
+
+    function expectNoUndefined(pm: unknown) {
+      expect(collectValues(pm).some((v) => v === undefined)).toBe(false);
+    }
+
+    const MALFORMED: Array<[string, unknown]> = [
+      ['a top-level text node', { type: 'text', text: 'loose' }],
+      ['a top-level inlineMath node', { type: 'inlineMath', latex: 'x^2' }],
+      ['a top-level listItem', { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'i' }] }] }],
+      ['an entirely unknown block type', { type: 'iframe', src: 'evil' }],
+      ['a null block', null],
+      ['a bulletList whose child is a paragraph', {
+        type: 'bulletList',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'not an item' }] }],
+      }],
+      ['an orderedList whose child is a text node', {
+        type: 'orderedList',
+        content: [{ type: 'text', text: 'bare' }],
+      }],
+      ['an inlineMath node with no latex', {
+        type: 'paragraph',
+        content: [{ type: 'inlineMath' }],
+      }],
+      ['a displayMath node with no latex', { type: 'displayMath' }],
+      ['a heading with no level', { type: 'heading', content: [{ type: 'text', text: 'h' }] }],
+      ['a text node with no text', { type: 'paragraph', content: [{ type: 'text' }] }],
+    ];
+
+    for (const [name, block] of MALFORMED) {
+      it(`emits no undefined for ${name}`, () => {
+        const doc = { type: 'doc', content: [block] } as unknown as NoteDoc;
+        const pm = unionToProse(doc);
+        expectNoUndefined(pm);
+        // The doc always has exactly one replacement block — nothing vanishes
+        // into a hole in the array.
+        expect(pm.content).toHaveLength(1);
+        expect(pm.content?.[0]).toBeDefined();
+      });
+    }
+
+    it('emits no undefined for a doc with a missing content array', () => {
+      const pm = unionToProse({ type: 'doc' } as unknown as NoteDoc);
+      expectNoUndefined(pm);
+      expect(pm.content).toEqual([]);
+    });
+
+    it('recovers the text of an inline node stranded at block level', () => {
+      const doc = { type: 'doc', content: [{ type: 'text', text: 'kept' }] } as unknown as NoteDoc;
+      const pm = unionToProse(doc);
+      expect(pm.content?.[0]).toEqual({
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'kept' }],
+      });
+    });
+
+    it('wraps a non-listItem list child so the list stays valid', () => {
+      const doc = {
+        type: 'doc',
+        content: [{
+          type: 'bulletList',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }],
+        }],
+      } as unknown as NoteDoc;
+      const pm = unionToProse(doc);
+      expect(pm.content?.[0]).toEqual({
+        type: 'bulletList',
+        content: [{
+          type: 'listItem',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }],
+        }],
+      });
+    });
+
+    it('never emits a math node with an undefined latex attr', () => {
+      const doc = {
+        type: 'doc',
+        content: [
+          { type: 'displayMath' },
+          { type: 'paragraph', content: [{ type: 'inlineMath' }] },
+        ],
+      } as unknown as NoteDoc;
+      const pm = unionToProse(doc);
+      // displayMath degrades to an empty-latex block, inline math with no latex
+      // is dropped rather than rendered as an empty formula.
+      expect(pm.content?.[0]).toEqual({ type: 'blockMath', attrs: { latex: '' } });
+      expect(pm.content?.[1]).toEqual({ type: 'paragraph' });
+    });
+
+    it('never emits an empty text node (PM throws on those)', () => {
+      const doc = {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text' }, { type: 'text', text: 'real' }] }],
+      } as unknown as NoteDoc;
+      const pm = unionToProse(doc);
+      expect(pm.content?.[0]).toEqual({
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'real' }],
+      });
+    });
+
+    it('clamps an out-of-range heading level instead of emitting it verbatim', () => {
+      const doc = {
+        type: 'doc',
+        content: [{ type: 'heading', level: 9, content: [{ type: 'text', text: 'h' }] }],
+      } as unknown as NoteDoc;
+      const pm = unionToProse(doc);
+      expect(pm.content?.[0]?.attrs).toEqual({ level: 3 });
+    });
+
+    it('leaves well-formed docs byte-identical to the previous behaviour', () => {
+      // The hardening must not change the happy path.
+      const pm = unionToProse(EVERY_NODE_DOC);
+      const back = proseToUnion(pm);
+      expect(back.ok).toBe(true);
+      if (back.ok) expect(back.value).toEqual(EVERY_NODE_DOC);
+    });
+  });
+
   describe('edge cases', () => {
     it('round-trips an empty doc (content:[]) → PM adds a paragraph → union has one empty paragraph', () => {
       const emptyDoc: NoteDoc = { type: 'doc', content: [] };

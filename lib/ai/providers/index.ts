@@ -12,7 +12,7 @@ import * as openai from './openai';
 import * as anthropic from './anthropic';
 import * as google from './google';
 import * as deepseek from './deepseek';
-import { validateWithRepair, NoteDocSchema, GeneratedCardArraySchema, type GeneratedCard } from '@/lib/ai/validate-output';
+import { validateWithRepair, NoteDocSchema, CopilotTextSchema, GeneratedCardArraySchema, type GeneratedCard, MAX_REPAIR_ATTEMPTS } from '@/lib/ai/validate-output';
 
 export interface PdfToNoteResult {
   noteDoc: NoteDoc;
@@ -30,7 +30,7 @@ export interface NotesToCardsResult {
 }
 
 // Re-export validation utilities
-export { validateWithRepair, NoteDocSchema, GeneratedCardArraySchema, type GeneratedCard };
+export { validateWithRepair, NoteDocSchema, CopilotTextSchema, GeneratedCardArraySchema, type GeneratedCard, MAX_REPAIR_ATTEMPTS };
 
 function getProviderError(provider: AiProvider): never {
   throw new Error(`Unknown provider: ${provider}`);
@@ -69,23 +69,24 @@ export async function copilot(
   selectionText: string | null,
   prompt: string | undefined,
   provider: AiProvider,
-  apiKey: string
+  apiKey: string,
+  materialText?: string | null
 ): Promise<CopilotResult> {
   switch (provider) {
     case 'openai': {
-      const r = await openai.openaiCopilot(action, noteDoc, selectionText, prompt, apiKey);
+      const r = await openai.openaiCopilot(action, noteDoc, selectionText, prompt, apiKey, materialText);
       return { result: r.result, usage: { input_tokens: r.usage.prompt_tokens, output_tokens: r.usage.completion_tokens } };
     }
     case 'anthropic': {
-      const r = await anthropic.anthropicCopilot(action, noteDoc, selectionText, prompt, apiKey);
+      const r = await anthropic.anthropicCopilot(action, noteDoc, selectionText, prompt, apiKey, materialText);
       return { result: r.result, usage: { input_tokens: r.usage.input_tokens, output_tokens: r.usage.output_tokens } };
     }
     case 'google': {
-      const r = await google.googleCopilot(action, noteDoc, selectionText, prompt, apiKey);
+      const r = await google.googleCopilot(action, noteDoc, selectionText, prompt, apiKey, materialText);
       return { result: r.result, usage: { input_tokens: r.usage.promptTokenCount, output_tokens: r.usage.candidatesTokenCount } };
     }
     case 'deepseek': {
-      const r = await deepseek.deepseekCopilot(action, noteDoc, selectionText, prompt, apiKey);
+      const r = await deepseek.deepseekCopilot(action, noteDoc, selectionText, prompt, apiKey, materialText);
       return { result: r.result, usage: { input_tokens: r.usage.prompt_tokens, output_tokens: r.usage.completion_tokens } };
     }
     default:

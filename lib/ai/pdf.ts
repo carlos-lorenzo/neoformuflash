@@ -22,11 +22,12 @@ export async function extractPdfText(
   // Dynamic import to keep bundle size down and avoid Edge runtime issues
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
-  // pdf.js needs a worker; in Node we can use the built-in one
+  // pdf.js needs a worker; in Node we point to the worker file via file:// URL
+  // The pdf.worker.mjs is a webpack bundle that exports WorkerMessageHandler, not a URL string.
   if (typeof window === 'undefined') {
-    const worker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    pdfjs.GlobalWorkerOptions.workerSrc = worker as any;
+    // Resolve the worker file path at runtime and use file:// protocol
+    const workerPath = require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
+    pdfjs.GlobalWorkerOptions.workerSrc = `file://${workerPath}`;
   }
 
   let data: Uint8Array;

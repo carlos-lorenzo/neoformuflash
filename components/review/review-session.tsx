@@ -34,7 +34,7 @@ export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: bo
 
   const [queue, setQueue] = useState<ReviewQueueItem[]>([]);
   const [phase, setPhase] = useState<'front' | 'back' | 'grading' | 'learning' | 'complete'>('front');
-  const [revealed, setRevealed] = useState(false);
+  const [showingBack, setShowingBack] = useState(false);
   const [gradingInFlight, setGradingInFlight] = useState(false);
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
   const [inlineEditOpen, setInlineEditOpen] = useState(false);
@@ -98,7 +98,7 @@ useActiveScope('review');
   // Reveal handler: flips the card and moves to grading
   const handleReveal = useCallback(() => {
     if (phaseRef.current === 'front') {
-      setRevealed(true);
+      setShowingBack(true);
       setPhase('grading');
       setRevealTimestamp(Date.now());
     }
@@ -133,7 +133,7 @@ useActiveScope('review');
 
       // Advance
       setQueue((q) => q.slice(1));
-      setRevealed(false);
+      setShowingBack(false);
       setPhase('front');
       setGradingInFlight(false);
       setEditedDuringReview(false);
@@ -174,10 +174,11 @@ useActiveScope('review');
     })();
   }, { label: 'shortcuts.review.undo' });
 
-  // Space: reveal or Good
+  // Space: swap sides (flip card)
   useShortcut('review', ' ', () => {
-    if (phaseRef.current === 'front') handleReveal();
-    else if (phaseRef.current === 'grading') handleGrade('good');
+    if (phaseRef.current === 'front' || phaseRef.current === 'grading') {
+      setShowingBack((prev) => !prev);
+    }
   }, { label: 'shortcuts.review.revealOrGood' });
 
   // 1-4: grade directly
@@ -257,7 +258,7 @@ useActiveScope('review');
         <FlashcardCard
           front={current.card.frontJson}
           back={current.card.backJson}
-          revealed={revealed || phase === 'grading' || phase === 'learning'}
+          showingBack={showingBack}
           onReveal={handleReveal}
         />
       </div>

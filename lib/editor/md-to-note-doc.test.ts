@@ -193,6 +193,23 @@ describe('mdToNoteDoc — edge cases', () => {
       { type: 'paragraph', content: [{ type: 'text', text: 'body' }] },
     ]);
   });
+
+  /*
+   * Regression: the copilot text path handed this `undefined` when the model
+   * answer lacked a `text` field. The function claimed "Total: never throws"
+   * in its docstring but threw on `.replace`, breaking the preview instead of
+   * degrading. Now non-string input returns an empty doc silently.
+   */
+  it('returns an empty doc for non-string input (never throws)', () => {
+    // @ts-expect-error testing invalid input
+    expect(mdToNoteDoc(undefined)).toEqual({ type: 'doc', content: [] });
+    // @ts-expect-error testing invalid input
+    expect(mdToNoteDoc(null)).toEqual({ type: 'doc', content: [] });
+    // @ts-expect-error testing invalid input
+    expect(mdToNoteDoc(42)).toEqual({ type: 'doc', content: [] });
+    // @ts-expect-error testing invalid input
+    expect(mdToNoteDoc({})).toEqual({ type: 'doc', content: [] });
+  });
 });
 
 describe('mdToNoteDoc — round-trips through the serializer (AC6)', () => {

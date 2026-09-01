@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/supabase/session';
 import { getDecryptedKey, insertAiJob, updateAiJob } from '@/lib/db/ai-keys';
 import { extractPdfText } from '@/lib/ai/pdf';
-import { pdfToNote, validateWithRepair, NoteDocSchema } from '@/lib/ai/providers';
+import { pdfToNote, validateWithRepair, NoteDocSchema, MAX_REPAIR_ATTEMPTS } from '@/lib/ai/providers';
 import { createNoteRowWithContent } from '@/lib/db/notes';
 import { PdfToNoteInput } from '@neoformuflash/contracts';
 import type { NoteDoc } from '@neoformuflash/contracts';
@@ -79,6 +79,8 @@ export async function POST(req: NextRequest) {
       const res = await pdfToNote(extractedText, parsed.data.provider, apiKey);
       return res.noteDoc;
     },
+    MAX_REPAIR_ATTEMPTS,
+    { provider: parsed.data.provider, action: 'pdf_to_note', noteDoc: { extractedText: extractedText.slice(0, 200) } }
   );
 
   if (!result.ok) {

@@ -38,7 +38,7 @@ type SlashMenuProps = {
   defaultProvider?: 'openai' | 'anthropic' | 'google' | 'deepseek';
   /** Opens the copilot menu for the given action. */
   onOpenCopilot?: (
-    action: 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex',
+    action: 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex' | 'generate_cards',
     provider?: 'openai' | 'anthropic' | 'google' | 'deepseek'
   ) => void;
 };
@@ -73,6 +73,7 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineE
             { id: 'ai-rephrase', label: ai('actions.rephrase'), action: () => onOpenCopilot('rephrase', defaultProvider) },
             { id: 'ai-continue', label: ai('actions.continue'), action: () => onOpenCopilot('continue', defaultProvider) },
             { id: 'ai-fix-latex', label: ai('actions.fix_latex'), action: () => onOpenCopilot('fix_latex', defaultProvider) },
+            { id: 'ai-generate-cards', label: ai('actions.generate_cards'), action: () => onOpenCopilot('generate_cards', defaultProvider) },
           ]
         : []),
     ],

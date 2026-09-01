@@ -271,7 +271,7 @@ export type UpdateNoteSeoInput = z.infer<typeof UpdateNoteSeoInput>;
 
 export const GenerateCardsInput = z.object({
   noteId: z.uuid('content.note.invalid'),
-  courseId: z.uuid('content.course.invalid').nullable(),
+  courseId: z.uuid('content.course.invalid').nullable().optional(),
   target: z.enum(['new_deck', 'existing_deck']),
   deckId: z.uuid('content.deck.invalid').nullable(), // required when target==='existing_deck'
   provider: AiProvider,
@@ -294,9 +294,16 @@ export type PdfToNoteInput = z.infer<typeof PdfToNoteInput>;
 
 export const CopilotInput = z.object({
   noteId: z.uuid('content.note.invalid'),
-  action: z.enum(['generate', 'explain', 'summarize', 'rephrase', 'continue', 'fix_latex']),
+  action: z.enum(['generate', 'explain', 'summarize', 'rephrase', 'continue', 'fix_latex', 'generate_cards']),
   prompt: z.string().max(4000, 'ai.prompt.tooLong').optional(), // free-text when action==='generate'
-  selectionText: z.string().nullable(), // the current editor selection, or null for whole-doc
+  selectionText: z.string().nullable().optional(), // the current editor selection, or null for whole-doc
   provider: AiProvider,
+  // Optional user-attached reference material (PDF/txt/md) extracted server-side.
+  // Not persisted — only lives in the request so the model can consult it.
+  materialText: z.string().max(50000, 'ai.material.tooLong').optional(),
+  // For generate_cards action
+  target: z.enum(['new_deck', 'existing_deck']).optional(),
+  deckId: z.uuid('content.deck.invalid').nullable().optional(),
+  courseId: z.uuid('content.course.invalid').nullable().optional(),
 });
 export type CopilotInput = z.infer<typeof CopilotInput>;

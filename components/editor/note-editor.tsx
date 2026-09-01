@@ -98,7 +98,7 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
   const [hasAiKey, setHasAiKey] = useState(false);
   const [aiProviders, setAiProviders] = useState<Array<'openai' | 'anthropic' | 'google' | 'deepseek'>>([]);
   const [copilotOpen, setCopilotOpen] = useState(false);
-  const [copilotAction, setCopilotAction] = useState<'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex' | null>(null);
+  const [copilotAction, setCopilotAction] = useState<'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex' | 'generate_cards' | null>(null);
   const [copilotSelection, setCopilotSelection] = useState<string | null>(null);
   const [copilotProvider, setCopilotProvider] = useState<'openai' | 'anthropic' | 'google' | 'deepseek' | null>(null);
 
@@ -356,19 +356,6 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
     { label: 'shortcuts.forceSave', requireModified: true },
   );
 
-  // ⌘J — open AI Copilot for generating new content (no selection needed).
-  // This allows users to generate content from scratch without selecting text first.
-  useShortcut(
-    'editor',
-    'mod+j',
-    () => {
-      if (hasAiKey && editor) {
-        openCopilot('generate');
-      }
-    },
-    { label: 'shortcuts.openCopilot', requireModified: true },
-  );
-
   /* ---------------- outline (tablet+) ---------------- */
 
   // Rebuilt from the editor's own callbacks (onCreate/onUpdate) rather than an
@@ -460,7 +447,7 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
   // Open the copilot menu with the current selection. Defined after `editor` so
   // the immutable-refs lint rule doesn't flag the editorRef writes above.
   const openCopilot = useCallback((
-    action: 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex',
+    action: 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex' | 'generate_cards',
     provider?: 'openai' | 'anthropic' | 'google' | 'deepseek'
   ) => {
     if (!editor) return;
@@ -479,6 +466,19 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
     setCopilotOpen(true);
   }, [editor, aiProviders, copilotProvider]);
 
+  // ⌘J — open AI Copilot for generating new content (no selection needed).
+  // This allows users to generate content from scratch without selecting text first.
+  useShortcut(
+    'editor',
+    'mod+j',
+    () => {
+      if (hasAiKey && editor) {
+        openCopilot('generate');
+      }
+    },
+    { label: 'shortcuts.openCopilot', requireModified: true },
+  );
+
   // Sync editable state with tablet breakpoint
   useEffect(() => {
     editor?.setEditable(isTablet);
@@ -489,10 +489,50 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
   if (!isTablet) {
     return (
       <div className="flex min-h-dvh flex-col bg-base">
-        {/* Breadcrumb at top - seamlessly integrated with document */}
+        {/* Breadcrumb + save status. Inline (not fixed) so the indicator never
+            overlaps the app-shell header's settings menu at the top right. */}
+        <div className="mx-auto flex w-full max-w-measure items-center justify-between gap-2 px-4 py-2">
+          {courseName ? (
+            <nav
+              className="min-w-0 truncate text-ui-sm text-secondary"
+              aria-label={tn('breadcrumb')}
+            >
+              <Link
+                href={`/app/courses/${note.courseId}`}
+                className="hover:underline"
+              >
+                {courseName}
+              </Link>
+              <span aria-hidden="true"> / </span>
+              <span aria-current="page">{title}</span>
+            </nav>
+          ) : (
+            <span />
+          )}
+          <SaveIndicator status={saveStatus} className="shrink-0" />
+        </div>
+        <div className="mx-auto w-full max-w-measure flex-1 overflow-auto px-4 py-4">
+          {/* Title — integrated as the first block (Notion style) */}
+          <h1 className="font-serif text-read-h1 font-semibold text-primary">{title}</h1>
+
+          {/* Read-only message at 390px */}
+          <div className="mt-2 mb-4 rounded-md border border-subtle bg-raised px-4 py-3 text-ui-sm text-secondary">
+            {t('mobileReadonly')}
+          </div>
+          <NoteDocView doc={note.contentJson} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-dvh flex-col bg-base">
+      {/* Breadcrumb + save status. Inline (not fixed) so the indicator never
+          overlaps the app-shell header's settings menu at the top right. */}
+      <div className="mx-auto flex w-full max-w-measure items-center justify-between gap-2 px-4 py-2">
         {courseName ? (
           <nav
-            className="mx-auto max-w-measure px-4 py-2 text-ui-sm text-secondary"
+            className="min-w-0 truncate text-ui-sm text-secondary"
             aria-label={tn('breadcrumb')}
           >
             <Link
@@ -504,49 +544,30 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
             <span aria-hidden="true"> / </span>
             <span aria-current="page">{title}</span>
           </nav>
-        ) : null}
-        <div className="mx-auto w-full max-w-measure flex-1 overflow-auto px-4 py-4">
-          {/* Title — integrated as the first block (Notion style) */}
-          <h1 className="font-serif text-read-h1 font-semibold text-primary">{title}</h1>
-
-          {/* Read-only message at 390px */}
-          <div className="mt-2 mb-4 rounded-md border border-subtle bg-raised px-4 py-3 text-ui-sm text-secondary">
-            {t('mobileReadonly')}
-          </div>
-          <NoteDocView doc={note.contentJson} />
-        </div>
-
-        {/* Save indicator fixed top-right */}
-        <SaveIndicator
-          status={saveStatus}
-          className="fixed top-4 right-4 z-50"
-        />
+        ) : (
+          <span />
+        )}
+        <SaveIndicator status={saveStatus} className="shrink-0" />
       </div>
-    );
-  }
-
-  return (
-    <div className="flex min-h-dvh flex-col bg-base">
-      {/* Breadcrumb at top - seamlessly integrated with document */}
-      {courseName ? (
-        <nav
-          className="mx-auto max-w-measure px-4 py-2 text-ui-sm text-secondary"
-          aria-label={tn('breadcrumb')}
-        >
-          <Link
-            href={`/app/courses/${note.courseId}`}
-            className="hover:underline"
-          >
-            {courseName}
-          </Link>
-          <span aria-hidden="true"> / </span>
-          <span aria-current="page">{title}</span>
-        </nav>
-      ) : null}
 
       {/* Editor canvas - borderless, seamless with page background */}
       <div className="flex-1 overflow-auto p-4">
         <div className="mx-auto w-full max-w-measure">
+          {/* Copilot trigger — inside the editor column, not a fixed overlay,
+              so it never sits on top of the app-shell's left sidebar. */}
+          {isOwner && hasAiKey && (
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => openCopilot('generate')}
+                className="flex h-11 items-center gap-2 rounded-md border border-subtle bg-raised px-3 text-ui-sm text-secondary transition-colors hover:bg-inset hover:text-primary"
+                aria-label={t('openCopilot')}
+              >
+                <SparklesIcon className="size-4" />
+                <span>{t('openCopilot')}</span>
+              </button>
+            </div>
+          )}
           <div className="prose prose-sm max-w-none">
             <EditorContent
               editor={editor}
@@ -633,25 +654,6 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
           </>
         )}
       </aside>
-
-      {/* Save indicator fixed top-right */}
-      <SaveIndicator
-        status={saveStatus}
-        className="fixed top-4 right-4 z-50"
-      />
-
-      {/* Copilot trigger button (fixed top-left) - only on tablet+ where editor is editable */}
-      {isTablet && isOwner && hasAiKey && (
-        <button
-          type="button"
-          onClick={() => openCopilot('generate')}
-          className="fixed top-4 left-4 z-50 flex h-11 items-center gap-2 rounded-md border border-subtle bg-overlay px-3 text-ui-sm text-secondary hover:text-primary hover:bg-raised transition-colors shadow-overlay animate-dialog"
-          aria-label={t('openCopilot')}
-        >
-          <SparklesIcon className="size-4" />
-          <span>{t('openCopilot')}</span>
-        </button>
-      )}
 
       {/* Copilot menu */}
       {copilotOpen && copilotAction && editor && (

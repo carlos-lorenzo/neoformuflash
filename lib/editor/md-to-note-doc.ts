@@ -330,6 +330,13 @@ function parseBlocks(lines: string[]): BlockNode[] {
  * literal text, so the worst case is unstyled prose rather than lost content.
  */
 export function mdToNoteDoc(text: string): NoteDoc {
+  /*
+   * Guard the input type, not just its syntax. The copilot text path handed
+   * this `undefined` whenever the model's answer came back without the `text`
+   * field, and `.replace` threw — breaking the preview render rather than
+   * degrading. "Never throws" has to hold for the argument as well.
+   */
+  if (typeof text !== 'string') return { type: 'doc', content: [] };
   const normalized = text.replace(/\r\n?/g, '\n');
   return { type: 'doc', content: parseBlocks(normalized.split('\n')) };
 }
