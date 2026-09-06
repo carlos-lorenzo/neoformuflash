@@ -35,7 +35,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       type: type as VerifyOtpParams['type'],
     });
     if (error || !data.user) {
-      return NextResponse.redirect(`${origin}/login?error=oauth`);
+      logCallbackFailure('verifyOtp', error);
+      return NextResponse.redirect(oauthFailureUrl(origin, error));
     }
     return redirectByProfile(origin, data.user.id);
   }
@@ -48,7 +49,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user) {
-    return NextResponse.redirect(`${origin}/login?error=oauth`);
+    logCallbackFailure('exchangeCodeForSession', error);
+    return NextResponse.redirect(oauthFailureUrl(origin, error));
   }
 
   return redirectByProfile(origin, data.user.id);
@@ -65,6 +67,32 @@ const OTP_TYPES = new Set([
   'phone_change',
   'signup',
 ]);
+
+/**
+ * A GoTrue failure on a return leg ends on /login?error=oauth. The code is kept
+ * in the URL (`reason=`) so a screenshot or a support ticket carries the actual
+ * failure instead of "couldn't finish signing you in" with no trail. The login
+ * page ignores it — it only reads `error` — so this never changes the UI.
+ */
+function oauthFailureUrl(
+  origin: string,
+  error?: { code?: string; status?: number; message?: string } | null
+): string {
+  const url = `${origin}/login?error=oauth`;
+  if (!error) return url;
+  const reason =
+    error.code ?? (typeof error.status === 'number' ? String(error.status) : undefined);
+  return reason ? `${url}&reason=${encodeURIComponent(reason)}` : url;
+}
+
+/** The auth return legs are the place a broken redirect config shows up first. */
+function logCallbackFailure(
+  leg: 'verifyOtp' | 'exchangeCodeForSession',
+  error?: { code?: string; status?: number; message?: string } | null
+): void {
+  if (!error) return;
+  console.error(`[auth] callback ${leg} failed`, { code: error.code, status: error.status, message: error.message });
+}
 
 async function redirectByProfile(origin: string, userId: string): Promise<NextResponse> {
   const profileExists = await hasProfile(userId);

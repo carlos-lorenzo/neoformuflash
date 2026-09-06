@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { useActionState } from 'react';
+import { startTransition, useActionState } from 'react';
 import { useTranslations } from 'next-intl';
 import { updateNoteSeoAction } from '@/app/app/notes/[id]/seo/actions';
 import { cn } from '@/lib/cn';
@@ -27,6 +27,11 @@ export function SeoForm({
 }) {
   const router = useRouter();
   const t = useTranslations('notes.seo');
+  // Server-action failures come back as global catalog keys (error.unexpected),
+  // translated here from the default scope.
+  const tg = useTranslations();
+
+  const message = (key: string | undefined) => (key ? tg(key) /* i18n-dynamic-key */ : undefined);
 
   const {
     register,
@@ -50,7 +55,11 @@ export function SeoForm({
     formData.append('ogTitle', data.ogTitle);
     formData.append('ogDescription', data.ogDescription);
     formData.append('ogImageUrl', data.ogImageUrl);
-    await formAction(formData);
+    // The action is invoked from a click handler rather than a native form
+    // submit, so it must run inside a transition for React to track pending.
+    startTransition(() => {
+      formAction(formData);
+    });
   });
 
   if (state.ok && !isSubmitting && isDirty) {
@@ -187,7 +196,7 @@ export function SeoForm({
 
             {!state.ok && state.error && (
               <span className="text-ui-sm text-danger" role="alert">
-                {state.error}
+                {message(state.error)}
               </span>
             )}
           </div>

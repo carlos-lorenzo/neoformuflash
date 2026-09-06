@@ -31,6 +31,9 @@ export async function publishNoteAction(
   const result = await setNotePublished(user.id, noteId, publishedAt);
 
   if (!result.ok) {
+    // The UI only shows the catalog key; the DB cause must reach the log or a
+    // publish failure is undiagnosable from the outside.
+    console.error('[notes] publish failed', { noteId, action, cause: result.cause });
     return { ok: false, error: result.code };
   }
 

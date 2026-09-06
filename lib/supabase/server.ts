@@ -64,11 +64,25 @@ export function createSupabaseAnonClient() {
 export function createSupabaseServiceClient() {
   return createClient<Database>(
     requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
-    requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
+    requireServiceRoleKey(),
     {
       auth: { autoRefreshToken: false, persistSession: false },
     }
   );
+}
+
+/*
+ * The hosted project issues publishable/secret keys (sb_publishable_/sb_secret_);
+ * the service-role key lives in SUPABASE_SECRET there. The local CLI and the
+ * e2e fixtures still export the legacy SUPABASE_SERVICE_ROLE_KEY name. Prefer
+ * the legacy name so anything that sets only that keeps working, then fall back
+ * to SUPABASE_SECRET for the hosted stack. An empty string counts as unset —
+ * a stray `KEY=` line must not slip past the guard as a "valid" blank value.
+ */
+function requireServiceRoleKey(): string {
+  const legacy = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (legacy) return legacy;
+  return requireEnv('SUPABASE_SECRET');
 }
 
 /*

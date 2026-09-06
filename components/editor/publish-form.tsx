@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { startTransition, useActionState } from 'react';
 import { useTranslations } from 'next-intl';
 import { publishNoteAction } from '@/app/app/notes/[id]/publish/actions';
 
@@ -17,8 +17,14 @@ export function PublishForm({
   isPublished: boolean;
 }) {
   const t = useTranslations('notes.publish');
+  // The server action returns catalog keys (error.unexpected, ...) from the
+  // global namespace, so errors are translated from the default scope — exactly
+  // like the auth forms.
+  const tg = useTranslations();
 
-  const [state, formAction] = useActionState<PublishFormState, FormData>(
+  const message = (key: string | undefined) => (key ? tg(key) /* i18n-dynamic-key */ : undefined);
+
+  const [state, formAction, pending] = useActionState<PublishFormState, FormData>(
     async (_prev: PublishFormState, formData: FormData) => {
       const result = await publishNoteAction(_prev, formData);
       return result as PublishFormState;
@@ -26,11 +32,19 @@ export function PublishForm({
     { ok: false, error: undefined },
   );
 
-  const onSubmit = async (action: 'publish' | 'unpublish') => {
+  /*
+   * The controls are not a native form submit — publish and unpublish need
+   * different actions — so the useActionState action is invoked from a click
+   * handler. That call must sit inside a transition, or React cannot track
+   * pending state and logs "called outside of a transition".
+   */
+  const submit = (action: 'publish' | 'unpublish') => {
     const formData = new FormData();
     formData.append('noteId', noteId);
     formData.append('action', action);
-    await formAction(formData);
+    startTransition(() => {
+      formAction(formData);
+    });
   };
 
   return (
@@ -49,8 +63,8 @@ export function PublishForm({
           {!isPublished && (
             <button
               type="button"
-              onClick={() => onSubmit('publish')}
-              disabled={state.ok}
+              onClick={() => submit('publish')}
+              disabled={state.ok || pending}
               className="flex-1 rounded-md bg-accent px-3 py-2 text-ui-sm font-medium text-primary hover:bg-accent-hover disabled:opacity-50"
             >
               {state.ok ? t('published') : t('publishButton')}
@@ -59,8 +73,8 @@ export function PublishForm({
           {isPublished && (
             <button
               type="button"
-              onClick={() => onSubmit('unpublish')}
-              disabled={state.ok}
+              onClick={() => submit('unpublish')}
+              disabled={state.ok || pending}
               className="flex-1 rounded-md bg-inset px-3 py-2 text-ui-sm font-medium text-secondary hover:bg-subtle disabled:opacity-50"
             >
               {state.ok ? t('unpublished') : t('unpublishButton')}
@@ -69,7 +83,7 @@ export function PublishForm({
         </div>
         {state.error && (
           <p className="text-ui-sm text-danger" role="alert">
-            {state.error}
+            {message(state.error)}
           </p>
         )}
       </div>

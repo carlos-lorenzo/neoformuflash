@@ -4,6 +4,11 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSessionUser } from '@/lib/supabase/session';
+import {
+  classifyAuthError,
+  isUnexpectedFailure,
+  type AuthFailure,
+} from '@/lib/auth/classify-error';
 
 /*
  * Field-keyed errors. The values are message-catalog keys, never prose — the
@@ -62,7 +67,13 @@ export async function signUp(
   });
 
   if (error) {
-    return { status: 'idle', errors: { form: mapSignUpError(error.code) } };
+    const failure = classifyAuthError(error);
+    // Same rule as sign-in: an unknown code or an unreachable auth server must
+    // reach the log, not vanish behind the generic copy.
+    if (isUnexpectedFailure(failure)) {
+      console.error('[auth] sign-up failed', { code: error.code, status: error.status, message: error.message });
+    }
+    return { status: 'idle', errors: { form: signUpMessageKey(failure) } };
   }
 
   // Session present (confirmations off, local stack): straight through. The
@@ -75,18 +86,21 @@ export async function signUp(
   return { status: 'idle', errors: { form: 'error.unexpected' } };
 }
 
-function mapSignUpError(code: string | undefined): string {
-  switch (code) {
-    case 'user_already_exists':
+function signUpMessageKey(failure: AuthFailure): string {
+  switch (failure) {
+    case 'emailTaken':
       return 'signup.errors.emailTaken';
-    case 'weak_password':
+    case 'weakPassword':
       return 'signup.errors.weakPassword';
-    case 'over_request_rate_limit':
-    case 'over_email_send_rate_limit':
+    case 'rateLimited':
       return 'signup.errors.rateLimited';
-    case 'validation_failed':
+    case 'invalidEmail':
       return 'signup.email.invalid';
+    case 'network':
+      return 'error.network';
     default:
+      // invalid/unconfirmed are sign-in shapes and cannot occur on signup; an
+      // unknown code falls through here too.
       return 'error.unexpected';
   }
 }

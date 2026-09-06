@@ -3,6 +3,11 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSessionUser } from '@/lib/supabase/session';
+import {
+  classifyAuthError,
+  isUnexpectedFailure,
+  type AuthFailure,
+} from '@/lib/auth/classify-error';
 
 /*
  * Field-keyed errors. The values are message-catalog keys, never prose — the
@@ -30,7 +35,13 @@ export async function signInWithPassword(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { errors: { form: mapSignInError(error.code) } };
+    const failure = classifyAuthError(error);
+    // An unknown code or an unreachable auth server is a bug to know about, not
+    // a wrong password to shrug at — the raw error must reach the server log.
+    if (isUnexpectedFailure(failure)) {
+      console.error('[auth] sign-in failed', { code: error.code, status: error.status, message: error.message });
+    }
+    return { errors: { form: signInMessageKey(failure) } };
   }
 
   // The layout's resolveAppEntry routes a signed-in user with no profile to
@@ -44,16 +55,19 @@ export async function signInWithPassword(
  * (who has an email but no password). Three distinct messages would let anyone
  * enumerate which emails have accounts; one message reveals nothing.
  */
-function mapSignInError(code: string | undefined): string {
-  switch (code) {
-    case 'invalid_credentials':
+function signInMessageKey(failure: AuthFailure): string {
+  switch (failure) {
+    case 'invalid':
       return 'login.errors.invalid';
-    case 'email_not_confirmed':
+    case 'unconfirmed':
       return 'login.errors.unconfirmed';
-    case 'over_request_rate_limit':
-    case 'over_email_send_rate_limit':
+    case 'rateLimited':
       return 'login.errors.rateLimited';
+    case 'network':
+      return 'error.network';
     default:
+      // emailTaken/weakPassword/invalidEmail are signup shapes and cannot occur
+      // on sign-in; an unknown code falls through here too.
       return 'error.unexpected';
   }
 }
