@@ -27,3 +27,22 @@ export function parseHandleSegment(segment: string): string | null {
   const handle = decoded.slice(1).toLowerCase();
   return HANDLE_RE.test(handle) ? handle : null;
 }
+
+/*
+ * The canonical absolute URL of a public profile.
+ *
+ * Extracted because the same expression was written out at four call sites
+ * (three generateMetadata canonicals plus public-note-meta), which is three
+ * chances for one of them to drift — and one of them, the dashboard's copy
+ * button, had already drifted: it put `@handle` on the clipboard instead of a
+ * link.
+ *
+ * The `@` is not decoration. `parseHandleSegment` requires it, and because the
+ * route is a bare root `[handle]` segment that catches every unmatched
+ * top-level path, a URL without the sigil is a 404.
+ */
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://formuflash.com';
+
+export function publicProfileUrl(handle: string): string {
+  return `${SITE_URL}/@${handle}`;
+}

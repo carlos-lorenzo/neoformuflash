@@ -3,7 +3,7 @@
 import type { Metadata } from 'next';
 import type { PublicNote } from '@neoformuflash/contracts';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://formuflash.com';
+import { SITE_URL } from '@/lib/public/handle';
 
 export function generateNoteMetadata(handle: string, note: PublicNote): Metadata {
   // Canonical is keyed on the author's handle, not the course slug — the note

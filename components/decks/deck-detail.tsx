@@ -7,6 +7,7 @@ import type { Route } from 'next';
 import type { DeckRow } from '@/lib/db/decks';
 import type { CardSummary } from '@/lib/db/cards';
 import { CardList } from './card-list';
+import { MultiCardEditor } from './multi-card-editor';
 import { DeckForm } from './deck-form';
 import { DeleteDeckButton } from './delete-deck-button';
 
@@ -23,8 +24,15 @@ export async function DeckDetail({
 }) {
   const t = await getTranslations('decks');
 
+  /*
+   * The owner gets the editor canvas width; a subscriber gets the reading
+   * measure. §6: "a content column capped at 68ch for reading and full-bleed
+   * for the editor canvas" — the card grid is the latter.
+   */
+  const width = canEdit ? 'max-w-deck' : 'max-w-measure';
+
   return (
-    <div className="mx-auto w-full max-w-measure px-4 py-8">
+    <div className={`mx-auto w-full ${width} px-4 py-8`}>
       {courseName ? (
         <div className="mb-4 flex items-center gap-1 text-ui-sm text-secondary">
           <Link
@@ -88,16 +96,25 @@ export async function DeckDetail({
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-ui-base font-semibold text-primary">{t('detail.cards')}</h2>
-          {canEdit ? (
-            <Link
-              href={`/app/decks/${deck.id}/cards/new`}
-              className="rounded-sm border border-subtle px-3 py-2 text-ui-sm font-medium text-secondary hover:border-strong"
-            >
-              {t('detail.addCard')}
-            </Link>
-          ) : null}
         </div>
-        <CardList deckId={deck.id} canEdit={canEdit} cards={cards} />
+
+        {/*
+          The owner edits every card in place; a subscriber gets the read-only
+          list. The per-card routes (/cards/new, /cards/[id]/edit) still exist
+          and still work as deep links — nothing links to them any more.
+        */}
+        {canEdit ? (
+          <MultiCardEditor
+            deckId={deck.id}
+            initialCards={cards.map((card) => ({
+              id: card.id,
+              frontJson: card.frontJson,
+              backJson: card.backJson,
+            }))}
+          />
+        ) : (
+          <CardList deckId={deck.id} canEdit={canEdit} cards={cards} />
+        )}
       </section>
     </div>
   );

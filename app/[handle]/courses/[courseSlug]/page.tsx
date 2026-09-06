@@ -8,7 +8,7 @@ import type { Route } from 'next';
 import { getPublicCourseBySlug, getPublicCourseBySlugPublic } from '@/lib/db/courses';
 import { listCourseDecks } from '@/lib/db/decks';
 import { listPublicCourseNotes } from '@/lib/db/notes';
-import { parseHandleSegment } from '@/lib/public/handle';
+import { parseHandleSegment, publicProfileUrl } from '@/lib/public/handle';
 import { UsersIcon, CodeForkIcon } from '@/components/ui/icon';
 import { ShareActionsServer } from '@/components/share/share-actions-server';
 
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
     title: `${course.name} · @${handle} · FormuFlash`,
     description: t('course.metaDescription', { name: course.name, handle: `@${handle}` }),
     alternates: {
-      canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://formuflash.com'}/@${handle}/courses/${courseSlug}`,
+      canonical: `${publicProfileUrl(handle)}/courses/${courseSlug}`,
     },
   };
 }

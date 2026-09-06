@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CardInput, UpdateCardInput, CreateCourseInput, UpdateCourseInput } from './schemas';
+import {
+  CardInput,
+  UpdateCardInput,
+  CreateCourseInput,
+  UpdateCourseInput,
+  SignupProfileInput,
+} from './schemas';
 import type { NoteDoc } from './content';
 
 /*
@@ -8,6 +14,12 @@ import type { NoteDoc } from './content';
  * confidence field and the new update input, per the phase-03 spec.
  * Phase 03b adds the course inputs: a contracts change with no migration
  * (every table, policy, FK and grant courses needs already exists in 0003).
+ *
+ * Phase 03d adds SignupProfileInput, which had NO tests at all while it was
+ * the schema gating every signup — and whose three cross-field refinements
+ * were the reason the degree field vanished for anyone whose university was
+ * not on the list. The suite below exists so the "both optional, both
+ * independent" property is asserted rather than assumed.
  */
 
 const doc: NoteDoc = { type: 'doc', content: [] };
@@ -142,5 +154,129 @@ describe('UpdateCourseInput', () => {
 
   it('rejects a missing id', () => {
     expect(UpdateCourseInput.safeParse({ name: 'X' }).success).toBe(false);
+  });
+});
+
+describe('SignupProfileInput', () => {
+  const base = { displayName: 'Ada Lovelace', locale: 'en' as const };
+
+  it('accepts a name alone: university and degree are both optional', () => {
+    const result = SignupProfileInput.safeParse({
+      ...base,
+      institutionName: null,
+      degreeText: null,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a degree with NO university — the coupling that broke signup is gone', () => {
+    // The old schema refused this with 'onboarding.degree.needsInstitution',
+    // which is why picking "my university isn't listed" hid the degree field.
+    const result = SignupProfileInput.safeParse({
+      ...base,
+      institutionName: null,
+      degreeText: 'Physics',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a university with no degree', () => {
+    const result = SignupProfileInput.safeParse({
+      ...base,
+      institutionName: 'University of Bath',
+      degreeText: null,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a university nobody has ever entered, in any script', () => {
+    // The whole point of 0015: the list is not a gate.
+    for (const name of ['東京大学', 'Politechnika Warszawska', 'Université de Montréal']) {
+      const result = SignupProfileInput.safeParse({
+        ...base,
+        institutionName: name,
+        degreeText: null,
+      });
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it('trims, so a field of spaces is not a 3-character university name', () => {
+    const result = SignupProfileInput.safeParse({
+      ...base,
+      institutionName: '  Universitat Politècnica de València  ',
+      degreeText: '  Physics  ',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.institutionName).toBe('Universitat Politècnica de València');
+      expect(result.data.degreeText).toBe('Physics');
+    }
+  });
+
+  it('rejects a blank name with a stable catalog code, never prose', () => {
+    const result = SignupProfileInput.safeParse({
+      ...base,
+      displayName: '   ',
+      institutionName: null,
+      degreeText: null,
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe('onboarding.displayName.required');
+    }
+  });
+
+  it('caps university and degree length with their own codes', () => {
+    const long = 'x'.repeat(121);
+
+    const institution = SignupProfileInput.safeParse({
+      ...base,
+      institutionName: long,
+      degreeText: null,
+    });
+    expect(institution.success).toBe(false);
+    if (!institution.success) {
+      expect(institution.error.issues[0]?.message).toBe('onboarding.institution.tooLong');
+    }
+
+    const degree = SignupProfileInput.safeParse({
+      ...base,
+      institutionName: null,
+      degreeText: long,
+    });
+    expect(degree.success).toBe(false);
+    if (!degree.success) {
+      expect(degree.error.issues[0]?.message).toBe('onboarding.degree.tooLong');
+    }
+  });
+
+  it('rejects a locale with no catalog on disk', () => {
+    const result = SignupProfileInput.safeParse({
+      ...base,
+      locale: 'xx',
+      institutionName: null,
+      degreeText: null,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('has no institutionId / institutionOther / degreeId fields left', () => {
+    // Guards against a half-finished revert: if any of these came back, the
+    // form and the RPC would disagree about what a profile is made of.
+    const result = SignupProfileInput.safeParse({
+      ...base,
+      institutionName: null,
+      degreeText: null,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(Object.keys(result.data).sort()).toEqual([
+        'degreeText',
+        'displayName',
+        'institutionName',
+        'locale',
+      ]);
+    }
   });
 });

@@ -1,16 +1,16 @@
 /*
  * Inline SVG icons, copied verbatim from Font Awesome Free 6.7.2 (solid).
- * https://fontawesome.com/icons/users  /code-fork  /book-open
+ * https://fontawesome.com/icons/users  /code-fork  /book-open  /copy  /check
  * Icons: CC BY 4.0. Copyright 2024 Fonticons, Inc.
  *
  * The `d` strings and each icon's own viewBox are taken unmodified from the
  * upstream files. Hand-approximating them produces the smeared, low-resolution
  * shapes this file previously rendered.
  *
- * Sizing is by height (`h-*` + `w-auto`), never a square `size-*`: these three
+ * Sizing is by height (`h-*` + `w-auto`), never a square `size-*`: these
  * glyphs are 640x512, 448x512 and 576x512, so forcing equal width and height
- * squashes them horizontally. `h-[1em]` tracks the surrounding text so the icon
- * optically matches whatever type scale it sits in.
+ * squashes them horizontally. `h-[1em]` tracks the surrounding text so the
+ * icon optically matches whatever type scale it sits in.
  */
 
 type IconProps = { className?: string };
@@ -55,6 +55,76 @@ export function BookOpenIcon({ className = '' }: IconProps) {
       fill="currentColor"
     >
       <path d="M249.6 471.5c10.8 3.8 22.4-4.1 22.4-15.5l0-377.4c0-4.2-1.6-8.4-5-11C247.4 52 202.4 32 144 32C93.5 32 46.3 45.3 18.1 56.1C6.8 60.5 0 71.7 0 83.8L0 454.1c0 11.9 12.8 20.2 24.1 16.5C55.6 460.1 105.5 448 144 448c33.9 0 79 14 105.6 23.5zm76.8 0C353 462 398.1 448 432 448c38.5 0 88.4 12.1 119.9 22.6c11.3 3.8 24.1-4.6 24.1-16.5l0-370.3c0-12.1-6.8-23.3-18.1-27.6C529.7 45.3 482.5 32 432 32c-58.4 0-103.4 20-123 35.6c-3.3 2.6-5 6.8-5 11L304 456c0 11.4 11.7 19.3 22.4 15.5z" />
+    </svg>
+  );
+}
+
+export function CopyIcon({ className = '' }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 448 512"
+      className={`${BASE} ${className}`}
+      fill="currentColor"
+    >
+      <path d="M208 0L332.1 0c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9L448 336c0 26.5-21.5 48-48 48l-192 0c-26.5 0-48-21.5-48-48l0-288c0-26.5 21.5-48 48-48zM48 128l80 0 0 64-64 0 0 256 192 0 0-32 64 0 0 48c0 26.5-21.5 48-48 48L48 512c-26.5 0-48-21.5-48-48L0 176c0-26.5 21.5-48 48-48z" />
+    </svg>
+  );
+}
+
+export function CheckIcon({ className = '' }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 448 512"
+      className={`${BASE} ${className}`}
+      fill="currentColor"
+    >
+      <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
+    </svg>
+  );
+}
+
+export function FireIcon({ className = '' }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 448 512"
+      className={`${BASE} ${className}`}
+      fill="currentColor"
+    >
+      <path d="M159.3 5.4c7.8-7.3 19.9-7.2 27.7 .1c27.6 25.9 53.5 53.8 77.7 84c11-14.4 23.5-30.1 37-42.9c7.9-7.4 20.1-7.4 28 .1c34.6 33 63.9 76.6 84.5 118c20.3 40.8 33.8 82.5 33.8 111.9C448 404.2 348.2 512 224 512C98.4 512 0 404.1 0 276.5c0-38.4 17.8-85.3 45.4-131.7C73.3 97.7 112.7 48.6 159.3 5.4zM225.7 416c25.3 0 47.7-7 68.8-21c42.1-29.4 53.4-88.2 28.1-134.4c-4.5-9-16-9.6-22.5-2l-25.2 29.3c-6.6 7.6-18.5 7.4-24.7-.5c-16.5-21-46-58.5-62.8-79.8c-6.3-8-18.3-8.1-24.7-.1c-33.8 42.5-50.8 69.3-50.8 99.4C112 375.4 162.6 416 225.7 416z" />
+    </svg>
+  );
+}
+
+export function ClockIcon({ className = '' }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 512 512"
+      className={`${BASE} ${className}`}
+      fill="currentColor"
+    >
+      <path d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120l0 136c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2 280 120c0-13.3-10.7-24-24-24s-24 10.7-24 24z" />
+    </svg>
+  );
+}
+
+export function KeyIcon({ className = '' }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 512 512"
+      className={`${BASE} ${className}`}
+      fill="currentColor"
+    >
+      <path d="M336 352c97.2 0 176-78.8 176-176S433.2 0 336 0S160 78.8 160 176c0 18.7 2.9 36.8 8.3 53.7L7 391c-4.5 4.5-7 10.6-7 17l0 80c0 13.3 10.7 24 24 24l80 0c13.3 0 24-10.7 24-24l0-40 40 0c13.3 0 24-10.7 24-24l0-40 40 0c6.4 0 12.5-2.5 17-7l33.3-33.3c16.9 5.4 35 8.3 53.7 8.3zM376 96a40 40 0 1 1 0 80 40 40 0 1 1 0-80z" />
     </svg>
   );
 }

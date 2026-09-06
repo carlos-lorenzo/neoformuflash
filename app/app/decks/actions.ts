@@ -162,14 +162,18 @@ export async function createCard(input: {
   deckId: string;
   frontJson: NoteDoc;
   backJson: NoteDoc;
-  confidence: 'again' | 'hard' | 'good' | 'easy' | null;
 }): Promise<{ id?: string; errors?: Record<string, string> }> {
   const user = await getSessionUser();
   if (!user) return { errors: { form: 'error.unexpected' } };
 
   // Parse without the text/position fields: frontText/backText are recomputed
   // server-side (D3) and position is computed inside createCardRow (max+1).
-  const parsed = CardInput.omit({ frontText: true, backText: true, position: true }).safeParse(input);
+  const parsed = CardInput.omit({
+    frontText: true,
+    backText: true,
+    position: true,
+    confidence: true,
+  }).safeParse(input);
   if (!parsed.success) {
     const errors: Record<string, string> = {};
     for (const issue of parsed.error.issues) {
@@ -192,7 +196,8 @@ export async function createCard(input: {
     backJson: back.json,
     frontText: front.text,
     backText: back.text,
-    confidence: parsed.data.confidence,
+    // Unseen: confidence is a review outcome, not an authoring choice.
+    confidence: null,
   });
   if (!result.ok) return { errors: { form: result.code } };
   return { id: result.value.id };

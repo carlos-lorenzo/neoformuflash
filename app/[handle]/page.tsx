@@ -4,7 +4,7 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getPublicProfile, listPublicCoursesByOwner } from '@/lib/db/profiles';
-import { parseHandleSegment } from '@/lib/public/handle';
+import { parseHandleSegment, publicProfileUrl } from '@/lib/public/handle';
 import { PublicProfileHeader } from '@/components/public/public-profile-header';
 import { PublicCourseCard } from '@/components/public/public-course-card';
 
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
     title: `@${handle} · FormuFlash`,
     description: t('meta.description', { handle }),
     alternates: {
-      canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://formuflash.com'}/@${handle}`,
+      canonical: publicProfileUrl(handle),
     },
   };
 }

@@ -19,6 +19,15 @@
  *    unmodified key in an editable, so Escape never reaches a binding. The
  *    fix adds allowInEditable. This test proves Escape fires from a
  *    contenteditable when opted in, and does NOT fire when not.
+ *
+ * 4. Case-insensitive key declaration — matchesModifier lowercased the EVENT
+ *    key but compared it against the raw declared string, so every binding
+ *    written `'mod+M'` was dead. All eight ⌘M / ⌘⇧M registrations in the app
+ *    were declared that way. It stayed invisible because MathEditorField also
+ *    handles those keys at the ProseMirror level, so math kept working
+ *    whenever a field had focus and the dead binding had nothing left to
+ *    prove — a shortcut that is a no-op is silent by construction, which is
+ *    why the matcher itself now has a test.
  */
 
 import { render, fireEvent } from '@testing-library/react';
@@ -204,5 +213,92 @@ describe('useShortcut — Escape from contenteditable', () => {
 
     dispatchKey('Escape');
     expect(optedIn).toHaveBeenCalledTimes(1);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  4. Modifier bindings are case-insensitive                          */
+/* ------------------------------------------------------------------ */
+
+describe('useShortcut — modifier key case', () => {
+  function Harness({ keys, onPress }: { keys: string; onPress: () => void }) {
+    useActiveScope('editor');
+    useShortcut('editor', keys, onPress, { label: 'shortcuts.editor.inlineMath' });
+    return null;
+  }
+
+  /*
+   * jsdom is not a Mac, so isMac() is false and the dispatcher reads ctrlKey.
+   * Sending metaKey here would make every one of these pass for the wrong
+   * reason on a Mac and fail in CI.
+   */
+  const press = (key: string, extra: Record<string, unknown> = {}) =>
+    fireEvent.keyDown(window, { key, ctrlKey: true, bubbles: true, ...extra });
+
+  it('fires for a binding declared with a CAPITAL letter', () => {
+    // The exact string all four ⌘M registrations used.
+    const onPress = vi.fn();
+    render(
+      <Provider>
+        <Harness keys="mod+M" onPress={onPress} />
+      </Provider>
+    );
+
+    press('m');
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires for the same binding declared lowercase', () => {
+    const onPress = vi.fn();
+    render(
+      <Provider>
+        <Harness keys="mod+m" onPress={onPress} />
+      </Provider>
+    );
+
+    press('m');
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires for a shift+modifier binding declared with a capital', () => {
+    const onPress = vi.fn();
+    render(
+      <Provider>
+        <Harness keys="mod+shift+M" onPress={onPress} />
+      </Provider>
+    );
+
+    press('M', { shiftKey: true });
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires WITHOUT the caller passing requireModified', () => {
+    /*
+     * The second half of the same bug: the dispatcher ignores a binding on a
+     * modified keypress unless requireModified is set, and five of the eight
+     * mod+* registrations never set it. It is now derived from the key string,
+     * and `Harness` deliberately does not pass the flag.
+     */
+    const onPress = vi.fn();
+    render(
+      <Provider>
+        <Harness keys="mod+enter" onPress={onPress} />
+      </Provider>
+    );
+
+    press('Enter');
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not fire without the modifier', () => {
+    const onPress = vi.fn();
+    render(
+      <Provider>
+        <Harness keys="mod+M" onPress={onPress} />
+      </Provider>
+    );
+
+    fireEvent.keyDown(window, { key: 'm', bubbles: true });
+    expect(onPress).not.toHaveBeenCalled();
   });
 });

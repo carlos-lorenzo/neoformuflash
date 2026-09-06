@@ -199,19 +199,22 @@ describe('profiles', () => {
 });
 
 describe('taxonomy', () => {
+  /*
+   * These used to assert against the 54-university Spanish seed. That seed is
+   * gone (0015_open_taxonomy.sql): institutions are created on demand by
+   * find_or_create_institution() the first time a student types a name, so the
+   * table starts empty and its contents are not a fixture.
+   *
+   * The assertions therefore seed their own row. A test that asserts "more
+   * than 50 rows exist" was testing seed.sql, not the policy.
+   */
   it('is readable anonymously, because signup needs it before a session exists', async () => {
-    const { data, error } = await anon.from('institutions').select('slug');
-    expect(error).toBeNull();
-    expect(data?.length).toBeGreaterThan(50);
-    expect(data?.map((row) => row.slug)).toContain('upv');
-  });
+    const slug = `anon-readable-${Date.now()}`;
+    await admin.from('institutions').insert({ slug, name: 'Anon Readable University' });
 
-  it('exposes UPV degrees', async () => {
-    const { data } = await anon
-      .from('degrees')
-      .select('slug, institutions!inner(slug)')
-      .eq('institutions.slug', 'upv');
-    expect(data?.length).toBeGreaterThan(10);
+    const { data, error } = await anon.from('institutions').select('slug').eq('slug', slug);
+    expect(error).toBeNull();
+    expect(data?.map((row) => row.slug)).toContain(slug);
   });
 
   it('is not writable by a signed-in user', async () => {
@@ -335,13 +338,21 @@ describe('privilege escalation', () => {
   });
 
   it('F5: does not let a user pre-resolve a request to an institution', async () => {
-    const { data: upv } = await anon.from('institutions').select('id').eq('slug', 'upv').single();
+    // Seeded here rather than taken from seed.sql, which no longer ships any
+    // institutions.
+    const slug = `preresolve-target-${Date.now()}`;
+    const { data: target } = await admin
+      .from('institutions')
+      .insert({ slug, name: 'Pre-resolve Target University' })
+      .select('id')
+      .single();
+    expect(target?.id).toBeTruthy();
 
     const { error } = await alice.client.from('institution_requests').insert({
       user_id: alice.id,
       name: 'Pre-resolved',
       country: 'ES',
-      resolved_institution_id: upv?.id,
+      resolved_institution_id: target?.id,
     });
     expect(error).not.toBeNull();
   });

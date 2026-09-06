@@ -63,8 +63,8 @@ describe('create_profile', () => {
           p_display_name: sharedName,
           p_avatar_url: null,
           p_locale: 'en',
-          p_institution_id: null,
-          p_degree_id: null,
+          p_institution_name: null,
+          p_degree_text: null,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generated Args omit Postgres parameter nullability
         } as any)
       )
@@ -87,8 +87,8 @@ describe('create_profile', () => {
       p_display_name: 'First Profile',
       p_avatar_url: null,
       p_locale: 'en',
-      p_institution_id: null,
-      p_degree_id: null,
+      p_institution_name: null,
+      p_degree_text: null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generated Args omit Postgres parameter nullability
     } as any);
     expect(first.error).toBeNull();
@@ -97,8 +97,8 @@ describe('create_profile', () => {
       p_display_name: 'Second Profile',
       p_avatar_url: null,
       p_locale: 'en',
-      p_institution_id: null,
-      p_degree_id: null,
+      p_institution_name: null,
+      p_degree_text: null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generated Args omit Postgres parameter nullability
     } as any);
     // Must fail fast rather than spin the retry loop on the primary key.
@@ -112,8 +112,8 @@ describe('create_profile', () => {
       p_display_name: 'Forge Test',
       p_avatar_url: null,
       p_locale: 'en',
-      p_institution_id: null,
-      p_degree_id: null,
+      p_institution_name: null,
+      p_degree_text: null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generated Args omit Postgres parameter nullability
     } as any);
 
@@ -130,8 +130,8 @@ describe('create_profile', () => {
       p_display_name: 'Anonymous',
       p_avatar_url: null,
       p_locale: 'en',
-      p_institution_id: null,
-      p_degree_id: null,
+      p_institution_name: null,
+      p_degree_text: null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generated Args omit Postgres parameter nullability
     } as any);
 

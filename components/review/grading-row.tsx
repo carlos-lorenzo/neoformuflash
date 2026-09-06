@@ -50,7 +50,9 @@ export function GradingRow({
             )}
           >
             <span>{t(`grade.${rating}`)}</span>
-            <span className="text-ui-sm font-mono tabular-nums text-secondary mb-1">
+            {/* Inherit the button's text colour so the interval reads on the
+                coloured fills instead of a hard-coded grey over colour. */}
+            <span className="text-ui-sm font-mono tabular-nums mb-1">
               {previews[rating]}
             </span>
           </button>

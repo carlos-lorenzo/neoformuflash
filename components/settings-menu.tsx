@@ -3,29 +3,29 @@
 // Client: owns the dialog's open state.
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { Locale } from '@neoformuflash/contracts';
 import { Dialog } from '@/components/ui/dialog';
+import { KeyIcon } from '@/components/ui/icon';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SignOutButton } from '@/components/sign-out-button';
 import type { ThemeChoice } from '@/lib/theme';
 
 /*
- * Language, theme and sign-out behind one control.
+ * Language, theme, API keys and sign-out behind one control.
  *
- * They started out inline in the header. At 390px that produced a clipped
- * "Language" label, "Sign out" wrapped onto two lines, and the whole row
- * crushed against the brand — the header is 48px of dense chrome and three
- * stacked-label controls do not fit in it. The screenshots caught this; the
- * code read fine.
- *
- * One 44px trigger at every width, rather than a menu on mobile and an inline
- * row on desktop: the same affordance everywhere is easier to teach and there
- * is only one layout to verify.
+ * The gear is the app's only persistent chrome control now that the sidebar is
+ * gone, so it carries everything a student reaches for outside their content:
+ * the theme segmented control, the language picker, the API Keys page (which
+ * used to be a sidebar item) and sign-out. One 44px trigger at every width,
+ * one layout to verify (settings-menu history: inline header controls clipped
+ * at 390px and three stacked labels did not fit a 48px header).
  */
 export function SettingsMenu({ theme, locale }: { theme: ThemeChoice; locale: Locale }) {
   const t = useTranslations('nav');
+  const themeT = useTranslations('theme');
   const common = useTranslations('common');
   const [open, setOpen] = useState(false);
 
@@ -47,8 +47,28 @@ export function SettingsMenu({ theme, locale }: { theme: ThemeChoice; locale: Lo
         closeLabel={common('close')}
       >
         <div className="flex flex-col gap-6">
+          <div>
+            <p className="text-ui-sm font-medium text-secondary">{themeT('label')}</p>
+            <div className="mt-2">
+              <ThemeToggle value={theme} />
+            </div>
+          </div>
+
           <LocaleSwitcher value={locale} />
-          <ThemeToggle value={theme} />
+
+          <Link
+            href="/app/settings/ai-keys"
+            onClick={() => setOpen(false)}
+            className="duration-instant flex h-11 items-center gap-3 rounded-md px-3 text-ui-sm text-secondary transition-colors ease-out hover:bg-raised hover:text-primary"
+          >
+            <KeyIcon className="shrink-0 text-tertiary" />
+            <span className="flex-1 truncate">{t('aiKeys')}</span>
+            {/* i18n-exempt — a chevron, not a word */}
+            <span aria-hidden="true" className="text-tertiary">
+              ›
+            </span>
+          </Link>
+
           <div className="border-t border-subtle pt-4">
             <SignOutButton />
           </div>

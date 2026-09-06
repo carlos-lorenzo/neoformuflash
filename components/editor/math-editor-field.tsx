@@ -4,6 +4,7 @@
  * This component replaces the duplicated Tiptap editor setup in:
  *   - card-editor.tsx (front + back editors)
  *   - inline-edit-overlay.tsx (front + back editors)
+ *   - multi-card-editor.tsx (2 per card, one row live at a time)
  *   - (future) note-editor.tsx (adopts buildEditorExtensions only)
  *
  * It owns:
@@ -15,7 +16,8 @@
  *
  * The TRAP: note-editor.tsx holds module-level singletons (editorHandle,
  * mathOpener). That works only because exactly one NoteEditor ever mounts.
- * MathEditorField mounts TWICE simultaneously in the card editor (front + back) —
+ * MathEditorField mounts TWICE simultaneously in the legacy card editor
+ * (front + back), and the multi-card deck editor puts 2xN of them on one page —
  * clicking a formula in the front would open the panel over the back.
  * MUST use per-instance refs. This field exposes an imperative handle
  * (getDoc / isFocused / openInlineMath / openDisplayMath) so a parent can route
@@ -46,6 +48,20 @@ export type MathEditorFieldHandle = {
   isFocused: () => boolean;
   openInlineMath: () => void;
   openDisplayMath: () => void;
+  /** Move focus here. Used by the multi-card editor's Tab chain. */
+  focus: (pos?: 'start' | 'end') => void;
+  /** True when the document has no content — an untouched card row. */
+  isEmpty: () => boolean;
+  /**
+   * True while this field's MathInput panel is open.
+   *
+   * The shortcut provider listens on `window` with capture:true, so a parent's
+   * `allowInEditable` Escape binding fires BEFORE MathInput's own Escape
+   * handler and preventDefault does not stop it. A parent must consult this
+   * and bail, or Escape inside an open equation cancels the panel AND whatever
+   * the parent's Escape does.
+   */
+  hasOpenMathPanel: () => boolean;
 };
 
 type MathEditorFieldProps = {
@@ -62,6 +78,26 @@ type MathEditorFieldProps = {
   shortcutScope?: 'editor' | 'review' | 'global';
   /** Forwarded so a parent can inspect content / route shortcuts on save. */
   ref?: React.Ref<MathEditorFieldHandle>;
+  /** Focus this field as soon as its view exists. */
+  autoFocus?: boolean;
+  /** Where autoFocus lands. Tabbing forward wants 'start', backward 'end'. */
+  autoFocusPos?: 'start' | 'end';
+  /**
+   * Tab / Shift+Tab pressed inside this field. Return true to consume it.
+   *
+   * Handled here at the ProseMirror level rather than through useShortcut for
+   * three reasons: a global Tab binding would need `allowInEditable` and would
+   * then fire for every Tab on the page, destroying ordinary focus traversal;
+   * the semantics are "tab out of THIS field", which is exactly what a
+   * per-field handler scopes; and Shift+Tab out of the first field must FALL
+   * THROUGH to the browser, which returning false does for free.
+   *
+   * Omitting this prop leaves Tab entirely untouched — that is what keeps
+   * inline-edit-overlay.tsx and the legacy card editor behaving as before.
+   */
+  onTabOut?: (direction: 'forward' | 'backward') => boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
 };
 
 /**
@@ -91,12 +127,40 @@ function isAtStartOfEmptyBlock(ed: Editor): boolean {
  *   - ⌘⇧M / Ctrl+Shift+M → display math
  */
 export const MathEditorField = forwardRef<MathEditorFieldHandle, MathEditorFieldProps>(
-  function MathEditorField({ content, onChange, placeholder, shortcutScope }, ref) {
+  function MathEditorField(
+    {
+      content,
+      onChange,
+      placeholder,
+      shortcutScope,
+      autoFocus = false,
+      autoFocusPos = 'end',
+      onTabOut,
+      onFocus,
+      onBlur,
+    },
+    ref
+  ) {
     const [mathPanel, setMathPanel] = useState<MathPanel | null>(null);
+    /*
+     * Mirrors mathPanel so hasOpenMathPanel() can read it without putting
+     * mathPanel in the imperative handle's deps — which would hand the parent
+     * a new handle object every time an equation panel opened.
+     */
+    const mathPanelRef = useRef<MathPanel | null>(null);
+    mathPanelRef.current = mathPanel;
     const editorRef = useRef<Editor | null>(null);
     const pendingChangeRef = useRef<NoteDoc | null>(null);
     const flushTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingDollarRef = useRef(false);
+    /*
+     * handleKeyDown is captured once when the editor is created, so reading
+     * onTabOut through a ref is what keeps a re-rendered parent's newer
+     * callback reachable. Putting it in the deps of useEditor instead would
+     * tear down and rebuild the ProseMirror view on every parent render.
+     */
+    const onTabOutRef = useRef(onTabOut);
+    onTabOutRef.current = onTabOut;
 
     /*
      * Math panel openers — declared before useEditor so the handleKeyDown
@@ -150,6 +214,21 @@ export const MathEditorField = forwardRef<MathEditorFieldHandle, MathEditorField
           const ed = editorRef.current;
           if (!ed) return false;
 
+          /*
+           * Tab — only when a parent asked for it. Placed before every other
+           * branch so the multi-card editor's traversal is not shadowed, and
+           * ahead of StarterKit's list-item Tab keymap (direct view props are
+           * consulted before plugin keymaps). Consequence, accepted
+           * deliberately: inside a bullet list in a card field, Tab leaves the
+           * field rather than indenting the item.
+           */
+          if (event.key === 'Tab' && onTabOutRef.current) {
+            const handled = onTabOutRef.current(event.shiftKey ? 'backward' : 'forward');
+            if (!handled) return false;
+            event.preventDefault();
+            return true;
+          }
+
           // ⌘M / ⌘⇧M — inline / display math.
           if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'm') {
             event.preventDefault();
@@ -178,6 +257,9 @@ export const MathEditorField = forwardRef<MathEditorFieldHandle, MathEditorField
           return false;
         },
       },
+      autofocus: autoFocus ? autoFocusPos : false,
+      onFocus: () => onFocus?.(),
+      onBlur: () => onBlur?.(),
       onUpdate: ({ editor }) => {
         const union = proseToUnion(editor.getJSON());
         if (union.ok) {
@@ -215,6 +297,11 @@ export const MathEditorField = forwardRef<MathEditorFieldHandle, MathEditorField
       isFocused: () => editorRef.current?.view.hasFocus() ?? false,
       openInlineMath,
       openDisplayMath,
+      focus: (pos = 'end') => {
+        editorRef.current?.chain().focus(pos).run();
+      },
+      isEmpty: () => editorRef.current?.isEmpty ?? true,
+      hasOpenMathPanel: () => mathPanelRef.current !== null,
     }), [openInlineMath, openDisplayMath]);
 
     /*
@@ -223,11 +310,11 @@ export const MathEditorField = forwardRef<MathEditorFieldHandle, MathEditorField
      * registering ⌘M would let the dispatcher fire only the last-registered
      * match (provider's first-match-wins loop).
      */
-    useShortcut(shortcutScope as 'editor' | 'review' | 'global', 'mod+M', openInlineMath, {
+    useShortcut(shortcutScope as 'editor' | 'review' | 'global', 'mod+m', openInlineMath, {
       label: 'shortcuts.editor.inlineMath',
       disabled: shortcutScope === undefined,
     });
-    useShortcut(shortcutScope as 'editor' | 'review' | 'global', 'mod+shift+M', openDisplayMath, {
+    useShortcut(shortcutScope as 'editor' | 'review' | 'global', 'mod+shift+m', openDisplayMath, {
       label: 'shortcuts.editor.displayMath',
       disabled: shortcutScope === undefined,
     });

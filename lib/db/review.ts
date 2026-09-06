@@ -137,7 +137,7 @@ export async function startReview(
   // 1. Load deck (RLS enforces visibility)
   const { data: deck, error: deckErr } = await supabase
     .from('decks')
-    .select('id, title, desired_retention, new_cards_per_day')
+    .select('id, title, desired_retention, new_cards_per_day, owner_id')
     .eq('id', deckId)
     .maybeSingle();
 
@@ -206,7 +206,17 @@ export async function startReview(
         lapses: 0,
         due_at: now.toISOString(),
         last_reviewed_at: null,
-        seen_version: 1,
+        /*
+         * The version this student is about to see for the FIRST time — not 1.
+         *
+         * Hardcoding 1 meant any card whose author had edited it before anyone
+         * reviewed it arrived with content_version > seen_version, so the
+         * "this card changed while you were reviewing" dialog fired on a card
+         * the student had never laid eyes on. Editing is now the normal way to
+         * build a deck (every autosave can bump content_version), so an owner
+         * reviewing their own new deck hit it on essentially every card.
+         */
+        seen_version: c.content_version,
       }));
     }
   }
@@ -237,7 +247,16 @@ export async function startReview(
       ? null
       : rowToSrs(row);
 
-    const changed = content.content_version > (row.seen_version ?? 1);
+    /*
+     * Only a SUBSCRIBER can be told "this card was edited by its author".
+     * The deck owner IS the author: editing a card is how they build the deck
+     * (every autosave bumps content_version), so flagging their own edit as a
+     * remote change would prompt them on cards they changed themselves. A card
+     * with no prior review state cannot have "changed" either — there is no
+     * earlier version this student saw.
+     */
+    const isOwnDeck = deck.owner_id === userId;
+    const changed = !isOwnDeck && state !== null && content.content_version > (row.seen_version ?? 1);
 
     // Compute previews for the four ratings
     const previews: Record<Rating, string> = {

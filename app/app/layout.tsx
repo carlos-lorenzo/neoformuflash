@@ -12,7 +12,6 @@ import { AppShell } from '@/components/layout/app-shell';
 import { SettingsMenu } from '@/components/settings-menu';
 import { resolveAppEntry } from '@/lib/app-entry';
 import { getProfile } from '@/lib/db/profiles';
-import { getSidebarCollapsed } from '@/lib/preferences';
 import { getSessionUser } from '@/lib/supabase/session';
 import { getThemeChoice } from '@/lib/theme.server';
 
@@ -60,15 +59,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { profile } = entry;
 
-  const [theme, collapsed, locale] = await Promise.all([
+  const [theme, locale] = await Promise.all([
     getThemeChoice(),
-    getSidebarCollapsed(),
     getLocale(),
   ]);
 
   return (
     <AppShell
-      collapsed={collapsed}
       keyboardShortcutsEnabled={profile.keyboardShortcutsEnabled}
       actions={
         <SettingsMenu theme={theme} locale={isLocale(locale) ? locale : DEFAULT_LOCALE} />

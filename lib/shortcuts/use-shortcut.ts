@@ -59,7 +59,22 @@ export function useShortcut(
       scope,
       label: options?.label ?? '',
       onPress: stableOnPress,
-      requireModified: options?.requireModified ?? false,
+      /*
+       * Derived from the key string, not demanded from the caller.
+       *
+       * The dispatcher only considers a binding for a modified keypress when
+       * `requireModified` is true, so a `mod+*` binding registered without it
+       * is dead on arrival. Five of the eight `mod+*` registrations in this
+       * app were exactly that: ⌘↩ save, ⌘⇧↩ save-and-new, and both math
+       * bindings in the card editors never fired. Math still appeared to work
+       * because MathEditorField ALSO handles ⌘M at the ProseMirror level, so
+       * the dead binding had nothing left to prove — and `⌘↩` simply did
+       * nothing while phase 03b's acceptance criteria recorded it as passing.
+       *
+       * A binding whose keys start with `mod+` IS modified. Making the caller
+       * restate that is a trap, and this is the one place that knows both.
+       */
+      requireModified: options?.requireModified ?? keys.startsWith('mod+'),
       allowInEditable: options?.allowInEditable ?? false,
     });
 

@@ -146,6 +146,15 @@
   --container-auth: 400px; /* refs/06-auth: 380–420px, centred, chrome stripped */
   --container-measure: var(--measure); /* 68ch reading cap */
   --container-review: 800px; /* the review card (§7) */
+  /*
+   * The multi-card deck editor. §6 calls the editor canvas full-bleed rather
+   * than capped at the 68ch reading measure — two side-by-side fields plus row
+   * chrome inside 68ch left each field around 40 characters wide, which is not
+   * a place anyone wants to write a flashcard. Capped rather than truly
+   * full-bleed so the two columns do not stretch to absurd line lengths on
+   * very wide monitors.
+   */
+  --container-deck: 1440px;
   --container-sidebar: var(--sidebar-width); /* 240px */
   --container-sidebar-rail: var(--sidebar-width-collapsed); /* 56px icon rail */
   --container-outline: var(--outline-rail-width); /* 200px, ≥1440px only */
@@ -154,6 +163,7 @@
   --max-w-auth: var(--container-auth);
   --max-w-measure: var(--container-measure);
   --max-w-review: var(--container-review);
+  --max-w-deck: var(--container-deck);
   --max-w-sidebar: var(--container-sidebar);
   --max-w-sidebar-rail: var(--container-sidebar-rail);
   --max-w-outline: var(--container-outline);

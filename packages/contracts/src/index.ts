@@ -11,7 +11,8 @@ export type { Locale } from './i18n';
 export {
   SignupProfileInput,
   DISPLAY_NAME_MAX,
-  INSTITUTION_OTHER_MAX,
+  INSTITUTION_MAX,
+  DEGREE_MAX,
   TITLE_MAX,
   CreateNoteInput,
   UpdateNoteInput,

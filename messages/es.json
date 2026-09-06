@@ -11,7 +11,8 @@
     "retry": "Reintentar",
     "close": "Cerrar",
     "loading": "Cargando",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "noResults": "Aún no hay coincidencias. Sigue escribiendo para añadir la tuya."
   },
   "landing": {
     "signIn": "Entrar con Google",
@@ -86,21 +87,15 @@
     },
     "institution": {
       "label": "Universidad",
-      "placeholder": "Busca tu universidad",
-      "other": "Mi universidad no está en la lista",
-      "otherLabel": "Escribe el nombre de tu universidad",
-      "otherHint": "La revisaremos y la añadiremos.",
-      "required": "Elige una universidad.",
-      "invalid": "Esa universidad no existe.",
-      "tooLong": "El nombre no puede pasar de 120 caracteres.",
-      "ambiguous": "Elige una universidad de la lista o escribe la tuya, no las dos."
+      "placeholder": "Empieza a escribir tu universidad",
+      "hint": "Opcional. Escribe cualquier universidad del mundo: si es nueva, la añadimos.",
+      "tooLong": "El nombre de la universidad no puede pasar de 120 caracteres."
     },
     "degree": {
       "label": "Grado",
-      "placeholder": "Elige tu grado",
-      "empty": "Elige antes una universidad.",
-      "invalid": "Ese grado no existe.",
-      "needsInstitution": "Elige antes una universidad."
+      "placeholder": "p. ej. Física",
+      "hint": "Opcional. Como tú lo llames está bien.",
+      "tooLong": "El grado no puede pasar de 120 caracteres."
     },
     "submit": "Empezar"
   },
@@ -287,8 +282,6 @@
     "cardEditor": {
       "front": "Frente",
       "back": "Reverso",
-      "confidence": "Confianza",
-      "confidenceHint": "Tu indicador de dificultad para esta tarjeta.",
       "save": "Guardar tarjeta",
       "saveAndNew": "Guardar y nueva",
       "editTitle": "Editar tarjeta",
@@ -296,8 +289,6 @@
     },
     "cardList": {
       "sortPosition": "Ordenar por posición",
-      "sortConfidenceAsc": "Ordenar por confianza ↑",
-      "sortConfidenceDesc": "Ordenar por confianza ↓",
       "showAnswers": "Mostrar respuestas",
       "hideAnswers": "Ocultar respuestas",
       "delete": "Eliminar tarjeta",
@@ -308,16 +299,17 @@
       "backToDeck": "Volver al mazo",
       "card": "Tarjeta {n}"
     },
-    "grade": {
-      "again": "Otra vez",
-      "hard": "Difícil",
-      "good": "Bien",
-      "easy": "Fácil"
-    },
     "error": "Algo salió mal al cargar tus mazos.",
     "create": {
       "chooseCourse": "Elige una asignatura para este mazo",
       "createCourseFirst": "Crea una asignatura primero"
+    },
+    "cardGrid": {
+      "tabHint": "Tab pasa al siguiente campo. Tab en la última tarjeta añade una nueva.",
+      "showMore": "Mostrar más tarjetas",
+      "frontOf": "Anverso de la tarjeta {index}",
+      "backOf": "Reverso de la tarjeta {index}",
+      "deleteCard": "Eliminar la tarjeta {index}"
     }
   },
   "courses": {
@@ -374,8 +366,24 @@
     "courseEyebrow": "Asignatura",
     "openCourse": "Abrir asignatura",
     "publicProfileLabel": "Tu perfil público",
-    "copyHandle": "Copiar usuario",
-    "publicProfileHint": "Comparte este enlace para que otros encuentren tus apuntes y asignaturas públicas."
+    "publicProfileHint": "Comparte este enlace para que otros encuentren tus apuntes y asignaturas públicas.",
+    "copyLink": "Copiar enlace",
+    "copied": "Enlace copiado.",
+    "dueTitle": "Sigue estudiando",
+    "dueStudy": "Estudiar",
+    "dueCount": "{count} pendientes",
+    "newCount": "{count} nuevos",
+    "stats": {
+      "streak": "Racha",
+      "best": "Mejor {count, plural, one {# día} other {# días}}",
+      "studied": "Tarjetas repasadas",
+      "time": "Tiempo de estudio",
+      "due": "Tarjetas pendientes",
+      "today": "hoy",
+      "now": "ahora",
+      "unitMin": "min",
+      "heat": "Repasado {active} de los últimos {total} días"
+    }
   },
   "review": {
     "sessionTitle": "Repaso: {deck}",

@@ -23,7 +23,7 @@ const profile: Profile = {
   avatarUrl: null,
   locale: 'en',
   institutionId: null,
-  degreeId: null,
+  degreeText: null,
   isPro: false,
   keyboardShortcutsEnabled: true,
 };

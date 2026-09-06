@@ -1,4 +1,4 @@
-// Server Component: renders a deck's cards, sortable by position or confidence.
+// Server Component: renders a deck's cards, in position order.
 
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -9,12 +9,10 @@ export async function CardList({
   deckId,
   canEdit,
   cards,
-  initialSort = 'position',
 }: {
   deckId: string;
   canEdit: boolean;
   cards: CardSummary[];
-  initialSort?: 'position' | 'confidence_asc' | 'confidence_desc';
 }) {
   const t = await getTranslations('decks');
 
@@ -37,12 +35,7 @@ export async function CardList({
 
   return (
     <div>
-      <CardListClient
-        deckId={deckId}
-        canEdit={canEdit}
-        cards={cards}
-        initialSort={initialSort}
-      />
+      <CardListClient deckId={deckId} canEdit={canEdit} cards={cards} />
     </div>
   );
 }

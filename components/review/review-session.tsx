@@ -2,7 +2,7 @@
 // changed-card dialog, inline-edit overlay, end-session confirm,
 // session-complete summary with streak.
 //
-// Shortcuts (review scope): Space reveal→Good, 1-4 grade, e inline edit
+// Shortcuts (review scope): Space flip side (reveal / hide), 1-4 grade, e inline edit
 // (owned decks only), u undo, Esc end session (confirm if cards remain).
 
 'use client';
@@ -87,13 +87,18 @@ useActiveScope('review');
   // yet, surface it before the student reviews. Dismissing acknowledges the
   // change and the card stays in the queue with `changed` still true, so the
   // prompted set prevents a re-prompt on the same card (phase-03b F5).
+  //
+  // Owners never see it: the deck owner IS the author, and startReview never
+  // flags their own cards as changed. This guard is belt-and-braces so a stale
+  // or refetched queue item cannot reopen the dialog regardless.
   useEffect(() => {
     const current = queue[0];
     if (!current || !current.changed) return;
+    if (isOwner) return;
     if (promptedChangedRef.current.has(current.card.id)) return;
     promptedChangedRef.current.add(current.card.id);
     setChangedCardOpen(true);
-  }, [queue]);
+  }, [queue, isOwner]);
 
   // Reveal handler: flips the card and moves to grading
   const handleReveal = useCallback(() => {
@@ -174,10 +179,18 @@ useActiveScope('review');
     })();
   }, { label: 'shortcuts.review.undo' });
 
-  // Space: swap sides (flip card)
+  // Space: swap the side that is shown. Space must never grade or "click" the
+  // focused control like a regular form key would. Revealing still drives the
+  // state machine (handleReveal) so phase reaches 'grading' and the row,
+  // Edit button and 1-4/e bindings are live on desktop; the provider
+  // preventDefaults the matched key so a focused grade button can't also be
+  // natively activated.
   useShortcut('review', ' ', () => {
-    if (phaseRef.current === 'front' || phaseRef.current === 'grading') {
-      setShowingBack((prev) => !prev);
+    if (phaseRef.current === 'front') {
+      handleReveal();
+    } else if (phaseRef.current === 'grading') {
+      setShowingBack(false);
+      setPhase('front');
     }
   }, { label: 'shortcuts.review.revealOrGood' });
 
@@ -294,7 +307,6 @@ useActiveScope('review');
         cardId={inlineEditCard?.card.id ?? ''}
         front={inlineEditCard?.card.frontJson ?? { type: 'doc', content: [] }}
         back={inlineEditCard?.card.backJson ?? { type: 'doc', content: [] }}
-        confidence={inlineEditCard?.card.confidence ?? null}
         onSave={() => {
           setInlineEditOpen(false);
           setInlineEditCard(null);

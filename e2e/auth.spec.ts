@@ -34,8 +34,10 @@ test.describe('auth-signup', () => {
     const nameField = page.getByRole('textbox').first();
     await expect(nameField).toHaveValue('José Martínez-Peña');
 
-    await page.getByRole('combobox').first().click();
-    await page.getByRole('option', { name: /Universitat Politècnica de València/ }).click();
+    // University and degree are free text and both optional (0015). This flow
+    // fills them; e2e/auth-email.spec.ts covers leaving them blank.
+    await page.getByLabel('University').fill('Universitat Politècnica de València');
+    await page.getByLabel('Degree').fill('Physics');
 
     await page.getByRole('button', { name: /Get started|Empezar/ }).click();
 

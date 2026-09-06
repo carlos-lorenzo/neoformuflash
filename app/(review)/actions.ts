@@ -168,11 +168,14 @@ export async function acknowledgeChangedCard(
 /*  Save inline edit during review                                     */
 /* ------------------------------------------------------------------ */
 
+/*
+ * Content-only. The card editor never sends `confidence` (new cards are
+ * unseen until graded), so an inline save can't overwrite a review outcome.
+ */
 export async function saveInlineEdit(input: {
   cardId: string;
   frontJson: unknown;
   backJson: unknown;
-  confidence: 'again' | 'hard' | 'good' | 'easy' | null;
 }): Promise<{ ok: boolean; value?: { savedAt: string; contentVersion: number }; errors?: Record<string, string> }> {
   const user = await getSessionUser();
   if (!user) return { ok: false, errors: { form: 'error.unexpected' } };
@@ -192,7 +195,6 @@ export async function saveInlineEdit(input: {
     backJson: back.value,
     frontText: extractText(front.value),
     backText: extractText(back.value),
-    confidence: input.confidence,
   });
   if (!res.ok) return { ok: false, errors: { form: res.code } };
   return { ok: true, value: { savedAt: new Date().toISOString(), contentVersion: res.value.contentVersion } };

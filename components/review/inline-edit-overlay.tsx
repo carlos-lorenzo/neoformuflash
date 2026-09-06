@@ -14,7 +14,6 @@ import { useTranslations } from 'next-intl';
 import type { NoteDoc } from '@neoformuflash/contracts';
 import { saveInlineEdit } from '@/app/(review)/actions';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
 import { Dialog } from '@/components/ui/dialog';
 import { MathEditorField, type MathEditorFieldHandle } from '@/components/editor/math-editor-field';
 import { useActiveScope } from '@/lib/shortcuts/use-scope';
@@ -28,7 +27,6 @@ export type InlineEditOverlayProps = {
   cardId: string;
   front: NoteDoc;
   back: NoteDoc;
-  confidence: 'again' | 'hard' | 'good' | 'easy' | null;
   onSave: () => void;
 };
 
@@ -42,15 +40,13 @@ function InlineEditOverlayBody({
   cardId,
   front,
   back,
-  confidence,
   onSave,
 }: InlineEditOverlayProps) {
   const t = useTranslations('review');
-  // The field labels (front/back/confidence/save) live under decks.cardEditor.*
+  // The field labels (front/back/save) live under decks.cardEditor.*
   // — the card editor is their home namespace. Root-scoped tc for shared copy.
   const td = useTranslations('decks');
   const tc = useTranslations('common');
-  const [localConfidence, setLocalConfidence] = useState<'again' | 'hard' | 'good' | 'easy' | null>(confidence);
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -73,7 +69,6 @@ function InlineEditOverlayBody({
         cardId,
         frontJson: frontDoc,
         backJson: backDoc,
-        confidence: localConfidence,
       });
       if (!res.ok) {
         setFormError(res.errors?.form ?? 'error.unexpected');
@@ -82,7 +77,7 @@ function InlineEditOverlayBody({
       onSave();
       onClose();
     });
-  }, [cardId, localConfidence, onSave, onClose]);
+  }, [cardId, onSave, onClose]);
 
   const handleCancel = useCallback(() => {
     onClose();
@@ -103,8 +98,8 @@ function InlineEditOverlayBody({
     else target.openInlineMath();
   }, []);
 
-  useShortcut('editor', 'mod+M', () => openMathOnFocused(false), { label: 'shortcuts.editor.inlineMath' });
-  useShortcut('editor', 'mod+shift+M', () => openMathOnFocused(true), { label: 'shortcuts.editor.displayMath' });
+  useShortcut('editor', 'mod+m', () => openMathOnFocused(false), { label: 'shortcuts.editor.inlineMath' });
+  useShortcut('editor', 'mod+shift+m', () => openMathOnFocused(true), { label: 'shortcuts.editor.displayMath' });
 
   return (
     <Dialog
@@ -151,19 +146,6 @@ function InlineEditOverlayBody({
           </div>
         </section>
 
-        <Select
-          label={td('cardEditor.confidence')}
-          placeholder={td('cardEditor.confidence')}
-          value={localConfidence ?? undefined}
-          onValueChange={(v) => setLocalConfidence(v as 'again' | 'hard' | 'good' | 'easy' | null)}
-          emptyLabel=""
-          options={[
-            { value: 'again', label: td('grade.again') },
-            { value: 'hard', label: td('grade.hard') },
-            { value: 'good', label: td('grade.good') },
-            { value: 'easy', label: td('grade.easy') },
-          ]}
-        />
       </div>
     </Dialog>
   );

@@ -130,5 +130,8 @@ export async function deleteCourse(input: { id: string }): Promise<{ errors?: Re
 
   const result = await deleteCourseRow(input.id);
   if (!result.ok) return { errors: { form: result.code } };
+
+  // The dashboard (the merged home + courses page) is where deletion lands.
+  revalidatePath('/app');
   return {};
 }

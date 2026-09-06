@@ -8,7 +8,7 @@ import type { Route } from 'next';
 import { getPublicNoteBySlug } from '@/lib/db/notes';
 import { getPublicDeckBySlug, getPublicDeckBySlugPublic } from '@/lib/db/decks';
 import { listCards } from '@/lib/db/cards';
-import { parseHandleSegment } from '@/lib/public/handle';
+import { parseHandleSegment, publicProfileUrl } from '@/lib/public/handle';
 import { getSessionUser } from '@/lib/supabase/session';
 import { NoteDocView } from '@/components/note/note-doc-view';
 import { generateNoteMetadata } from '@/components/public/public-note-meta';
@@ -69,7 +69,7 @@ export async function generateMetadata({
     title: `${deck.title} · @${handle} · FormuFlash`,
     description: t('deck.metaDescription', { title: deck.title, handle: `@${handle}` }),
     alternates: {
-      canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://formuflash.com'}/@${handle}/${pathSlug}`,
+      canonical: `${publicProfileUrl(handle)}/${pathSlug}`,
     },
   };
 }

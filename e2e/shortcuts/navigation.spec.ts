@@ -46,7 +46,7 @@ test.describe('global shortcuts', () => {
     await page.keyboard.press('g');
 
     // The indicator should be visible (aria-live region with the g Kbd).
-    const indicator = page.locator('[aria-live="polite"]');
+    const indicator = page.locator('[data-g-prefix-indicator]');
     await expect(indicator).toBeVisible();
 
     await user.cleanup();
@@ -59,7 +59,7 @@ test.describe('global shortcuts', () => {
     await waitForHydration(page);
 
     await page.keyboard.press('g');
-    const indicator = page.locator('[aria-live="polite"]');
+    const indicator = page.locator('[data-g-prefix-indicator]');
     await expect(indicator).toBeVisible();
 
     await page.keyboard.press('h');

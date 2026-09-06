@@ -1,12 +1,16 @@
 import { redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@neoformuflash/contracts';
-import { listInstitutions } from '@/lib/db/institutions';
 import { hasProfile } from '@/lib/db/profiles';
 import { getSessionUser } from '@/lib/supabase/session';
 import { OnboardingForm } from './onboarding-form';
 
-// Server Component: fetches the taxonomy and the Google-supplied name.
+/*
+ * Server Component: supplies the Google-provided name and the translated
+ * labels. It no longer fetches a taxonomy — institution suggestions are
+ * searched on demand through /api/institutions as the student types, so an
+ * empty database costs nothing and a large one is never shipped in the HTML.
+ */
 
 export const metadata = {
   robots: { index: false },
@@ -19,10 +23,10 @@ export default async function OnboardingPage() {
   // First-run only (AC 2). A returning user never sees this screen.
   if (await hasProfile(user.id)) redirect('/app');
 
-  const [t, locale, institutions] = await Promise.all([
+  const [t, tc, locale] = await Promise.all([
     getTranslations('onboarding'),
+    getTranslations('common'),
     getLocale(),
-    listInstitutions(),
   ]);
 
   const metadata = user.user_metadata as Record<string, unknown> | undefined;
@@ -44,18 +48,16 @@ export default async function OnboardingPage() {
           className="mt-6"
           suggestedName={suggestedName}
           locale={isLocale(locale) ? locale : DEFAULT_LOCALE}
-          institutions={institutions}
           labels={{
             displayName: t('displayName.label'),
             displayNamePlaceholder: t('displayName.placeholder'),
             institution: t('institution.label'),
             institutionPlaceholder: t('institution.placeholder'),
-            institutionOther: t('institution.other'),
-            institutionOtherLabel: t('institution.otherLabel'),
-            institutionOtherHint: t('institution.otherHint'),
+            institutionHint: t('institution.hint'),
             degree: t('degree.label'),
             degreePlaceholder: t('degree.placeholder'),
-            degreeEmpty: t('degree.empty'),
+            degreeHint: t('degree.hint'),
+            noResults: tc('noResults'),
             submit: t('submit'),
           }}
         />

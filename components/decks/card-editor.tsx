@@ -1,5 +1,5 @@
-// Client: the card editor — front/back MathEditorField instances, confidence
-// select, save lifecycle.
+// Client: the card editor — front/back MathEditorField instances and the save
+// lifecycle.
 //
 // Shortcuts (editor scope): ⌘Enter save, ⌘⇧Enter save-and-new (new-card page
 // only), Esc cancel. ⌘M / ⌘⇧M route to whichever field has focus. Everything is
@@ -14,7 +14,6 @@ import type { NoteDoc } from '@neoformuflash/contracts';
 import type { CardRow } from '@/lib/db/cards';
 import { createCard, updateCard } from '@/app/app/decks/actions';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
 import { MathEditorField, type MathEditorFieldHandle } from '@/components/editor/math-editor-field';
 import { useActiveScope } from '@/lib/shortcuts/use-scope';
 import { useShortcut } from '@/lib/shortcuts/use-shortcut';
@@ -35,9 +34,6 @@ export function CardEditor({ deckId, card, allowCreateAnother = false }: CardEdi
   // common.* into every namespace is how catalogs rot.
   const tc = useTranslations('common');
   const router = useRouter();
-  const [confidence, setConfidence] = useState<'again' | 'hard' | 'good' | 'easy' | null>(
-    (card?.confidence as 'again' | 'hard' | 'good' | 'easy' | null | undefined) ?? 'good',
-  );
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   // Bumped to remount both fields after "save and create another".
@@ -68,7 +64,6 @@ export function CardEditor({ deckId, card, allowCreateAnother = false }: CardEdi
           deckId,
           frontJson: frontDoc,
           backJson: backDoc,
-          confidence,
         });
         if (res.errors?.form) {
           setFormError(res.errors.form);
@@ -82,7 +77,6 @@ export function CardEditor({ deckId, card, allowCreateAnother = false }: CardEdi
           deckId,
           frontJson: frontDoc,
           backJson: backDoc,
-          confidence,
         });
         if (res.errors?.form) {
           setFormError(res.errors.form);
@@ -90,7 +84,6 @@ export function CardEditor({ deckId, card, allowCreateAnother = false }: CardEdi
         }
         if (createAnother) {
           // Reset both fields for the next card, keep focus on front.
-          setConfidence('good');
           setFormError(null);
           setResetKey((k) => k + 1);
         } else {
@@ -98,7 +91,7 @@ export function CardEditor({ deckId, card, allowCreateAnother = false }: CardEdi
         }
       }
     });
-  }, [card, deckId, confidence, router]);
+  }, [card, deckId, router]);
 
   const handleCancel = useCallback(() => {
     router.back();
@@ -130,13 +123,13 @@ export function CardEditor({ deckId, card, allowCreateAnother = false }: CardEdi
     else target.openInlineMath();
   }, []);
 
-  useShortcut('editor', 'mod+M', () => openMathOnFocused(false), { label: 'shortcuts.editor.inlineMath' });
-  useShortcut('editor', 'mod+shift+M', () => openMathOnFocused(true), { label: 'shortcuts.editor.displayMath' });
+  useShortcut('editor', 'mod+m', () => openMathOnFocused(false), { label: 'shortcuts.editor.inlineMath' });
+  useShortcut('editor', 'mod+shift+m', () => openMathOnFocused(true), { label: 'shortcuts.editor.displayMath' });
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4">
-        <section className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4 laptop:flex-row laptop:items-start laptop:gap-4">
+        <section className="flex min-w-0 flex-1 flex-col gap-2">
           <h2 className="text-ui-sm font-semibold text-secondary">{t('cardEditor.front')}</h2>
           <div className="rounded-sm border border-subtle bg-inset">
             <MathEditorField
@@ -149,7 +142,7 @@ export function CardEditor({ deckId, card, allowCreateAnother = false }: CardEdi
           </div>
         </section>
 
-        <section className="flex flex-col gap-2">
+        <section className="flex min-w-0 flex-1 flex-col gap-2">
           <h2 className="text-ui-sm font-semibold text-secondary">{t('cardEditor.back')}</h2>
           <div className="rounded-sm border border-subtle bg-inset">
             <MathEditorField
@@ -161,22 +154,6 @@ export function CardEditor({ deckId, card, allowCreateAnother = false }: CardEdi
             />
           </div>
         </section>
-      </div>
-
-      <div className="w-full">
-        <Select
-          label={t('cardEditor.confidence')}
-          placeholder={t('cardEditor.confidence')}
-          value={confidence ?? undefined}
-          onValueChange={(v) => setConfidence(v as 'again' | 'hard' | 'good' | 'easy')}
-          emptyLabel=""
-          options={[
-            { value: 'again', label: t('grade.again') },
-            { value: 'hard', label: t('grade.hard') },
-            { value: 'good', label: t('grade.good') },
-            { value: 'easy', label: t('grade.easy') },
-          ]}
-        />
       </div>
 
       {formError ? <p className="text-ui-sm text-danger">{formError}</p> : null}

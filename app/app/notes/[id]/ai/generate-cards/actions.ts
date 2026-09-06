@@ -104,7 +104,9 @@ export async function generateCardsAction(
       backJson: card.backJson as NoteDoc,
       frontText,
       backText,
-      confidence: 'again',
+      // Unseen: confidence is a review outcome, not something generation can
+      // know — a card nobody has studied has no confidence yet.
+      confidence: null,
       position: card.position,
     });
     if (!cardRes.ok) {

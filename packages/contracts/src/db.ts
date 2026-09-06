@@ -530,21 +530,21 @@ export type Database = {
       }
       institutions: {
         Row: {
-          country: string
+          country: string | null
           created_at: string
           id: string
           name: string
           slug: string
         }
         Insert: {
-          country: string
+          country?: string | null
           created_at?: string
           id?: string
           name: string
           slug: string
         }
         Update: {
-          country?: string
+          country?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -635,7 +635,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
-          degree_id: string | null
+          degree_text: string | null
           desired_retention: number
           display_name: string
           handle: string
@@ -649,7 +649,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
-          degree_id?: string | null
+          degree_text?: string | null
           desired_retention?: number
           display_name: string
           handle: string
@@ -663,7 +663,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
-          degree_id?: string | null
+          degree_text?: string | null
           desired_retention?: number
           display_name?: string
           handle?: string
@@ -675,13 +675,6 @@ export type Database = {
           slug?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "profiles_degree_id_fkey"
-            columns: ["degree_id"]
-            isOneToOne: false
-            referencedRelation: "degrees"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "profiles_institution_id_fkey"
             columns: ["institution_id"]
@@ -867,15 +860,15 @@ export type Database = {
       create_profile: {
         Args: {
           p_avatar_url: string
-          p_degree_id: string
+          p_degree_text: string
           p_display_name: string
-          p_institution_id: string
+          p_institution_name: string
           p_locale: string
         }
         Returns: {
           avatar_url: string | null
           created_at: string
-          degree_id: string | null
+          degree_text: string | null
           desired_retention: number
           display_name: string
           handle: string
@@ -894,6 +887,7 @@ export type Database = {
         }
       }
       delete_course: { Args: { p_course_id: string }; Returns: undefined }
+      find_or_create_institution: { Args: { p_name: string }; Returns: string }
       fork_course: {
         Args: { p_course_id: string }
         Returns: Database["public"]["CompositeTypes"]["fork_result"]
@@ -914,7 +908,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      institution_acronym: { Args: { p_name: string }; Returns: string }
       profile_slug_base: { Args: { p_base: string }; Returns: string }
+      search_institutions: {
+        Args: { p_limit?: number; p_min_similarity?: number; p_query: string }
+        Returns: {
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       slugify: { Args: { p_input: string }; Returns: string }
       subscribe_to_course: { Args: { p_course_id: string }; Returns: undefined }
       subscribe_to_deck: { Args: { p_deck_id: string }; Returns: undefined }

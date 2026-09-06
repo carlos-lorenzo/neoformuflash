@@ -225,6 +225,11 @@ Vertical rhythm in the note surface: paragraph spacing `--sp-4`, before a headin
 
 Structure: a fixed left sidebar (240px, collapsible to 56px icon rail), a content column capped at 68ch for reading and full-bleed for the editor canvas, and an optional right outline rail (200px) at ≥1440px only.
 
+The editor canvas is capped rather than literally full-bleed: `--container-deck`
+(1200px, added phase 03d) bounds the multi-card deck editor. Two side-by-side
+card fields inside the 68ch reading measure left each one around 40 characters
+wide; unbounded, they stretch past a comfortable line length at 1440px+.
+
 Mobile review screen is thumb-first: the grading row sits in the bottom 25% of the viewport, targets ≥ 44×44 with ≥ `--sp-2` between them.
 
 ---

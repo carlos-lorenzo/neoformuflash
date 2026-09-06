@@ -56,6 +56,7 @@ Taken from Linear, which is the reference that got this right: **`g` + letter na
 | `⌘⇧↩` | Save and create another — card editor only |
 | `Esc` | Exit math node into surrounding text; otherwise cancel and close |
 | `/` | Slash menu — only at the start of an empty block |
+| `Tab` / `⇧Tab` | Next / previous field — multi-card deck editor only. `Tab` from the last card's back adds a new card. |
 
 **On `⌘↩` / `⌘⇧↩` (added phase 03b).** The note editor autosaves, so it needs no save key
 beyond `⌘S`'s reassurance. The card editor does not: a card is a small, discrete unit that is
@@ -65,6 +66,34 @@ without it every card costs a round trip through the deck page.
 
 `↩` is safe to bind with a modifier here: bare `Enter` inside a Tiptap block creates a
 paragraph and must keep doing so.
+
+**On `Tab` (added phase 03d).** This is the one binding in this document that is NOT registered
+with the dispatcher. It lives in `MathEditorField`'s ProseMirror `handleKeyDown`, alongside the
+existing `$` / `⌘M` machine, for three reasons that a global binding cannot satisfy:
+
+1. A dispatcher binding would need `allowInEditable`, and would then fire for **every** `Tab` on
+   the page — including the delete button and the confidence control — destroying ordinary focus
+   traversal on a screen that is mostly form controls.
+2. The semantics are "tab out of *this* field", which is exactly what a per-field handler scopes.
+3. `⇧Tab` from the very first field must **fall through** to the browser so focus leaves the grid
+   naturally. Returning `false` from a ProseMirror handler does that for free; a global binding
+   would have to reimplement focus order to get it back.
+
+The field intercepts `Tab` only when a parent passes `onTabOut`, so the note editor, the review
+inline-edit overlay and the legacy card editor are untouched.
+
+Accepted consequence: inside a bullet list in a card field, `Tab` leaves the field rather than
+indenting the item. Predictable traversal across ~40 cards is worth more than list indentation on
+a flashcard.
+
+Because it is not in the dispatcher it can never appear in the `?` overlay, so the multi-card
+editor carries an inline hint (`decks.cardGrid.tabHint`) above the grid. That hint is the only
+place this behaviour is taught and is not optional decoration.
+
+**Deliberately not added:** `⌘⌫` to delete the focused card. The list section binds it for a
+focused *list item*, but in the grid every row is an editable field, and a delete key one
+keystroke away from `⌫` inside a text field is a bad trade. Deletion ships pointer-only, which
+still satisfies "nothing is shortcut-only".
 
 **On `Esc` (clarified phase 03b).** The global row below reads "close topmost layer", and this
 row is a case of it — but the dispatcher was blocking `Esc` inside every editable target,

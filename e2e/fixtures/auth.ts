@@ -170,6 +170,23 @@ export async function seedUserWithProfile(label: string): Promise<SeededUser> {
  * and it would break as "the user is mysteriously logged out", which is a bad
  * afternoon to debug.
  */
+/**
+ * Put a known institution in the table so the type-ahead has something to
+ * suggest.
+ *
+ * Needed because 0015_open_taxonomy.sql removed the seed entirely: the table
+ * now fills itself from what users type, so a test that expects a suggestion
+ * has to supply one rather than assume another test ran first. service_role is
+ * the only role that may write this table directly — `authenticated` cannot,
+ * which is itself asserted in tests/db/open-taxonomy.test.ts.
+ */
+export async function seedInstitution(name: string, slug: string): Promise<void> {
+  const { error } = await adminClient()
+    .from('institutions')
+    .upsert({ slug, name }, { onConflict: 'slug' });
+  if (error) throw new Error(`institution seed failed: ${error.message}`);
+}
+
 export async function signIn(context: BrowserContext, user: SeededUser): Promise<void> {
   const response = await context.request.post('/api/test-auth', {
     data: { email: user.email, password: user.password },

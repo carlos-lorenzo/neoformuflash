@@ -11,7 +11,8 @@
     "retry": "Retry",
     "close": "Close",
     "loading": "Loading",
-    "settings": "Settings"
+    "settings": "Settings",
+    "noResults": "No matches yet. Keep typing to add yours."
   },
   "landing": {
     "signIn": "Sign in with Google",
@@ -86,21 +87,15 @@
     },
     "institution": {
       "label": "University",
-      "placeholder": "Search for your university",
-      "other": "My university isn't listed",
-      "otherLabel": "Type your university's name",
-      "otherHint": "We'll review it and add it.",
-      "required": "Choose a university.",
-      "invalid": "That university doesn't exist.",
-      "tooLong": "Name can't be longer than 120 characters.",
-      "ambiguous": "Pick a university from the list or type your own, not both."
+      "placeholder": "Start typing your university",
+      "hint": "Optional. Type any university in the world — if it's new, we'll add it.",
+      "tooLong": "University name can't be longer than 120 characters."
     },
     "degree": {
       "label": "Degree",
-      "placeholder": "Choose your degree",
-      "empty": "Choose a university first.",
-      "invalid": "That degree doesn't exist.",
-      "needsInstitution": "Choose a university first."
+      "placeholder": "e.g. Physics",
+      "hint": "Optional. Whatever you call it is fine.",
+      "tooLong": "Degree can't be longer than 120 characters."
     },
     "submit": "Get started"
   },
@@ -287,8 +282,6 @@
     "cardEditor": {
       "front": "Front",
       "back": "Back",
-      "confidence": "Confidence",
-      "confidenceHint": "Your difficulty hint for this card.",
       "save": "Save card",
       "saveAndNew": "Save and new",
       "editTitle": "Edit card",
@@ -296,8 +289,6 @@
     },
     "cardList": {
       "sortPosition": "Sort by position",
-      "sortConfidenceAsc": "Sort by confidence ↑",
-      "sortConfidenceDesc": "Sort by confidence ↓",
       "showAnswers": "Show answers",
       "hideAnswers": "Hide answers",
       "delete": "Delete card",
@@ -308,16 +299,17 @@
       "backToDeck": "Back to deck",
       "card": "Card {n}"
     },
-    "grade": {
-      "again": "Again",
-      "hard": "Hard",
-      "good": "Good",
-      "easy": "Easy"
-    },
     "error": "Something went wrong loading your decks.",
     "create": {
       "chooseCourse": "Choose a course for this deck",
       "createCourseFirst": "Create a course first"
+    },
+    "cardGrid": {
+      "tabHint": "Tab moves to the next field. Tab from the last card adds a new one.",
+      "showMore": "Show more cards",
+      "frontOf": "Card {index} front",
+      "backOf": "Card {index} back",
+      "deleteCard": "Delete card {index}"
     }
   },
   "courses": {
@@ -374,8 +366,24 @@
     "courseEyebrow": "Course",
     "openCourse": "Open course",
     "publicProfileLabel": "Your public profile",
-    "copyHandle": "Copy handle",
-    "publicProfileHint": "Share this link so others can find your public notes and courses."
+    "publicProfileHint": "Share this link so others can find your public notes and courses.",
+    "copyLink": "Copy link",
+    "copied": "Link copied.",
+    "dueTitle": "Continue studying",
+    "dueStudy": "Study",
+    "dueCount": "{count} due",
+    "newCount": "{count} new",
+    "stats": {
+      "streak": "Streak",
+      "best": "Best {count, plural, one {# day} other {# days}}",
+      "studied": "Cards reviewed",
+      "time": "Time studied",
+      "due": "Cards due",
+      "today": "today",
+      "now": "now",
+      "unitMin": "min",
+      "heat": "Reviewed on {active} of the last {total} days"
+    }
   },
   "review": {
     "sessionTitle": "Review: {deck}",

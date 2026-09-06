@@ -32,7 +32,7 @@ export function DeleteCourseButton({ courseId }: { courseId: string }) {
         );
         return;
       }
-      router.push('/app/courses');
+      router.push('/app');
     });
   }
 

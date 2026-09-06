@@ -14,7 +14,8 @@ import type { Database } from './db';
  */
 
 export const DISPLAY_NAME_MAX = 80;
-export const INSTITUTION_OTHER_MAX = 120;
+export const INSTITUTION_MAX = 120;
+export const DEGREE_MAX = 120;
 
 export const SignupProfileInput = z
   .object({
@@ -24,40 +25,51 @@ export const SignupProfileInput = z
       .min(1, 'onboarding.displayName.required')
       .max(DISPLAY_NAME_MAX, 'onboarding.displayName.tooLong'),
 
-    /** A row in `institutions`. Null when the student picked "other". */
-    institutionId: z.uuid('onboarding.institution.invalid').nullable(),
-
-    /**
-     * Free text from the "my university isn't listed" path. This NEVER creates
-     * an `institutions` row — it is written to `institution_requests` for
-     * moderation. A text column here would mean 400 spellings of "Universitat
-     * Politècnica de València" by the time V2's browse-by-university matters.
+    /*
+     * Free text, resolved server-side by find_or_create_institution(): an
+     * existing row wins (matched case- and accent-insensitively), otherwise a
+     * new one is created.
+     *
+     * This reverses ADR-002 decision 2, which made institution a closed table
+     * so that "browse by university" would stay a query rather than a
+     * data-cleanup project. The closed list turned out to hold 27 Spanish
+     * universities and to be the thing blocking every student outside it from
+     * finishing signup. Duplicate spellings are now possible and accepted;
+     * the answer to them is a merge tool, not a gate on signup.
+     *
+     * Null means "skipped" — it is not an error.
      */
-    institutionOther: z
+    institutionName: z
       .string()
       .trim()
-      .min(1, 'onboarding.institution.required')
-      .max(INSTITUTION_OTHER_MAX, 'onboarding.institution.tooLong')
+      .max(INSTITUTION_MAX, 'onboarding.institution.tooLong')
       .nullable(),
 
-    /** A row in `degrees`, always belonging to `institutionId`. */
-    degreeId: z.uuid('onboarding.degree.invalid').nullable(),
+    /*
+     * Plain text on `profiles.degree_text`. Deliberately NOT a row in
+     * `degrees`: that table keys degrees to one institution, which is what
+     * made the degree field disappear whenever a student picked "my
+     * university isn't listed". Null means "skipped".
+     *
+     * (`degrees` still exists — `courses.degree_id` references it — it is
+     * simply no longer part of signup.)
+     */
+    degreeText: z
+      .string()
+      .trim()
+      .max(DEGREE_MAX, 'onboarding.degree.tooLong')
+      .nullable(),
 
     locale: z.enum(LOCALES),
-  })
-  .refine((v) => v.institutionId === null || v.institutionOther === null, {
-    error: 'onboarding.institution.ambiguous',
-    path: ['institutionOther'],
-  })
-  .refine((v) => v.institutionId !== null || v.institutionOther !== null, {
-    error: 'onboarding.institution.required',
-    path: ['institutionId'],
-  })
-  // A degree belongs to an institution, so it cannot be set on the "other" path.
-  .refine((v) => v.degreeId === null || v.institutionId !== null, {
-    error: 'onboarding.degree.needsInstitution',
-    path: ['degreeId'],
   });
+
+/*
+ * No cross-field refinements. The three that used to live here policed the
+ * institutionId / institutionOther / degreeId triangle — mutual exclusion,
+ * at-least-one, and "a degree needs an institution". All three fields are
+ * gone, and both remaining ones are independently optional, so there is
+ * nothing left to police.
+ */
 
 export type SignupProfileInput = z.infer<typeof SignupProfileInput>;
 

@@ -7,11 +7,12 @@
 
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useEditor, EditorContent } from '@tiptap/react';
 import type { Editor } from '@tiptap/core';
 import { buildEditorExtensions } from '@/lib/editor/tiptap-extensions';
+import { useIsTablet } from '@/lib/hooks/use-is-tablet';
 import { findMathAtClick } from '@/lib/editor/math-click';
 import { deriveTitle } from '@/lib/editor/derive-title';
 import { unionToProse } from '@/lib/editor/serialize';
@@ -58,24 +59,6 @@ type MathPanel = {
 };
 
 type OutlineItem = { level: number; text: string; pos: number };
-
-/* ------------------------------------------------------------------ */
-/*  Tablet gate (≥768px the editor is usable; design-system §6)        */
-/* ------------------------------------------------------------------ */
-
-function subscribeTablet(onChange: () => void): () => void {
-  const mq = window.matchMedia('(min-width: 768px)');
-  mq.addEventListener('change', onChange);
-  return () => mq.removeEventListener('change', onChange);
-}
-
-function getTabletSnapshot(): boolean {
-  return window.matchMedia('(min-width: 768px)').matches;
-}
-
-function useIsTablet(): boolean {
-  return useSyncExternalStore(subscribeTablet, getTabletSnapshot, () => false);
-}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */

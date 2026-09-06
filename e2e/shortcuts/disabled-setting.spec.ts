@@ -59,7 +59,7 @@ test.describe('keyboard_shortcuts_enabled = false', () => {
     await page.waitForTimeout(200);
 
     // The g-prefix indicator must NOT appear.
-    const indicator = page.locator('[aria-live="polite"]');
+    const indicator = page.locator('[data-g-prefix-indicator]');
     await expect(indicator).not.toBeVisible();
 
     // Press h — should not navigate (g prefix was suppressed).

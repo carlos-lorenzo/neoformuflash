@@ -16,7 +16,7 @@ export type Profile = {
   avatarUrl: string | null;
   locale: Locale;
   institutionId: string | null;
-  degreeId: string | null;
+  degreeText: string | null;
   isPro: boolean;
   keyboardShortcutsEnabled: boolean;
 };
@@ -35,7 +35,7 @@ export async function getProfile(userId: string): Promise<Result<Profile | null>
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, slug, handle, display_name, avatar_url, locale, institution_id, degree_id, is_pro, keyboard_shortcuts_enabled')
+    .select('id, slug, handle, display_name, avatar_url, locale, institution_id, degree_text, is_pro, keyboard_shortcuts_enabled')
     .eq('id', userId)
     .maybeSingle();
 
@@ -50,7 +50,7 @@ export async function getProfile(userId: string): Promise<Result<Profile | null>
     avatarUrl: data.avatar_url,
     locale: data.locale as Locale,
     institutionId: data.institution_id,
-    degreeId: data.degree_id,
+    degreeText: data.degree_text,
     isPro: data.is_pro,
     keyboardShortcutsEnabled: data.keyboard_shortcuts_enabled,
   });
@@ -74,7 +74,14 @@ export async function hasProfile(userId: string): Promise<boolean> {
  * profile even if this code were wrong.
  */
 export async function createProfile(
-  userId: string,
+  /*
+   * Unused since the institution_requests write was removed: the id the
+   * profile is created for comes from auth.uid() INSIDE create_profile(), not
+   * from this argument, so a caller cannot create someone else's profile even
+   * if this code were wrong. Kept in the signature to keep call sites honest
+   * about whose profile they think they are creating.
+   */
+  _userId: string,
   input: SignupProfileInput,
   seed: { avatarUrl: string | null }
 ): Promise<Result<Profile>> {
@@ -83,34 +90,29 @@ export async function createProfile(
   /*
    * `supabase gen types` renders every function parameter as non-nullable,
    * because a Postgres signature does not record nullability — but avatar_url,
-   * institution_id and degree_id are all genuinely optional here. The cast is
-   * confined to this object rather than loosening the function's return type,
-   * which stays fully checked below.
+   * institution_name and degree_text are all genuinely optional here. The cast
+   * is confined to this object rather than loosening the function's return
+   * type, which stays fully checked below.
    */
   const args = {
     p_display_name: input.displayName,
     p_avatar_url: seed.avatarUrl,
     p_locale: input.locale,
-    p_institution_id: input.institutionId,
-    p_degree_id: input.degreeId,
+    p_institution_name: input.institutionName,
+    p_degree_text: input.degreeText,
   } as unknown as Parameters<typeof supabase.rpc<'create_profile'>>[1];
 
   const { data, error } = await supabase.rpc('create_profile', args);
 
   if (error || !data) return err('error.unexpected', error);
 
-  // The "my university isn't listed" path files a moderation request. It runs
-  // after the profile insert so a failure here cannot block someone signing up
-  // over a nice-to-have.
-  if (input.institutionOther) {
-    const { error: requestError } = await supabase
-      .from('institution_requests')
-      .insert({ user_id: userId, name: input.institutionOther, country: 'ES' });
-
-    if (requestError) {
-      console.error('institution_request insert failed', requestError);
-    }
-  }
+  /*
+   * There is no longer a moderation write here. The "my university isn't
+   * listed" path used to file an `institution_requests` row for a human to
+   * approve; now any typed name resolves to a real institution row inside
+   * create_profile(), so there is nothing to queue. The table and its policies
+   * survive for the pending requests filed before this change.
+   */
 
   return ok({
     id: data.id,
@@ -120,7 +122,7 @@ export async function createProfile(
     avatarUrl: data.avatar_url,
     locale: data.locale as Locale,
     institutionId: data.institution_id,
-    degreeId: data.degree_id,
+    degreeText: data.degree_text,
     isPro: data.is_pro,
     keyboardShortcutsEnabled: data.keyboard_shortcuts_enabled,
   });

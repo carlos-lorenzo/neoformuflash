@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   cleanupUserByEmail,
   expectNoHorizontalScroll,
+  seedInstitution,
   seedUserUnconfirmed,
   seedUserWithProfile,
   signIn,
@@ -28,28 +29,84 @@ test.describe('auth-email-signup', () => {
     if (email) await cleanupUserByEmail(email);
   });
 
+  async function signUp(page: import('@playwright/test').Page, address: string) {
+    await page.goto('/signup');
+    await page.getByLabel('Email').fill(address);
+    await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
+    await page.getByLabel('Confirm password').fill(PASSWORD);
+    await page.getByRole('button', { name: /Create account/ }).click();
+    // No profile yet — the layout routes a signed-in user to onboarding.
+    await expect(page).toHaveURL(/\/onboarding$/);
+  }
+
   test('a new email user reaches onboarding and lands on the dashboard (AC 2)', async ({
     page,
   }) => {
     email = uniqueEmail('signup');
-
-    await page.goto('/signup');
-    await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
-    await page.getByLabel('Confirm password').fill(PASSWORD);
-    await page.getByRole('button', { name: /Create account/ }).click();
-
-    // No profile yet — the layout routes a signed-in user to onboarding.
-    await expect(page).toHaveURL(/\/onboarding$/);
+    await signUp(page, email);
 
     // The display name is pre-filled from the email local part (AC 9).
     const nameField = page.getByRole('textbox').first();
     await expect(nameField).not.toHaveValue('');
 
-    await page.getByRole('combobox').first().click();
-    await page.getByRole('option', { name: /Universitat Politècnica de València/ }).click();
+    await page.getByLabel('University').fill('Universitat Politècnica de València');
+    await page.getByLabel('Degree').fill('Physics');
     await page.getByRole('button', { name: /Get started|Empezar/ }).click();
 
+    await expect(page).toHaveURL(/\/app$/);
+  });
+
+  /*
+   * The regression that started all of this: university and degree were a
+   * closed <Select> of 27 Spanish universities plus a coupled degree list, so
+   * a student outside that list could not finish. Both fields are now optional
+   * free text, and each half of that claim gets its own test.
+   */
+  test('finishes with university and degree both left blank', async ({ page }) => {
+    email = uniqueEmail('blank');
+    await signUp(page, email);
+
+    // Submit without touching either field.
+    await page.getByRole('button', { name: /Get started|Empezar/ }).click();
+    await expect(page).toHaveURL(/\/app$/);
+  });
+
+  test('accepts a university nobody has ever entered, in any script', async ({ page }) => {
+    email = uniqueEmail('newuni');
+    await signUp(page, email);
+
+    const typed = `Universidade Federal de Teste ${Date.now()}`;
+    await page.getByLabel('University').fill(typed);
+    await page.getByLabel('Degree').fill('Engenharia');
+    await page.getByRole('button', { name: /Get started|Empezar/ }).click();
+
+    await expect(page).toHaveURL(/\/app$/);
+  });
+
+  test('suggests a university that already exists, and typing it is not required', async ({
+    page,
+  }) => {
+    // Seeded here rather than relying on another test having run: the table
+    // starts empty and the three viewport projects do not share ordering.
+    await seedInstitution('Universitat Politècnica de València', 'upv-suggest-fixture');
+
+    email = uniqueEmail('suggest');
+    await signUp(page, email);
+
+    const field = page.getByLabel('University');
+    // "Politecnica" — unaccented, partial. Trigram search has to bridge that.
+    await field.fill('Politecnica');
+
+    const listbox = page.getByRole('listbox');
+    await expect(listbox).toBeVisible();
+    const option = listbox.getByRole('option').first();
+    await expect(option).toBeVisible();
+    await option.click();
+
+    // Picking a suggestion fills the field rather than storing a hidden id.
+    await expect(field).not.toHaveValue('Politecnica');
+
+    await page.getByRole('button', { name: /Get started|Empezar/ }).click();
     await expect(page).toHaveURL(/\/app$/);
   });
 

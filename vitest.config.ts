@@ -3,7 +3,19 @@ import { defineConfig } from 'vitest/config';
 
 // Next resolves `@/*` from tsconfig; Vite does not read tsconfig paths, so the
 // component tests need it spelled out or every `@/lib/...` import fails to resolve.
-const alias = { '@': fileURLToPath(new URL('.', import.meta.url).href).replace(/\/$/, '') };
+const root = fileURLToPath(new URL('.', import.meta.url).href).replace(/\/$/, '');
+
+/*
+ * `@/*` — Next resolves it from tsconfig; Vite does not read tsconfig paths,
+ * so the component tests need it spelled out or every `@/lib/...` import fails.
+ *
+ * The KaTeX stylesheet is stubbed because importing it drags in the project's
+ * PostCSS config (Tailwind v4), which Vite cannot load here. See the stub.
+ */
+const alias = {
+  'katex/dist/katex.min.css': `${root}/tests/stubs/empty.css.ts`,
+  '@': root,
+};
 
 /*
  * Two projects, because they have different prerequisites.

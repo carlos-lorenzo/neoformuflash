@@ -5,7 +5,6 @@ import { isLocale } from '@neoformuflash/contracts';
 import { LOCALE_COOKIE, PSEUDO_LOCALE } from '@/lib/i18n/locale';
 import { isShippedLocale } from '@/lib/i18n/shipped';
 import { THEME_COOKIE, isThemeChoice } from '@/lib/theme';
-import { SIDEBAR_COOKIE } from '@/lib/preferences';
 import { updateProfileLocale } from '@/lib/db/profiles';
 import { getSessionUser } from '@/lib/supabase/session';
 
@@ -16,15 +15,6 @@ import { getSessionUser } from '@/lib/supabase/session';
  */
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
-
-export async function setSidebarCollapsed(collapsed: boolean): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(SIDEBAR_COOKIE, collapsed ? '1' : '0', {
-    maxAge: ONE_YEAR_SECONDS,
-    sameSite: 'lax',
-    path: '/',
-  });
-}
 
 export async function setTheme(value: string): Promise<void> {
   if (!isThemeChoice(value)) return;

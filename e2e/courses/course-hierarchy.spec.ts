@@ -22,7 +22,7 @@ test.afterEach(async () => {
 
 test('create a course, put a deck in it, then delete the course', async ({ page }) => {
   await signIn(page.context(), user);
-  await page.goto('/app/courses');
+  await page.goto('/app');
 
   // Empty state offers a one-click course draft.
   await expect(page.getByRole('button', { name: 'Create course' })).toBeVisible();
@@ -48,8 +48,8 @@ test('create a course, put a deck in it, then delete the course', async ({ page 
   await expect(page).toHaveURL(/\/app\/decks\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('heading', { name: 'Untitled deck' })).toBeVisible();
 
-  // Back on the course, the deck is listed under it.
-  await page.goto('/app/courses');
+  // Back on the dashboard, the deck is listed under it.
+  await page.goto('/app');
   await page.getByRole('link', { name: 'Analisis II' }).click();
   await expect(page.getByRole('link', { name: 'Untitled deck' })).toBeVisible();
 
@@ -60,6 +60,6 @@ test('create a course, put a deck in it, then delete the course', async ({ page 
   await page.getByText('Settings').click();
   await page.getByRole('button', { name: 'Delete course' }).click();
   await page.getByRole('button', { name: 'Delete course' }).last().click();
-  await expect(page).toHaveURL(/\/app\/courses$/);
+  await expect(page).toHaveURL(/\/app$/);
   await expect(page.getByRole('heading', { name: 'Analisis II' })).toHaveCount(0);
 });

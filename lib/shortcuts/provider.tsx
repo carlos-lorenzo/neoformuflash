@@ -58,7 +58,19 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 function matchesModifier(event: KeyboardEvent, keys: string): boolean {
   if (!keys.startsWith('mod+')) return false;
-  const keyPart = keys.slice(4); // e.g. "shift+enter" or "enter"
+  /*
+   * The DECLARED key is lowercased as well as the event's.
+   *
+   * Only the event side used to be normalised, so a binding declared with a
+   * capital compared `event.key.toLowerCase()` ("m") against the literal "M"
+   * and could never match. Every ⌘M / ⌘⇧M binding in the app was declared with a capital and
+   * was therefore dead — silently, because MathEditorField also handles those
+   * keys at the ProseMirror level, so math still worked whenever a field had
+   * focus and the dead binding had nothing left to prove.
+   *
+   * Normalising here kills the whole class rather than the eight instances.
+   */
+  const keyPart = keys.slice(4).toLowerCase(); // e.g. "shift+enter" or "enter"
   const modifierHeld = isMac() ? event.metaKey : event.ctrlKey;
 
   if (!modifierHeld) return false;
@@ -266,6 +278,10 @@ function GPrefixIndicator() {
   return (
     <div
       aria-live="polite"
+      // Identified explicitly: `[aria-live="polite"]` is not a name, and any
+      // screen that grows a second live region (the dashboard's copy-link
+      // confirmation did) makes a bare match ambiguous.
+      data-g-prefix-indicator=""
       className="duration-fast fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-md border border-subtle bg-overlay px-3 py-2 shadow-overlay transition-opacity ease-out"
     >
       <Kbd keys={['g']} />

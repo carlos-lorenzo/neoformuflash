@@ -8,8 +8,9 @@ import { ShortcutContext } from './provider';
 /**
  * Register all global-scope shortcuts.
  *
- * Phase 03c: removed decks and notes listings from global nav. Kept
- * goHome, goCourses, and the g-prefix is trimmed accordingly.
+ * The merged Home/Courses dashboard lives at /app, so there is exactly one
+ * home to go to: g h. The g-prefix map in shortcut-manager.tsx is kept in
+ * step — no second key is registered.
  */
 export function GlobalShortcuts() {
   const router = useRouter();
@@ -34,11 +35,6 @@ export function GlobalShortcuts() {
   // g h → home (/app)
   useShortcut('global', 'g>h', () => router.push('/app'), {
     label: 'shortcuts.goHome',
-  });
-
-  // g c → courses (/app/courses)
-  useShortcut('global', 'g>c', () => router.push('/app/courses'), {
-    label: 'shortcuts.goCourses',
   });
 
   return null;

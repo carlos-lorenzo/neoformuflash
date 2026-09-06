@@ -27,17 +27,17 @@ export async function submitOnboarding(
   // submit from a stale tab must not attempt a duplicate profile insert.
   if (await hasProfile(user.id)) redirect('/app');
 
-  const institutionId = asString(formData.get('institutionId'));
-  const institutionOther = asString(formData.get('institutionOther'));
   const localeValue = asString(formData.get('locale'));
 
   const parsed = SignupProfileInput.safeParse({
     displayName: asString(formData.get('displayName')) ?? '',
-    institutionId,
-    // The two paths are mutually exclusive; whichever the student did not use
-    // must be null, not an empty string, or both refinements misfire.
-    institutionOther: institutionId ? null : institutionOther,
-    degreeId: institutionId ? asString(formData.get('degreeId')) : null,
+    /*
+     * Both optional and independent. `asString` maps a blank field to null,
+     * which is what "skipped" means all the way down: create_profile() stores
+     * null rather than creating an institution row.
+     */
+    institutionName: asString(formData.get('institutionName')),
+    degreeText: asString(formData.get('degreeText')),
     // Only locales with a catalog on disk; a stray `ca` from a hidden field or
     // stale cookie must fall back to the default rather than persist to the
     // profile and crash the student's next render.
