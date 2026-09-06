@@ -62,3 +62,8 @@ messages/pseudo.json
 
 
 export_omniroute.sh
+
+.claude
+._claude
+
+.settings.local.json
