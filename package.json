@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "predev": "node scripts/check-migration-drift.mjs",
     "build": "next build && node scripts/assert-build-safe.mjs && node scripts/assert-classes-compile.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit && pnpm --filter @neoformuflash/contracts typecheck",

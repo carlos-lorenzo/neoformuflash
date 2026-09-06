@@ -15,8 +15,40 @@
     "noResults": "No matches yet. Keep typing to add yours."
   },
   "landing": {
-    "signIn": "Sign in with Google",
-    "lede": "Write the derivation once. Review it until it sticks."
+    "signIn": "Sign in",
+    "startFree": "Start free",
+    "lede": "Write the derivation once. Review it until it sticks.",
+    "heroEyebrow": "Structured notes · Spaced repetition",
+    "heroBody": "Structured notes and spaced-repetition flashcards in one surface — math that renders like a textbook, and cards that come back on the day you'd forget them.",
+    "heroCaption": "Free for STEM students · No credit card",
+    "demo": {
+      "eyebrow": "Sample session",
+      "deck": "PHY 121 · Electromagnetism",
+      "hint": "Click the card to reveal it, then grade your recall. No account needed — nothing is saved.",
+      "revealHint": "Click to reveal",
+      "gradeLabel": "Grade your recall",
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy",
+      "shortcutHint": "Space · 1 2 3 4",
+      "completeTitle": "Session complete",
+      "completeBody": "That's the loop — {count} cards reviewed and nothing saved. Yours would be written from your notes and scheduled for the day you'd forget them.",
+      "runAgain": "Run it again"
+    },
+    "loop": {
+      "title": "Write, turn, keep.",
+      "writeTitle": "Write",
+      "writeBody": "A derivation becomes a structured note — headings, lists and real LaTeX, in a serif surface that reads like the page it came from.",
+      "turnTitle": "Turn",
+      "turnBody": "Any note can become a deck: card by card in the editor, or drafted for you by the AI.",
+      "keepTitle": "Keep",
+      "keepBody": "FSRS spaced repetition brings each card back just before you'd forget it. Grade Again, Hard, Good or Easy and the schedule adapts to you."
+    },
+    "closing": {
+      "title": "Make it stick.",
+      "body": "Start with one course. Write tonight's derivation and it will come back the day before the exam."
+    }
   },
   "login": {
     "title": "Sign in to FormuFlash",

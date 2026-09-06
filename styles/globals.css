@@ -288,6 +288,29 @@
   transform: rotateY(180deg);
 }
 
+/*
+ * Landing demo card (components/landing/demo-card.tsx): the same 200ms Y-axis
+ * flip over a content-sized stage. The review card's faces are absolutely
+ * positioned inside a viewport-filling container; the landing demo has no
+ * fixed region, so both faces share one grid cell instead and the stage takes
+ * the taller of the two. Same tokens, same reduced-motion behaviour.
+ */
+.landing-flip {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform var(--dur-base) var(--ease-in-out-curve);
+}
+.landing-flip.flipped {
+  transform: rotateY(180deg);
+}
+.landing-flip > .landing-face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+}
+.landing-flip > .landing-back {
+  transform: rotateY(180deg);
+}
+
 
 /* Safe-area padding for iOS notch/home indicator on mobile */
 @utility pb-safe {

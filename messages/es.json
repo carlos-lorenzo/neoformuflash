@@ -15,8 +15,40 @@
     "noResults": "Aún no hay coincidencias. Sigue escribiendo para añadir la tuya."
   },
   "landing": {
-    "signIn": "Entrar con Google",
-    "lede": "Escribe la derivación una vez. Repásala hasta que se quede."
+    "signIn": "Entrar",
+    "startFree": "Empezar gratis",
+    "lede": "Escribe la derivación una vez. Repásala hasta que se quede.",
+    "heroEyebrow": "Apuntes estructurados · Repaso espaciado",
+    "heroBody": "Apuntes estructurados y tarjetas de repaso espaciado en una misma superficie — matemáticas que se ven como en un libro y tarjetas que vuelven el día en que las olvidarías.",
+    "heroCaption": "Gratis para estudiantes de carreras técnicas · Sin tarjeta de crédito",
+    "demo": {
+      "eyebrow": "Sesión de ejemplo",
+      "deck": "PHY 121 · Electromagnetismo",
+      "hint": "Toca la tarjeta para verla y después califica tu recuerdo. Sin cuenta — no se guarda nada.",
+      "revealHint": "Haz clic para ver",
+      "gradeLabel": "Califica tu recuerdo",
+      "again": "Otra vez",
+      "hard": "Difícil",
+      "good": "Bien",
+      "easy": "Fácil",
+      "shortcutHint": "Espacio · 1 2 3 4",
+      "completeTitle": "Sesión completa",
+      "completeBody": "Ese es el bucle: {count} tarjetas repasadas y nada guardado. Las tuyas saldrían de tus apuntes y volverían el día en que las olvidarías.",
+      "runAgain": "Repetir"
+    },
+    "loop": {
+      "title": "Escribe, convierte, retén.",
+      "writeTitle": "Escribe",
+      "writeBody": "Una derivación se convierte en un apunte estructurado — títulos, listas y LaTeX de verdad, en una superficie serif que se lee como la página de la que salió.",
+      "turnTitle": "Convierte",
+      "turnBody": "Cualquier apunte puede ser un mazo: tarjeta a tarjeta en el editor, o redactado por la IA.",
+      "keepTitle": "Retén",
+      "keepBody": "El repaso espaciado FSRS trae cada tarjeta de vuelta justo antes de que la olvides. Califícala Otra vez, Difícil, Bien o Fácil y el plan se adapta a ti."
+    },
+    "closing": {
+      "title": "Haz que se quede.",
+      "body": "Empieza con una asignatura. Escribe la derivación de esta noche y volverá el día antes del examen."
+    }
   },
   "login": {
     "title": "Entra en FormuFlash",
