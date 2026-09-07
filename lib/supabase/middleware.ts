@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isOAuthReturnQuery } from './oauth-return';
 
 /*
  * Refresh the Supabase session on every request and guard the authed routes.
@@ -29,6 +30,27 @@ const AUTHED_PREFIXES = ['/app', '/onboarding'];
 
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   let response = NextResponse.next({ request });
+
+  const { pathname, searchParams } = request.nextUrl;
+
+  /*
+   * Rescue parked auth returns. GoTrue lands an OAuth/email-return query on the
+   * Site URL root when the exact callback URL is missing from the project's
+   * redirect allowlist — see lib/supabase/oauth-return.ts. Route it on to
+   * /auth/callback so the normal exchange runs instead of leaving the user on
+   * the landing page with `?code=` and no session. Scoped to GETs on public /
+   * auth pages: a real /auth/callback hit is the destination, not a rescue, and
+   * authed surfaces never legitimately carry a fresh return query.
+   */
+  const isPublicPath =
+    pathname !== '/auth/callback' &&
+    !AUTHED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+
+  if (request.method === 'GET' && isPublicPath && isOAuthReturnQuery(searchParams)) {
+    const callbackUrl = request.nextUrl.clone();
+    callbackUrl.pathname = '/auth/callback';
+    return NextResponse.redirect(callbackUrl);
+  }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -69,7 +91,6 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
   const needsAuth = AUTHED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
