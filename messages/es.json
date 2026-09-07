@@ -239,7 +239,12 @@
     },
     "error": "Algo salió mal al cargar este apunte.",
     "newNote": "Nuevo apunte",
-    "breadcrumb": "Apunte"
+    "breadcrumb": "Apunte",
+    "reader": {
+      "breadcrumb": "Apunte",
+      "badge": "Solo lectura",
+      "subscriberBody": "Estás viendo este apunte gracias a tu suscripción a {course}."
+    }
   },
   "editor": {
     "inlineMath": "Matemáticas en línea",

@@ -64,6 +64,12 @@ export interface BlockquoteNode {
   content: BlockNode[];
 }
 
+export interface ImageNode {
+  type: 'image';
+  src: string;
+  alt: string;
+}
+
 export type BlockNode =
   | ParagraphNode
   | HeadingNode
@@ -71,7 +77,8 @@ export type BlockNode =
   | BulletListNode
   | OrderedListNode
   | BlockquoteNode
-  | DisplayMathNode;
+  | DisplayMathNode
+  | ImageNode;
 
 export interface NoteDoc {
   type: 'doc';
@@ -98,6 +105,8 @@ function extractBlock(node: BlockNode): string {
       return node.content.map((li) => li.content.map(extractBlock).join('\n')).join('\n');
     case 'blockquote':
       return node.content.map(extractBlock).join('\n');
+    case 'image':
+      return '';
   }
 }
 

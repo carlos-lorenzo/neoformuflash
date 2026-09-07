@@ -83,6 +83,8 @@ const EVERY_NODE_DOC: NoteDoc = {
     },
     // Display math
     { type: 'displayMath', latex: '\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}' },
+    // Remote image
+    { type: 'image', src: 'https://example.com/diagram.png', alt: 'A diagram' },
   ],
 };
 
@@ -114,6 +116,33 @@ describe('serialize', () => {
       if (back.ok) {
         expect(back.value.content[0]).toEqual({ type: 'displayMath', latex: 'E = mc^2' });
       }
+    });
+
+    it('round-trips an image node through union → PM → union', () => {
+      const doc: NoteDoc = {
+        type: 'doc',
+        content: [{ type: 'image', src: 'https://example.com/x.png', alt: 'fig' }],
+      };
+      const pm = unionToProse(doc);
+      expect(pm.content?.[0]).toEqual({
+        type: 'image',
+        attrs: { src: 'https://example.com/x.png', alt: 'fig' },
+      });
+
+      const back = proseToUnion(pm);
+      expect(back.ok).toBe(true);
+      if (back.ok) {
+        expect(back.value.content[0]).toEqual({ type: 'image', src: 'https://example.com/x.png', alt: 'fig' });
+      }
+    });
+
+    it('degrades a non-http image source to an empty paragraph (union → PM)', () => {
+      const doc: NoteDoc = {
+        type: 'doc',
+        content: [{ type: 'image', src: 'javascript:alert(1)', alt: 'x' }],
+      };
+      const pm = unionToProse(doc);
+      expect(pm.content?.[0]).toEqual({ type: 'paragraph' });
     });
   });
 
@@ -172,6 +201,15 @@ describe('serialize', () => {
         content: [
           { type: 'heading', attrs: { level: 5 }, content: [{ type: 'text', text: 'Big' }] },
         ],
+      };
+      const result = proseToUnion(pm);
+      expect(result.ok).toBe(false);
+    });
+
+    it('rejects an image with a non-http source (PM → union)', () => {
+      const pm = {
+        type: 'doc',
+        content: [{ type: 'image', attrs: { src: 'javascript:alert(1)', alt: 'x' } }],
       };
       const result = proseToUnion(pm);
       expect(result.ok).toBe(false);

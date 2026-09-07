@@ -19,6 +19,23 @@ type SlashMenuItem = {
   focusesOwnInput?: boolean;
 };
 
+/**
+ * Block items that, when chosen from a mid-line `/`, wrap the text *after* the
+ * caret. For those the editor splits the paragraph at the caret before running
+ * the action, so the trailing text becomes the new block. Equation/AI items are
+ * not here — they insert at the caret or operate on a selection instead.
+ */
+const SPLITS_INLINE = new Set([
+  'paragraph',
+  'heading1',
+  'heading2',
+  'heading3',
+  'bulletList',
+  'orderedList',
+  'codeBlock',
+  'blockquote',
+]);
+
 type SlashMenuProps = {
   editor: Editor;
   position: { top: number; left: number };
@@ -41,9 +58,11 @@ type SlashMenuProps = {
     action: 'generate' | 'explain' | 'summarize' | 'rephrase' | 'continue' | 'fix_latex' | 'generate_cards',
     provider?: 'openai' | 'anthropic' | 'google' | 'deepseek'
   ) => void;
+  /** True when `/` was typed mid-line: block items split the paragraph first. */
+  inline?: boolean;
 };
 
-export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineEquation, onInsertBlockEquation, hasAiKey, onOpenCopilot, defaultProvider }: SlashMenuProps) {
+export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineEquation, onInsertBlockEquation, hasAiKey, onOpenCopilot, defaultProvider, inline = false }: SlashMenuProps) {
   const t = useTranslations('editor.blocks');
   const tp = useTranslations('editor');
   const ai = useTranslations('ai.copilot');
@@ -93,6 +112,12 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineE
 
   const selectItem = useCallback(
     (item: SlashMenuItem) => {
+      // Mid-line trigger: split the paragraph at the caret first so the chosen
+      // block style wraps the text after the caret (the text before it stays in
+      // its own paragraph).
+      if (inline && SPLITS_INLINE.has(item.id)) {
+        editor.chain().focus().splitBlock().run();
+      }
       item.action();
       onClose();
       // The filter input unmounts with the menu, dropping focus to <body> and
@@ -105,7 +130,7 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineE
         });
       }
     },
-    [editor, onClose],
+    [editor, onClose, inline],
   );
 
   const handleKeyDown = useCallback(

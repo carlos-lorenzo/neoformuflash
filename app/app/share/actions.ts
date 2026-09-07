@@ -74,6 +74,15 @@ export async function subscribe(
   revalidatePath('/app/courses');
   revalidatePath('/app');
 
+  // Land the subscriber inside the app on the course/deck they just subscribed
+  // to (same behaviour as fork).
+  if (targetType === 'course') {
+    redirect(`/app/courses/${targetId}` as Route);
+  }
+  if (targetType === 'deck') {
+    redirect(`/app/decks/${targetId}` as Route);
+  }
+
   return { ok: true, targetType };
 }
 

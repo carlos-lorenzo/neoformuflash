@@ -33,6 +33,12 @@ describe('lib/editor/tiptap-extensions — security properties', () => {
     expect(blockMath).toBeDefined();
   });
 
+  it('registers the image extension', () => {
+    const ext = buildEditorExtensions('test');
+    const image = ext.find((e) => e.name === 'image');
+    expect(image).toBeDefined();
+  });
+
   it('returns a stable array reference for the same placeholder', () => {
     const ext1 = buildEditorExtensions('same');
     const ext2 = buildEditorExtensions('same');

@@ -4,6 +4,7 @@ import { getSessionUser } from '@/lib/supabase/session';
 import { getNoteForUser } from '@/lib/db/notes';
 import { getCourse } from '@/lib/db/courses';
 import { NoteEditor } from '@/components/editor/note-editor';
+import { NoteReader } from '@/components/note/note-reader';
 
 export default async function NotePage({
   params,
@@ -23,6 +24,26 @@ export default async function NotePage({
 
   if (!result.value) notFound();
 
+  // Check if user is owner for editor permissions. A note the user does not own
+  // is only reachable through a course subscription — render it read-only.
+  const isOwner = result.value.ownerId === user.id;
+
+  if (!isOwner) {
+    // Fetch course for breadcrumb + fork affordance.
+    let course: { id: string; name: string; forkCount: number } | null = null;
+    if (result.value.courseId) {
+      const courseResult = await getCourse(result.value.courseId);
+      if (courseResult.ok && courseResult.value) {
+        course = {
+          id: courseResult.value.id,
+          name: courseResult.value.name,
+          forkCount: courseResult.value.forkCount,
+        };
+      }
+    }
+    return <NoteReader note={result.value} course={course} />;
+  }
+
   // Fetch course name for breadcrumb if note has a course
   let courseName: string | null = null;
   if (result.value.courseId) {
@@ -31,9 +52,6 @@ export default async function NotePage({
       courseName = courseResult.value.name;
     }
   }
-
-  // Check if user is owner for editor permissions
-  const isOwner = result.value.ownerId === user.id;
 
   return <NoteEditor note={result.value} courseName={courseName} isOwner={isOwner} />;
 }

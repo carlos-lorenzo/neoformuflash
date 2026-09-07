@@ -103,6 +103,13 @@ function blockToProse(node: BlockNode): ProseNode {
       return { type: 'blockquote', content: (node.content ?? []).map(blockToProse) };
     case 'displayMath':
       return { type: 'blockMath', attrs: { latex: typeof node.latex === 'string' ? node.latex : '' } };
+    case 'image': {
+      // Only http(s) URLs reach the editor as image nodes; anything else degrades
+      // to an empty paragraph rather than carrying a dangerous src through PM.
+      const src = typeof node.src === 'string' && /^https?:\/\//i.test(node.src) ? node.src : '';
+      const alt = typeof node.alt === 'string' ? node.alt : '';
+      return src.length > 0 ? { type: 'image', attrs: { src, alt } } : { type: 'paragraph' };
+    }
     default: {
       /*
        * Not a known block type. The switch above is exhaustive over BlockNode,
@@ -266,6 +273,14 @@ function blockToUnion(node: unknown): Result<BlockNode> {
     case 'blockMath': {
       const latex = typeof attrs.latex === 'string' ? attrs.latex : '';
       return ok({ type: 'displayMath', latex });
+    }
+    case 'image': {
+      const src = typeof attrs.src === 'string' ? attrs.src : '';
+      const alt = typeof attrs.alt === 'string' ? attrs.alt : '';
+      // Trust boundary: reject non-http(s) image sources outright rather than
+      // persisting a javascript:/data: src in the doc.
+      if (!/^https?:\/\//i.test(src)) return err('editor.unsupportedBlock');
+      return ok({ type: 'image', src, alt });
     }
     /*
      * Idempotence: the union's own block-math name, accepted so a doc that has

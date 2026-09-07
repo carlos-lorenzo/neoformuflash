@@ -74,6 +74,8 @@ function extractBlockText(node: BlockNode): string {
       return node.content.map((li) => li.content.map(extractBlockText).join('\n')).join('\n');
     case 'blockquote':
       return node.content.map(extractBlockText).join('\n');
+    case 'image':
+      return '';
   }
 }
 

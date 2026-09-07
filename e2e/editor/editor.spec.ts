@@ -223,4 +223,61 @@ test.describe('editor', () => {
     await note.cleanup();
     await user.cleanup();
   });
+
+  test('editor-markdown-image-shortcut', async ({ page, context }) => {
+    const user = await seedUserWithProfile('img');
+    const note = await seedNote(user.id, 'Image');
+    await signIn(context, user);
+
+    await page.goto(`/app/notes/${note.id}`);
+    await editorLocator(page).click();
+
+    // `![alt](url)` on its own block converts to an embedded image.
+    await page.keyboard.type('![a diagram](https://example.com/diagram.png)');
+    const img = editorLocator(page).locator('img.note-image');
+    await expect(img).toHaveCount(1);
+    await expect(img).toHaveAttribute('src', 'https://example.com/diagram.png');
+    await expect(img).toHaveAttribute('alt', 'a diagram');
+
+    // The markdown itself is gone, not left as literal text.
+    await expect(editorLocator(page).locator('text="!["')).toHaveCount(0);
+
+    await waitForSaveStatus(page, 'Saved');
+    await page.waitForTimeout(500);
+    await page.reload();
+    await expect(editorLocator(page).locator('img.note-image')).toHaveCount(1);
+
+    await note.cleanup();
+    await user.cleanup();
+  });
+
+  test('editor-slash-menu-inline-splits-at-caret', async ({ page, context }) => {
+    const user = await seedUserWithProfile('slash-inline');
+    const note = await seedNote(user.id, 'Slash Inline');
+    await signIn(context, user);
+
+    await page.goto(`/app/notes/${note.id}`);
+    await editorLocator(page).click();
+
+    // Type a sentence, park the caret mid-line after "alpha " and type `/`.
+    await page.keyboard.type('alpha beta');
+    // "alpha beta" → caret after the space, before "beta".
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.type('/');
+    await expect(page.getByRole('listbox')).toBeVisible();
+
+    // Pick Heading 1 — the text after the caret becomes the heading.
+    await page.keyboard.type('Heading 1');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('listbox')).toBeHidden();
+
+    await expect(editorLocator(page).locator('h1').filter({ hasText: 'beta' })).toHaveCount(1);
+    await expect(editorLocator(page).locator('p').filter({ hasText: /alpha/ })).toHaveCount(1);
+
+    await note.cleanup();
+    await user.cleanup();
+  });
 });

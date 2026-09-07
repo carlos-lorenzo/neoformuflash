@@ -134,6 +134,23 @@ function renderBlock(node: BlockNode): React.ReactNode {
       });
       return <div key="dm" className="display-math" dangerouslySetInnerHTML={{ __html: html }} />;
     }
+    case 'image': {
+      // Only http(s) sources are renderable — the serializer already rejects the
+      // rest at the trust boundary, so a malformed row simply renders nothing.
+      if (typeof node.src !== 'string' || !/^https?:\/\//i.test(node.src)) return null;
+      // Docs carry arbitrary remote URLs from user-authored markdown — no fixed
+      // dimensions, so next/image cannot optimise them here.
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key="img"
+          src={node.src}
+          alt={typeof node.alt === 'string' ? node.alt : ''}
+          loading="lazy"
+          className="note-image"
+        />
+      );
+    }
     /*
      * The switch is exhaustive over BlockNode, so an unrecognised type used to
      * fall out returning undefined — the node vanished with no error anywhere.

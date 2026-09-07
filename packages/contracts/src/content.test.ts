@@ -45,6 +45,11 @@ describe('extractText', () => {
           type: 'blockquote',
           content: [{ type: 'paragraph', content: [{ type: 'text', text: 'quoted' }] }],
         },
+        {
+          type: 'image',
+          src: 'https://example.com/x.png',
+          alt: 'decorative',
+        },
       ],
     };
 
@@ -58,6 +63,14 @@ describe('extractText', () => {
     expect(text).toContain('bullet two');
     expect(text).toContain('first');
     expect(text).toContain('quoted');
+  });
+
+  it('ignores image blocks when extracting text', () => {
+    const doc: NoteDoc = {
+      type: 'doc',
+      content: [{ type: 'image', src: 'https://example.com/x.png', alt: 'a' }],
+    };
+    expect(extractText(doc)).toBe('');
   });
 
   it('returns an empty string for an empty doc', () => {

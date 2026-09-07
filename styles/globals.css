@@ -584,6 +584,15 @@
   text-align: center;
 }
 
+/* Remote images (markdown `![alt](url)` blocks) */
+:is(.tiptap, .note-doc-view) img.note-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: var(--spacing-3) 0;
+  border-radius: var(--radius-md, 0.375rem);
+}
+
 :is(.tiptap, .note-doc-view) .inline-math {
   font-family: var(--font-serif);
 }

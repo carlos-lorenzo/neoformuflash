@@ -239,7 +239,12 @@
     },
     "error": "Something went wrong loading this note.",
     "newNote": "New note",
-    "breadcrumb": "Note"
+    "breadcrumb": "Note",
+    "reader": {
+      "breadcrumb": "Note",
+      "badge": "Read-only",
+      "subscriberBody": "You're viewing this note through your subscription to {course}."
+    }
   },
   "editor": {
     "inlineMath": "In-line math",

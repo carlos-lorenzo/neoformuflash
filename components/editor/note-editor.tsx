@@ -75,6 +75,7 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
   const [mathPanel, setMathPanel] = useState<MathPanel | null>(null);
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashPosition, setSlashPosition] = useState<PanelPosition>({ top: 0, left: 0 });
+  const [slashInline, setSlashInline] = useState(false);
   const [outline, setOutline] = useState<OutlineItem[]>([]);
 
   // Copilot state
@@ -163,6 +164,33 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
     return $from.parent.isTextblock && $from.parent.textContent.length === 0 && $from.parentOffset === 0;
   }, []);
 
+  /*
+   * Whether a `/` at the current caret should open the slash menu rather than be
+   * typed as a literal slash. The caret must be inside a textblock, outside code,
+   * and at a token boundary — the block start or right after whitespace — so
+   * typing "https://…", "3/4" or "path/to" never pops the menu.
+   */
+  const isSlashTrigger = useCallback((ed: Editor): boolean => {
+    const { $from } = ed.state.selection;
+    const parent = $from.parent;
+    if (!parent.isTextblock) return false;
+    if ($from.parentOffset === 0) return true;
+    const charBefore = parent.textBetween($from.parentOffset - 1, $from.parentOffset, null, '\ufffc');
+    return /\s/.test(charBefore);
+  }, []);
+
+  /* `/` while the caret is inside a code context must stay a literal slash. */
+  const isCodeContext = useCallback((ed: Editor): boolean => {
+    const { $from } = ed.state.selection;
+    if ($from.parent.type.spec.code) return true;
+    const codeMark = $from.marks().some((m) => m.type.name === 'code');
+    if (codeMark) return true;
+    // The slash itself will be typed between two code-marked nodes.
+    if (($from.nodeBefore?.marks ?? []).some((m) => m.type.name === 'code') ||
+        ($from.nodeAfter?.marks ?? []).some((m) => m.type.name === 'code')) return true;
+    return false;
+  }, []);
+
   const handleEditorKeyDown = useCallback(
     (_view: unknown, event: KeyboardEvent): boolean => {
       const ed = editorRef.current;
@@ -209,7 +237,9 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
       // `/` — slash menu or AI copilot.
       // When text is selected, `/` opens the copilot menu for the selection
       // (instead of inserting literal `/` and overwriting the selection).
-      // On an empty block, `/` opens the slash menu (AC2).
+      // Otherwise `/` opens the slash menu (AC2) — at the start of an empty
+      // block it applies to the whole block, mid-line it splits at the caret
+      // first so the text after it becomes the chosen block.
       if (event.key === '/') {
         const { from, to } = ed.state.selection;
         const hasSelection = from !== to;
@@ -221,10 +251,11 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
           setCopilotAction('explain');
           setCopilotOpen(true);
           return true;
-        } else if (isAtStartOfEmptyBlock(ed)) {
+        } else if (isSlashTrigger(ed) && !isCodeContext(ed)) {
           event.preventDefault();
           const coords = ed.view.coordsAtPos(ed.state.selection.from);
           setSlashOpen(true);
+          setSlashInline(ed.state.selection.$from.parentOffset > 0);
           setSlashPosition({ top: coords.bottom, left: coords.left });
           return true;
         }
@@ -232,7 +263,7 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
 
       return false;
     },
-    [openDisplayMath, openInlineMath, isAtStartOfEmptyBlock],
+    [openDisplayMath, openInlineMath, isAtStartOfEmptyBlock, isSlashTrigger, isCodeContext],
   );
 
   const handleSlashClose = useCallback(() => {
@@ -573,6 +604,7 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
           availableProviders={aiProviders}
           defaultProvider={aiProviders[0]}
           onOpenCopilot={openCopilot}
+          inline={slashInline}
         />
       )}
 
