@@ -210,8 +210,12 @@
   min-height: 500px;
 }
 
-/* Notion-style editor: borderless, no background box, seamless with page */
-.tiptap .ProseMirror {
+/* Notion-style editor: borderless, no background box, seamless with page.
+   NOTE: Tiptap puts `tiptap` + `ProseMirror` on the SAME element
+   (<div class="tiptap ProseMirror" contenteditable>), so this must be a
+   compound selector — `.tiptap .ProseMirror` (descendant) never matches. */
+.tiptap.ProseMirror,
+.tiptap {
   background: transparent;
   border: none;
   border-radius: 0;
@@ -223,6 +227,15 @@
   background: transparent;
   border: none;
   border-radius: 0;
+}
+
+/* Notion-style: no focus ring on the editing surface itself (caret is the
+   indicator). Global :focus-visible still applies to controls. */
+.tiptap:focus,
+.tiptap:focus-visible,
+.ProseMirror:focus,
+.ProseMirror:focus-visible {
+  outline: none;
 }
 
 /* Save indicator fixed positioning */
