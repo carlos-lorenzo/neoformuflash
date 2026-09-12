@@ -83,8 +83,13 @@ function renderBlock(node: BlockNode): React.ReactNode {
     }
     case 'heading': {
       const content = inlineToArray(node.content);
-      // Render heading as styled elements since dynamic tag doesn't work in shared code
-      return <p key={`h${node.level}`} className="note-heading">{content}</p>;
+      // Semantic heading tags so the shared :is(.tiptap, .note-doc-view)
+      // h1/h2/h3 typography applies to read-only surfaces too. The level is
+      // clamped — the serializer and md parser only ever emit 1–3, anything
+      // else degrades to h1 rather than an invalid tag.
+      const level = node.level === 2 ? 2 : node.level === 3 ? 3 : 1;
+      const Tag = `h${level}` as 'h1' | 'h2' | 'h3';
+      return <Tag key={`h${level}`}>{content}</Tag>;
     }
     case 'codeBlock': {
       const code = (node.content ?? []).map((n) => n.text).join('\n');

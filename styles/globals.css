@@ -594,7 +594,27 @@
 :is(.tiptap, .note-doc-view) :is(.display-math, [data-type='block-math']) {
   margin: var(--spacing-3) 0;
   overflow-x: auto;
+  overflow-y: visible;
   text-align: center;
+  /* Tall fractions (frac/dfrac/cfrac, matrices, sums with limits) extend
+   * beyond the line box via KaTeX's vlist. Without vertical breathing room
+   * inside the scrollport their ascenders/descenders clip. Padding keeps them
+   * inside the scroll container; line-height/height resets keep the editor's
+   * 1.7 reading line-height from constraining the math box. */
+  line-height: normal;
+  height: auto;
+  min-height: auto;
+  padding-block: 0.5em;
+}
+
+/* Inner KaTeX display: neutralise the 1em vertical margins (the wrapper owns
+ * spacing) and keep vertical overflow visible so tall glyphs are never cut.
+ * Horizontal scrolling stays on the outer wrapper. */
+:is(.tiptap, .note-doc-view) :is(.display-math, [data-type='block-math']) .katex-display {
+  margin: 0;
+  padding-block: 0.25em;
+  overflow: visible;
+  line-height: normal;
 }
 
 /* Remote images (markdown `![alt](url)` blocks) */

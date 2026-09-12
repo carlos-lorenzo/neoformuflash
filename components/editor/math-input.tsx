@@ -87,10 +87,11 @@ export function MathInput({ mode, initialLatex = '', position, onCommit, onCance
         placeholder={LATEX_PLACEHOLDER}
         className="w-full rounded-md border border-subtle bg-raised px-3 py-2 font-mono text-ui-sm text-primary outline-none placeholder:text-tertiary focus:border-strong"
       />
-      {/* Live KaTeX preview */}
+      {/* Live KaTeX preview — scrolls horizontally when wide, never clips tall
+          fractions vertically (same overflow rationale as the editor wrapper). */}
       <div
         className={cn(
-          'min-h-8 rounded-md bg-base p-2 text-center text-read-base',
+          'min-h-8 overflow-x-auto rounded-md bg-base p-2 text-center text-read-base leading-normal',
           preview.error && 'text-danger',
         )}
         dangerouslySetInnerHTML={{ __html: preview.html }}

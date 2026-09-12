@@ -3,6 +3,14 @@
     "name": "FormuFlash",
     "tagline": "Apuntes estructurados y repaso espaciado, para carreras técnicas."
   },
+  "analytics": {
+    "banner": {
+      "title": "Ayuda a mejorar FormuFlash",
+      "message": "Usamos Google Analytics para entender el uso. Solo se carga si aceptas.",
+      "accept": "Aceptar",
+      "decline": "Rechazar"
+    }
+  },
   "common": {
     "continue": "Continuar",
     "cancel": "Cancelar",
@@ -261,6 +269,10 @@
     "offline": "Sin conexión — los cambios se sincronizarán al volver",
     "slashPlaceholder": "Escribe para filtrar…",
     "noMatches": "Ningún comando coincide",
+    "imageUrlPlaceholder": "Pega la URL de la imagen (https://…)",
+    "imageUrlInvalid": "Introduce una URL de imagen http(s) válida.",
+    "imageBack": "Atrás",
+    "imageInsert": "Insertar imagen",
     "blocks": {
       "paragraph": "Párrafo",
       "heading1": "Título 1",
@@ -270,6 +282,7 @@
       "orderedList": "Lista numerada",
       "codeBlock": "Bloque de código",
       "blockquote": "Cita",
+      "image": "Imagen",
       "inlineEquation": "Ecuación en línea",
       "blockEquation": "Ecuación en bloque"
     },

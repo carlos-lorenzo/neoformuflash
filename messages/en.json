@@ -3,6 +3,14 @@
     "name": "FormuFlash",
     "tagline": "Structured notes and spaced repetition, for STEM degrees."
   },
+  "analytics": {
+    "banner": {
+      "title": "Help improve FormuFlash",
+      "message": "We use Google Analytics to understand usage. It loads only if you accept.",
+      "accept": "Accept",
+      "decline": "Decline"
+    }
+  },
   "common": {
     "continue": "Continue",
     "cancel": "Cancel",
@@ -261,6 +269,10 @@
     "offline": "Offline — changes will sync when you're back",
     "slashPlaceholder": "Type to filter…",
     "noMatches": "No commands match",
+    "imageUrlPlaceholder": "Paste image URL (https://…)",
+    "imageUrlInvalid": "Enter a valid http(s) image URL.",
+    "imageBack": "Back",
+    "imageInsert": "Insert image",
     "blocks": {
       "paragraph": "Paragraph",
       "heading1": "Heading 1",
@@ -270,6 +282,7 @@
       "orderedList": "Numbered list",
       "codeBlock": "Code block",
       "blockquote": "Quote",
+      "image": "Image",
       "inlineEquation": "Inline equation",
       "blockEquation": "Block equation"
     },

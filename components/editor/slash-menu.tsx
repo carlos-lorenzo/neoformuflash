@@ -68,7 +68,11 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineE
   const ai = useTranslations('ai.copilot');
   const [filter, setFilter] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [showImagePrompt, setShowImagePrompt] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageError, setImageError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const items: SlashMenuItem[] = useMemo(
@@ -81,6 +85,7 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineE
       { id: 'orderedList', label: t('orderedList'), action: () => editor.chain().focus().toggleOrderedList().run() },
       { id: 'codeBlock', label: t('codeBlock'), action: () => editor.chain().focus().toggleCodeBlock().run() },
       { id: 'blockquote', label: t('blockquote'), action: () => editor.chain().focus().toggleBlockquote().run() },
+      { id: 'image', label: t('image'), action: () => setShowImagePrompt(true), focusesOwnInput: true },
       { id: 'inlineEquation', label: t('inlineEquation'), action: onInsertInlineEquation, focusesOwnInput: true },
       { id: 'blockEquation', label: t('blockEquation'), action: onInsertBlockEquation, focusesOwnInput: true },
       // AI actions (only shown when user has an AI key)
@@ -107,11 +112,61 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineE
 
   // Focus the filter input on mount.
   useEffect(() => {
-    inputRef.current?.focus();
+    if (!showImagePrompt) inputRef.current?.focus();
+  }, [showImagePrompt]);
+
+  // Focus the URL input when the image prompt opens.
+  useEffect(() => {
+    if (showImagePrompt) urlInputRef.current?.focus();
+  }, [showImagePrompt]);
+
+  /*
+   * Insert the image from the inline URL field. Equivalent to typing
+   * `![](url)` and letting the markdown input rule fire — same http(s) gate,
+   * same block placement — but without making the student memorise syntax.
+   */
+  const commitImage = useCallback(() => {
+    const src = imageUrl.trim();
+    if (!/^https?:\/\//i.test(src)) {
+      setImageError(tp('imageUrlInvalid'));
+      return;
+    }
+    setImageError(null);
+    editor.chain().focus().setImage({ src, alt: '' }).run();
+    onClose();
+    // The menu unmounts with focus inside it — return focus to the editor so
+    // the student keeps typing where they left off.
+    void Promise.resolve().then(() => {
+      editor.chain().focus().run();
+    });
+  }, [editor, imageUrl, onClose, tp]);
+
+  const backToList = useCallback(() => {
+    setShowImagePrompt(false);
+    setImageError(null);
   }, []);
+
+  const handleImageKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitImage();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        backToList();
+      }
+    },
+    [commitImage, backToList],
+  );
 
   const selectItem = useCallback(
     (item: SlashMenuItem) => {
+      // The image entry swaps the menu body to its inline URL field instead
+      // of closing — the insert happens from commitImage on Enter.
+      if (item.id === 'image') {
+        setShowImagePrompt(true);
+        return;
+      }
       // Mid-line trigger: split the paragraph at the caret first so the chosen
       // block style wraps the text after the caret (the text before it stays in
       // its own paragraph).
@@ -167,6 +222,43 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineE
       role="listbox"
       aria-label={tp('slashPlaceholder')}
     >
+      {showImagePrompt ? (
+        <div className="flex flex-col gap-2 p-3">
+          <input
+            ref={urlInputRef}
+            type="text"
+            value={imageUrl}
+            onChange={(e) => {
+              setImageUrl(e.target.value);
+              setImageError(null);
+            }}
+            onKeyDown={handleImageKeyDown}
+            placeholder={tp('imageUrlPlaceholder')}
+            aria-label={tp('imageUrlPlaceholder')}
+            className="w-full rounded-md border border-subtle bg-raised px-3 py-2 text-ui-sm text-primary outline-none placeholder:text-tertiary focus:border-strong"
+          />
+          {imageError && (
+            <p className="text-ui-xs text-danger">{imageError}</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={backToList}
+              className="h-11 flex-1 rounded-md border border-subtle bg-raised px-3 text-ui-sm text-secondary transition-colors hover:text-primary"
+            >
+              {tp('imageBack')}
+            </button>
+            <button
+              type="button"
+              onClick={commitImage}
+              className="h-11 flex-1 rounded-md bg-accent px-3 text-ui-sm text-on-accent transition-colors hover:bg-accent-hover"
+            >
+              {tp('imageInsert')}
+            </button>
+          </div>
+        </div>
+      ) : (
+      <>
       <input
         ref={inputRef}
         type="text"
@@ -201,6 +293,8 @@ export function SlashMenu({ editor, position, onClose, onCancel, onInsertInlineE
           ))
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

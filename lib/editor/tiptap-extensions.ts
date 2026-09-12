@@ -48,6 +48,20 @@ const BlockMathNoRules = BlockMath.extend({ addInputRules() { return []; } });
  */
 const IMAGE_SRC_RE = /^https?:\/\//i;
 
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    image: {
+      /**
+       * Insert a remote image block. Rejects non-http(s) sources — the same
+       * gate as the markdown input rule and the proseToUnion trust boundary.
+       * Empty block → replaced; otherwise the image lands after it. Equivalent
+       * to typing `![](url)` and letting the input rule fire.
+       */
+      setImage: (options: { src: string; alt?: string }) => ReturnType;
+    };
+  }
+}
+
 const NoteImage = Node.create({
   name: 'image',
   group: 'block',
@@ -68,6 +82,32 @@ const NoteImage = Node.create({
 
   renderHTML({ HTMLAttributes }) {
     return ['img', mergeAttributes(HTMLAttributes, { class: 'note-image' })];
+  },
+
+  addCommands() {
+    return {
+      setImage:
+        (options) =>
+        ({ state, dispatch }) => {
+          const src = options?.src ?? '';
+          const alt = options?.alt ?? '';
+          if (!IMAGE_SRC_RE.test(src)) return false;
+          const nodeType = state.schema.nodes.image;
+          if (!nodeType) return false;
+          if (dispatch) {
+            const { $from } = state.selection;
+            const node = nodeType.create({ src, alt });
+            const parent = $from.parent;
+            if (parent.isTextblock && parent.textContent.length === 0) {
+              state.tr.replaceWith($from.before(), $from.after(), node);
+            } else {
+              state.tr.insert($from.after(), node);
+            }
+            dispatch(state.tr);
+          }
+          return true;
+        },
+    };
   },
 
   addInputRules() {

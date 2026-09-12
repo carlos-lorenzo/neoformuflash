@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { SYSTEM_THEME_SCRIPT } from '@/lib/theme';
 import { getThemeChoice } from '@/lib/theme.server';
+import { AnalyticsConsent } from '@/components/analytics/analytics-consent';
 import '@/styles/globals.css';
 
 /*
@@ -61,6 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
+          <AnalyticsConsent />
         </NextIntlClientProvider>
       </body>
     </html>
