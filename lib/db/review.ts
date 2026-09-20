@@ -50,6 +50,12 @@ export type StartReviewResult = {
   deck: { id: string; title: string; desiredRetention: number };
   cards: ReviewQueueCard[];
   streak: Streak | null;
+  /**
+   * Soonest future due_at for this user+deck (ISO string), or null when
+   * nothing is scheduled. Shown in the empty state as "next session due …"
+   * so "No cards due" reads as a schedule, not a bug.
+   */
+  nextDueAt: string | null;
 };
 
 export type GradeCardResult = {
@@ -160,21 +166,51 @@ export async function startReview(
   const dueEntries = dueRows ?? [];
   const remainingSlots = SESSION_CAP - dueEntries.length;
 
+  // Helper: soonest future due for the empty-state "next session due …" line.
+  async function fetchNextDueAt(): Promise<string | null> {
+    const { data } = await supabase
+      .from('card_states')
+      .select('due_at')
+      .eq('user_id', userId)
+      .eq('deck_id', deckId)
+      .gt('due_at', now.toISOString())
+      .order('due_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    return (data as { due_at: string } | null)?.due_at ?? null;
+  }
+
   // 3. New cards (second branch), capped by daily allowance
   let newCards: typeof dueEntries = [];
   if (remainingSlots > 0) {
-    // Count today's reviews that started as 'new' (to compute the daily cap)
+    // Count today's reviews that started as 'new' IN THIS DECK (to compute
+    // the daily cap). review_logs carries no deck_id, so resolve via cards.
+    // A global count blocked deck B after studying deck A — the "whichever
+    // deck I try says no cards due" report.
     const todayStart = new Date(now);
     todayStart.setUTCHours(0, 0, 0, 0);
 
-    const { count: newReviewsToday } = await supabase
+    const { data: todaysNew } = await supabase
       .from('review_logs')
-      .select('*', { count: 'exact', head: true })
+      .select('card_id')
       .eq('user_id', userId)
       .eq('phase', 'new')
-      .gte('reviewed_at', todayStart.toISOString());
+      .gte('reviewed_at', todayStart.toISOString())
+      .limit(500);
 
-    const dailyCap = deck.new_cards_per_day - (newReviewsToday ?? 0);
+    let newReviewsTodayInDeck = 0;
+    if (todaysNew && todaysNew.length > 0) {
+      const { data: cardDecks } = await supabase
+        .from('cards')
+        .select('id, deck_id')
+        .in(
+          'id',
+          todaysNew.map((r) => r.card_id),
+        );
+      newReviewsTodayInDeck = (cardDecks ?? []).filter((c) => c.deck_id === deckId).length;
+    }
+
+    const dailyCap = deck.new_cards_per_day - newReviewsTodayInDeck;
     const newCardSlots = Math.max(0, Math.min(remainingSlots, dailyCap));
 
     if (newCardSlots > 0) {
@@ -225,7 +261,8 @@ export async function startReview(
   const mergedIds = [...dueEntries.map((r) => r.card_id), ...newCards.map((r) => r.card_id)];
   if (mergedIds.length === 0) {
     const streak = await getStreak(userId);
-    return ok({ deck: { id: deck.id, title: deck.title, desiredRetention }, cards: [], streak: streak.ok ? streak.value : null });
+    const nextDueAt = await fetchNextDueAt();
+    return ok({ deck: { id: deck.id, title: deck.title, desiredRetention }, cards: [], streak: streak.ok ? streak.value : null, nextDueAt });
   }
 
   // Fetch card content in one query
@@ -290,6 +327,7 @@ export async function startReview(
     deck: { id: deck.id, title: deck.title, desiredRetention },
     cards,
     streak: streak.ok ? streak.value : null,
+    nextDueAt: null,
   });
 }
 

@@ -21,7 +21,7 @@ export function FlashcardCard({ front, back, showingBack, onReveal }: FlashcardC
 
   return (
     <div
-      className="flip-container relative w-full h-full max-w-review mx-auto min-h-editor rounded-lg border border-subtle bg-raised"
+      className="flip-container relative w-full h-full max-w-review laptop:max-w-review-wide mx-auto min-h-editor rounded-lg border border-subtle bg-raised"
       onClick={showingBack ? undefined : onReveal}
       role="button"
       tabIndex={showingBack ? undefined : 0}

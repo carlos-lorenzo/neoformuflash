@@ -327,7 +327,9 @@
       "emptyCardsBody": "Añade tu primera tarjeta a este mazo.",
       "delete": "Eliminar mazo",
       "deleteConfirm": "¿Estás seguro? Esto no se puede deshacer.",
-      "hasSubscribers": "Este mazo tiene suscriptores y no se puede eliminar. Hazlo privado primero."
+      "hasSubscribers": "Este mazo tiene suscriptores y no se puede eliminar. Hazlo privado primero.",
+      "practice": "Practicar",
+      "practiceHint": "Estudia sin cambiar la planificación FSRS"
     },
     "cardEditor": {
       "front": "Frente",
@@ -465,8 +467,11 @@
       "title": "Sesión completa",
       "reviewed": "Repasadas {count} tarjetas",
       "streak": "Día {current} — récord {longest}",
-      "done": "Listo"
-    }
+      "done": "Listo",
+      "nextDue": "Próxima sesión {when}."
+    },
+    "allCaughtUp": "¡Al día!",
+    "noDueNext": "¡Felicidades! Tu próxima sesión es {when}."
   },
   "math": {
     "invalidLatex": "Esta fórmula no se puede previsualizar",
@@ -787,5 +792,35 @@
       "materialNeedsVision": "Este PDF parece escaneado. La extracción por visión llegará pronto — pegue el texto manualmente.",
       "materialEmpty": "El archivo no tiene texto legible."
     }
+  },
+  "practice": {
+    "title": "Práctica: {deck}",
+    "bannerTitle": "Modo práctica — planificación intacta",
+    "bannerBody": "Tus calificaciones aquí nunca cambian los intervalos FSRS ni las fechas. Tu racha sí cuenta y nada se escribe en tu historial.",
+    "backToDeck": "Volver al mazo",
+    "start": "Empezar práctica",
+    "emptyDeck": "Este mazo aún no tiene tarjetas.",
+    "noMatch": "Ninguna tarjeta coincide con estos filtros.",
+    "filters": {
+      "title": "Qué practicar",
+      "confidence": "Confianza",
+      "shuffle": "Orden aleatorio",
+      "again": "Otra vez",
+      "hard": "Difícil",
+      "good": "Bien",
+      "easy": "Fácil",
+      "unset": "Sin calificar",
+      "all": "{count} de {total} tarjetas",
+      "endless": "Sin fin (repasar en bucle)"
+    },
+    "sessionComplete": {
+      "title": "Práctica completa",
+      "practiced": "Practicaste {count} tarjetas",
+      "untouched": "Planificación intacta — ninguna fecha cambió.",
+      "streak": "Día {current} — récord {longest}",
+      "done": "Listo"
+    },
+    "bannerShort": "Modo práctica — las calificaciones nunca cambian tu planificación FSRS. La racha sí cuenta.",
+    "end": "Terminar"
   }
 }

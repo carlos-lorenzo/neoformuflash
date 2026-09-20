@@ -18,11 +18,11 @@ export async function DueDecksList({ decks, courseNameById }: DueDecksListProps)
   return (
     <ul className="flex flex-col gap-2">
       {decks.map((deck) => {
-        // Review sessions are course-scoped (phase-03c); a course-less deck has
-        // no review URL today, so it falls back to its deck page.
+        // Course-scoped decks keep their review URL; course-less decks use the
+        // universal study route so every deck is studyable.
         const href = deck.courseId
           ? (`/app/courses/${deck.courseId}/review/${deck.id}` as Route)
-          : (`/app/decks/${deck.id}` as Route);
+          : (`/app/decks/${deck.id}/study` as Route);
 
         const courseName = deck.courseId ? courseNameById[deck.courseId] : undefined;
 

@@ -631,6 +631,45 @@ export type Database = {
           },
         ]
       }
+      practice_logs: {
+        Row: {
+          card_id: string
+          id: number
+          rating: Database["public"]["Enums"]["review_rating"]
+          reviewed_at: string
+          user_id: string
+        }
+        Insert: {
+          card_id: string
+          id?: number
+          rating: Database["public"]["Enums"]["review_rating"]
+          reviewed_at?: string
+          user_id: string
+        }
+        Update: {
+          card_id?: string
+          id?: number
+          rating?: Database["public"]["Enums"]["review_rating"]
+          reviewed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_logs_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

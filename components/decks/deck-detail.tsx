@@ -60,7 +60,18 @@ export async function DeckDetail({
             {t('detail.preview')}
           </Link>
           <Link
-            href={`/app/courses/${deck.courseId}/review/${deck.id}`}
+            href={`/app/decks/${deck.id}/practice` as Route}
+            className="rounded-sm border border-subtle px-4 py-2 text-ui-base font-medium text-secondary hover:text-primary"
+            title={t('detail.practiceHint')}
+          >
+            {t('detail.practice')}
+          </Link>
+          <Link
+            href={
+              (deck.courseId
+                ? `/app/courses/${deck.courseId}/review/${deck.id}`
+                : `/app/decks/${deck.id}/study`) as Route
+            }
             className="rounded-sm bg-accent px-4 py-2 text-ui-base font-medium text-on-accent hover:bg-accent-hover"
           >
             {t('detail.study')}

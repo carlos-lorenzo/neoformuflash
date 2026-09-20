@@ -8,6 +8,7 @@
 
 import { getSessionUser } from '@/lib/supabase/session';
 import { startReview, gradeCard, undoGrade, saveInlineEdit as saveInlineEditDb, acknowledgeChange } from '@/lib/db/review';
+import { startPractice, logPractice, type PracticeFilter } from '@/lib/db/practice';
 import { getStreak } from '@/lib/db/decks';
 import { extractText } from '@neoformuflash/contracts';
 import { proseToUnion } from '@/lib/editor/serialize';
@@ -19,7 +20,7 @@ import type { SrsState } from '@neoformuflash/contracts';
 /* ------------------------------------------------------------------ */
 
 export async function getReviewQueue(deckId: string): Promise<
-  | { ok: true; value: { queue: ReviewQueueCard[]; streak: { current: number; longest: number; lastActiveDate: string | null } | null } }
+  | { ok: true; value: { queue: ReviewQueueCard[]; streak: { current: number; longest: number; lastActiveDate: string | null } | null; nextDueAt: string | null } }
   | { ok: false; code: string }
 > {
   const user = await getSessionUser();
@@ -32,7 +33,8 @@ export async function getReviewQueue(deckId: string): Promise<
     ok: true,
     value: {
       queue: res.value.cards,
-      streak: res.value.streak
+      streak: res.value.streak,
+      nextDueAt: res.value.nextDueAt,
     }
   };
 }
@@ -49,7 +51,7 @@ export async function submitReview(input: {
   editedDuringReview: boolean;
 }): Promise<{
   ok: boolean;
-  value?: { learning: boolean; remainingCount: number; streak: { current: number; longest: number; lastActiveDate: string | null } };
+  value?: { learning: boolean; remainingCount: number; nextDueAt: string | null; streak: { current: number; longest: number; lastActiveDate: string | null } };
   errors?: Record<string, string>;
 }> {
   const user = await getSessionUser();
@@ -80,9 +82,71 @@ export async function submitReview(input: {
     value: {
       learning,
       remainingCount: remaining.ok ? remaining.value.cards.length : 0,
+      nextDueAt: remaining.ok ? remaining.value.nextDueAt : null,
       streak
     }
   };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Practice (no FSRS effect)                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Practice queue: all cards in the deck, no due filter, no daily cap.
+ * Writes go to practice_logs only — card_states/review_logs untouched.
+ */
+export async function getPracticeQueue(deckId: string, filter: PracticeFilter = {}): Promise<
+  | {
+      ok: true;
+      value: {
+        queue: { id: string; frontJson: unknown; backJson: unknown; contentVersion: number; confidence: string | null }[];
+        totalInDeck: number;
+        streak: { current: number; longest: number; lastActiveDate: string | null } | null;
+      };
+    }
+  | { ok: false; code: string }
+> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, code: 'error.unexpected' };
+
+  const res = await startPractice(user.id, deckId, filter);
+  if (!res.ok) return { ok: false, code: res.code };
+
+  return {
+    ok: true,
+    value: {
+      queue: res.value.cards.map((c) => ({
+        id: c.id,
+        frontJson: c.frontJson,
+        backJson: c.backJson,
+        contentVersion: c.contentVersion,
+        confidence: c.confidence,
+      })),
+      totalInDeck: res.value.totalInDeck,
+      streak: res.value.streak,
+    },
+  };
+}
+
+/**
+ * Log one practice grade. Only practice_logs is written (streak bumps via
+ * trigger); the FSRS schedule is untouched by construction.
+ */
+export async function submitPractice(input: {
+  cardId: string;
+  rating: 'again' | 'hard' | 'good' | 'easy';
+}): Promise<{
+  ok: boolean;
+  value?: { streak: { current: number; longest: number; lastActiveDate: string | null } | null };
+  errors?: Record<string, string>;
+}> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, errors: { form: 'error.unexpected' } };
+
+  const res = await logPractice(user.id, { cardId: input.cardId, rating: input.rating });
+  if (!res.ok) return { ok: false, errors: { form: res.code } };
+  return { ok: true, value: { streak: res.value.streak } };
 }
 
 /* ------------------------------------------------------------------ */

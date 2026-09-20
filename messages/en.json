@@ -327,7 +327,9 @@
       "emptyCardsBody": "Add your first card to this deck.",
       "delete": "Delete deck",
       "deleteConfirm": "Are you sure? This can't be undone.",
-      "hasSubscribers": "This deck has subscribers and can't be deleted. Make it private first."
+      "hasSubscribers": "This deck has subscribers and can't be deleted. Make it private first.",
+      "practice": "Practice",
+      "practiceHint": "Study without changing the FSRS schedule"
     },
     "cardEditor": {
       "front": "Front",
@@ -465,8 +467,11 @@
       "title": "Session complete",
       "reviewed": "Reviewed {count} cards",
       "streak": "Day {current} — longest {longest}",
-      "done": "Done"
-    }
+      "done": "Done",
+      "nextDue": "Next study session due {when}."
+    },
+    "allCaughtUp": "All caught up!",
+    "noDueNext": "Congratulations! Your next study session is due {when}."
   },
   "math": {
     "invalidLatex": "This formula can't be previewed",
@@ -787,5 +792,35 @@
       "materialNeedsVision": "This PDF looks scanned. Vision extraction is coming soon — paste the text manually instead.",
       "materialEmpty": "The file has no readable text."
     }
+  },
+  "practice": {
+    "title": "Practice: {deck}",
+    "bannerTitle": "Practice mode — schedule untouched",
+    "bannerBody": "Grades here never change FSRS intervals or due dates. Your streak still counts, and nothing is written to your review history.",
+    "backToDeck": "Back to deck",
+    "start": "Start practice",
+    "emptyDeck": "This deck has no cards yet.",
+    "noMatch": "No cards match these filters.",
+    "filters": {
+      "title": "What to practice",
+      "confidence": "Confidence",
+      "shuffle": "Shuffle order",
+      "again": "Again",
+      "hard": "Hard",
+      "good": "Good",
+      "easy": "Easy",
+      "unset": "Not rated",
+      "all": "{count} of {total} cards",
+      "endless": "Endless (cycle through cards)"
+    },
+    "sessionComplete": {
+      "title": "Practice complete",
+      "practiced": "Practiced {count} cards",
+      "untouched": "Schedule untouched — no due dates changed.",
+      "streak": "Day {current} — longest {longest}",
+      "done": "Done"
+    },
+    "bannerShort": "Practice mode — grades never change your FSRS schedule. Streak still counts.",
+    "end": "End practice"
   }
 }

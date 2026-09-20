@@ -20,6 +20,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { getReviewQueue, submitReview, undoLastReview, acknowledgeChangedCard } from '@/app/(review)/actions';
 import type { ReviewQueueItem } from '@/lib/db/review';
+import { formatNextDue } from '@/lib/review/format-due';
 
 // Ensure KaTeX styles are loaded for flashcard math rendering
 import 'katex/dist/katex.min.css';
@@ -42,7 +43,8 @@ export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: bo
   const [changedCardOpen, setChangedCardOpen] = useState(false);
   const [undoStack, setUndoStack] = useState<ReviewQueueItem[]>([]);
   const [sessionComplete, setSessionComplete] = useState(false);
-  const [summary, setSummary] = useState<{ reviewed: number; streak: { current: number; longest: number; lastActiveDate: string | null } } | null>(null);
+  const [summary, setSummary] = useState<{ reviewed: number; streak: { current: number; longest: number; lastActiveDate: string | null }; nextDueAt: string | null } | null>(null);
+  const [nextDueAt, setNextDueAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [revealTimestamp, setRevealTimestamp] = useState(0);
@@ -71,6 +73,7 @@ useActiveScope('review');
     if (res.ok) {
       setQueue(res.value.queue);
       setTotalCount((prev) => prev + res.value.queue.length);
+      setNextDueAt(res.value.nextDueAt);
     }
   }, [deckId]);
 
@@ -155,6 +158,7 @@ useActiveScope('review');
         setSummary({
           reviewed: reviewedCount + 1,
           streak: res.value?.streak ?? { current: 0, longest: 0, lastActiveDate: null },
+          nextDueAt: res.value?.nextDueAt ?? null,
         });
         setSessionComplete(true);
       } else if (queue.length <= 1) {
@@ -232,6 +236,7 @@ useActiveScope('review');
   const current = queue[0];
 
   if (sessionComplete && summary) {
+    const next = summary.nextDueAt ? formatNextDue(summary.nextDueAt) : null;
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
         <h1 className="text-ui-lg font-semibold text-primary">{t('sessionComplete.title')}</h1>
@@ -241,6 +246,11 @@ useActiveScope('review');
         <p className="text-ui-sm text-tertiary">
           {t('sessionComplete.streak', { current: summary.streak.current, longest: summary.streak.longest })}
         </p>
+        {next ? (
+          <p className="text-ui-sm text-secondary" title={next.absolute}>
+            {t('sessionComplete.nextDue', { when: next.relative })}
+          </p>
+        ) : null}
         <Button variant="primary" onClick={() => router.push(`/app/decks/${deckId}`)}>
           {t('sessionComplete.done')}
         </Button>
@@ -249,9 +259,15 @@ useActiveScope('review');
   }
 
   if (!current) {
+    const next = nextDueAt ? formatNextDue(nextDueAt) : null;
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
-        <p className="text-ui-lg font-semibold text-primary">{t('noDue')}</p>
+        <p className="text-ui-lg font-semibold text-primary">{next ? t('allCaughtUp') : t('noDue')}</p>
+        {next ? (
+          <p className="text-ui-base text-secondary" title={next.absolute}>
+            {t('noDueNext', { when: next.relative })}
+          </p>
+        ) : null}
         <Button variant="primary" onClick={() => router.push(`/app/decks/${deckId}`)}>
           {t('backToDeck')}
         </Button>
@@ -260,31 +276,43 @@ useActiveScope('review');
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       {/* Counter fixed at top-left */}
       <div className="fixed top-4 left-4 z-10 text-ui-sm text-tertiary">
         {totalCount === 0 ? 1 : totalCount - queue.length + 1} / {totalCount}
       </div>
 
-      {/* Card fills the available space, centered vertically */}
-      <div className="flex-1 flex items-center justify-center p-4">
-        <FlashcardCard
-          front={current.card.frontJson}
-          back={current.card.backJson}
-          showingBack={showingBack}
-          onReveal={handleReveal}
-        />
+      {/* Card fills the available space, centered vertically; scrolls
+          internally on short viewports so the grading row never leaves screen */}
+      <div className="flex min-h-0 flex-1 justify-center overflow-y-auto p-4">
+        <div className="m-auto w-full">
+          <FlashcardCard
+            front={current.card.frontJson}
+            back={current.card.backJson}
+            showingBack={showingBack}
+            onReveal={handleReveal}
+          />
+        </div>
       </div>
 
-      {/* Grading row fixed at bottom — thumb-first zone (§6) */}
-      {(phase === 'grading' || phase === 'learning') && (
-        <div className="shrink-0 p-4 pb-safe">
+      {/*
+        Grading row fixed at bottom — thumb-first zone (§6). Always rendered:
+        before reveal it is an invisible placeholder of identical height so the
+        card never shifts when the row appears.
+      */}
+      <div className="shrink-0 p-4 pb-safe">
+        <div
+          className={phase === 'grading' || phase === 'learning' ? undefined : 'invisible'}
+          aria-hidden={phase === 'grading' || phase === 'learning' ? undefined : true}
+          inert={phase === 'grading' || phase === 'learning' ? undefined : true}
+        >
           {isOwner ? (
             <div className="mb-2">
               <Button
                 variant="secondary"
                 onClick={openInlineEdit}
                 className="text-ui-sm"
+                tabIndex={phase === 'grading' || phase === 'learning' ? undefined : -1}
               >
                 {t('editCard')}
               </Button>
@@ -293,11 +321,11 @@ useActiveScope('review');
           <GradingRow
             previews={previews}
             onGrade={handleGrade}
-            disabled={gradingInFlight}
+            disabled={gradingInFlight || (phase !== 'grading' && phase !== 'learning')}
             loadingRating={gradingInFlight ? RATINGS[0] : null}
           />
         </div>
-      )}
+      </div>
 
       {error && <p className="text-ui-sm text-danger fixed bottom-4">{error}</p>}
 
