@@ -91,7 +91,7 @@ export function MathInput({ mode, initialLatex = '', position, onCommit, onCance
           fractions vertically (same overflow rationale as the editor wrapper). */}
       <div
         className={cn(
-          'min-h-8 overflow-x-auto rounded-md bg-base p-2 text-center text-read-base leading-normal',
+          'min-h-8 overflow-x-auto overflow-y-visible rounded-md bg-base p-2 text-center text-read-base leading-normal',
           preview.error && 'text-danger',
         )}
         dangerouslySetInnerHTML={{ __html: preview.html }}

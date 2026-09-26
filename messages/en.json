@@ -822,6 +822,7 @@
     },
     "bannerShort": "Practice mode — grades never change your FSRS schedule. Streak still counts.",
     "end": "End practice",
-    "next": "Next card"
+    "next": "Next card",
+    "shortcutHint": "Space · Enter · Esc end"
   }
 }

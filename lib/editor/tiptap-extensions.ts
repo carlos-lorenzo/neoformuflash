@@ -175,8 +175,15 @@ export function buildEditorExtensions(placeholder: string) {
       strike: false,
       underline: false,
     }),
-    InlineMathNoRules.configure({ katexOptions: { ...KATEX_OPTIONS } }),
-    BlockMathNoRules.configure({ katexOptions: { ...KATEX_OPTIONS } }),
+    InlineMathNoRules.configure({ katexOptions: { ...KATEX_OPTIONS, displayMode: false } }),
+    /*
+     * BlockMath MUST render with displayMode: true. The nodeview passes
+     * katexOptions straight to katex.render(), which defaults to inline/text
+     * style — fractions, sums with limits and matrices then render squished
+     * into a single text line. Display style is what makes \frac etc. grow
+     * vertically the way the read-only renderer (note-doc-render.tsx) does.
+     */
+    BlockMathNoRules.configure({ katexOptions: { ...KATEX_OPTIONS, displayMode: true } }),
     NoteImage,
   ];
 }

@@ -540,6 +540,26 @@
   color: var(--text-secondary);
 }
 
+/*
+ * Flashcard faces (review + landing demo) centre short prose via the
+ * inherited `text-center` on the face, but structured blocks must stay
+ * left-aligned — otherwise bullets render as a narrow centred column with
+ * centred text. The content wrapper is full-width (items-stretch), so these
+ * rules only correct the inherited alignment, not the layout.
+ */
+:is(.flip-face, .landing-face) .note-doc-view :is(ul, ol, blockquote, pre) {
+  text-align: left;
+}
+
+:is(.flip-face, .landing-face) .note-doc-view :is(ul, ol) {
+  width: 100%;
+  margin-inline: 0;
+}
+
+:is(.flip-face, .landing-face) .note-doc-view li > p {
+  text-align: left;
+}
+
 /* ---- blockquote ---- */
 
 :is(.tiptap, .note-doc-view) blockquote {
@@ -594,6 +614,7 @@
 /* ---- display/inline math wrappers (from note-doc-view.tsx) ---- */
 
 :is(.tiptap, .note-doc-view) :is(.display-math, [data-type='block-math']) {
+  display: block;
   margin: var(--spacing-3) 0;
   overflow-x: auto;
   overflow-y: visible;
@@ -602,20 +623,29 @@
    * beyond the line box via KaTeX's vlist. Without vertical breathing room
    * inside the scrollport their ascenders/descenders clip. Padding keeps them
    * inside the scroll container; line-height/height resets keep the editor's
-   * 1.7 reading line-height from constraining the math box. */
+   * 1.7 reading line-height (and the Tailwind `prose` scale) from constraining
+   * the math box. max-height:none guards against typography-plugin caps. */
   line-height: normal;
   height: auto;
-  min-height: auto;
+  max-height: none;
+  min-height: 0;
   padding-block: 0.5em;
 }
 
-/* Inner KaTeX display: neutralise the 1em vertical margins (the wrapper owns
+/*
+ * Inner KaTeX: neutralise the 1em vertical margins (the wrapper owns
  * spacing) and keep vertical overflow visible so tall glyphs are never cut.
- * Horizontal scrolling stays on the outer wrapper. */
-:is(.tiptap, .note-doc-view) :is(.display-math, [data-type='block-math']) .katex-display {
+ * Horizontal scrolling stays on the outer wrapper.
+ *
+ * The Tiptap BlockMath nodeview renders `.katex` directly (not
+ * `.katex-display`), so all three layers must be covered — targeting only
+ * `.katex-display` left editor equations squashed to a single line.
+ */
+:is(.tiptap, .note-doc-view) :is(.display-math, [data-type='block-math']) :is(.katex-display, .katex, .katex-html) {
   margin: 0;
   padding-block: 0.25em;
   overflow: visible;
+  max-height: none;
   line-height: normal;
 }
 

@@ -14,9 +14,15 @@ export type FlashcardCardProps = {
   back: NoteDoc;
   showingBack: boolean;
   onReveal: () => void;
+  /**
+   * Hint shown at the bottom of the front face. Defaults to the review
+   * shortcut hint — practice sessions must pass their own, since 1-4/e/u
+   * do nothing there (Space/Enter/Esc only).
+   */
+  hint?: string;
 };
 
-export function FlashcardCard({ front, back, showingBack, onReveal }: FlashcardCardProps) {
+export function FlashcardCard({ front, back, showingBack, onReveal, hint }: FlashcardCardProps) {
   const t = useTranslations('review');
 
   return (
@@ -35,21 +41,25 @@ export function FlashcardCard({ front, back, showingBack, onReveal }: FlashcardC
     >
       <div className={showingBack ? 'flip-inner flipped' : 'flip-inner'} style={{ height: '100%' }}>
         {/* Front */}
-        <div className="flip-face absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden">
-            <NoteDocView doc={front} />
+        <div className="flip-face absolute inset-0 flex min-h-0 flex-col items-stretch justify-center p-6 text-center">
+          <div className="flex h-full min-h-0 w-full flex-1 flex-col items-stretch justify-center overflow-auto">
+            <div className="mx-auto w-full max-w-measure">
+              <NoteDocView doc={front} />
+            </div>
           </div>
           {!showingBack && (
             <div className="absolute bottom-4 text-ui-sm text-secondary animate-pulse">
-              {t('shortcutHint')}
+              {hint ?? t('shortcutHint')}
             </div>
           )}
         </div>
 
         {/* Back */}
-        <div className="flip-face flip-back absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden">
-            <NoteDocView doc={back} />
+        <div className="flip-face flip-back absolute inset-0 flex min-h-0 flex-col items-stretch justify-center p-6 text-center">
+          <div className="flex h-full min-h-0 w-full flex-1 flex-col items-stretch justify-center overflow-auto">
+            <div className="mx-auto w-full max-w-measure">
+              <NoteDocView doc={back} />
+            </div>
           </div>
         </div>
       </div>

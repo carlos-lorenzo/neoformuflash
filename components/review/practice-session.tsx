@@ -297,9 +297,8 @@ export function PracticeSession({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-warning bg-raised px-4 py-2" role="note">
+      <div className="flex shrink-0 items-center justify-between gap-2 px-4 py-2">
         <span className="shrink-0 text-ui-sm text-tertiary">{counter}</span>
-        <span className="min-w-0 flex-1 truncate text-center text-ui-xs text-secondary">{t('bannerTitle')}</span>
         <Button variant="ghost" size="sm" onClick={handleEnd}>
           {t('end')}
         </Button>
@@ -311,6 +310,7 @@ export function PracticeSession({
           back={current.backJson}
           showingBack={showingBack}
           onReveal={handleReveal}
+          hint={t('shortcutHint')}
         />
       </div>
 

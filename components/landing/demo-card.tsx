@@ -52,10 +52,12 @@ export const DemoCard = forwardRef<HTMLDivElement, DemoCardProps>(function DemoC
         {/* Front */}
         <div
           aria-hidden={showingBack}
-          className="landing-face flex flex-col rounded-lg border border-subtle bg-raised px-6 py-6 text-center sm:px-12"
+          className="landing-face flex flex-col items-stretch rounded-lg border border-subtle bg-raised px-6 py-6 text-center sm:px-12"
         >
-          <div className="flex flex-1 items-center justify-center">
-            <NoteDocView doc={front} />
+          <div className="flex min-h-0 flex-1 items-stretch justify-center">
+            <div className="mx-auto w-full max-w-measure">
+              <NoteDocView doc={front} />
+            </div>
           </div>
           {!showingBack ? (
             <p className="pt-6 text-ui-sm text-secondary">{hint}</p>
@@ -65,10 +67,12 @@ export const DemoCard = forwardRef<HTMLDivElement, DemoCardProps>(function DemoC
         {/* Back */}
         <div
           aria-hidden={!showingBack}
-          className="landing-face landing-back flex flex-col rounded-lg border border-subtle bg-raised px-6 py-6 text-center sm:px-12"
+          className="landing-face landing-back flex flex-col items-stretch rounded-lg border border-subtle bg-raised px-6 py-6 text-center sm:px-12"
         >
-          <div className="flex flex-1 items-center justify-center">
-            <NoteDocView doc={back} />
+          <div className="flex min-h-0 flex-1 items-stretch justify-center">
+            <div className="mx-auto w-full max-w-measure">
+              <NoteDocView doc={back} />
+            </div>
           </div>
         </div>
       </div>
