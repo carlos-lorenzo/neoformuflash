@@ -821,6 +821,7 @@
       "done": "Listo"
     },
     "bannerShort": "Modo práctica — las calificaciones nunca cambian tu planificación FSRS. La racha sí cuenta.",
-    "end": "Terminar"
+    "end": "Terminar",
+    "next": "Siguiente"
   }
 }

@@ -51,7 +51,7 @@ export async function submitReview(input: {
   editedDuringReview: boolean;
 }): Promise<{
   ok: boolean;
-  value?: { learning: boolean; remainingCount: number; nextDueAt: string | null; streak: { current: number; longest: number; lastActiveDate: string | null } };
+  value?: { learning: boolean; remainingCount?: number; nextDueAt?: string | null; streak: { current: number; longest: number; lastActiveDate: string | null } };
   errors?: Record<string, string>;
 }> {
   const user = await getSessionUser();
@@ -65,13 +65,11 @@ export async function submitReview(input: {
   });
   if (!res.ok) return { ok: false, errors: { form: res.code } };
 
-  // Re-run startReview to get the TRUE remaining count. The client's local
-  // queue is only the initial SESSION_CAP window; a card graded 'again' is
-  // re-added to the queue, so the server count is what decides whether the
-  // session is actually over. The old `queue: []` made every grade look like
-  // the last one — session-complete fired after each card (phase-03b defect 1).
-  const remaining = await startReview(user.id, input.deckId);
-
+  // Fast path: the client advances optimistically and prefetches the next
+  // window itself, so grading must not re-run the full startReview queue
+  // build (~7 sequential queries) on every card — that was the 1-2s stall.
+  // Completion is decided client-side: when the local queue drains it fetches
+  // the next batch, and only shows session-complete when that fetch is empty.
   const learning = res.value.next.phase === 'learning' || res.value.next.phase === 'relearning';
   const streakResult = await getStreak(user.id);
   const streak = streakResult.ok && streakResult.value
@@ -81,8 +79,6 @@ export async function submitReview(input: {
     ok: true,
     value: {
       learning,
-      remainingCount: remaining.ok ? remaining.value.cards.length : 0,
-      nextDueAt: remaining.ok ? remaining.value.nextDueAt : null,
       streak
     }
   };

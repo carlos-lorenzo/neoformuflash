@@ -44,7 +44,7 @@ export function GradingRow({
               'min-h-11 min-w-11', // ≥44px touch target at 390px (§6)
               RATING_VARIANT[rating],
               {
-                'opacity-50 pointer-events-none': disabled || loadingRating !== null,
+                'opacity-50 pointer-events-none': disabled || loadingRating != null,
                 'ring-2 ring-offset-2 ring-accent': loadingRating === rating,
               }
             )}

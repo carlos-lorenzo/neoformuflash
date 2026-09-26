@@ -25,7 +25,7 @@ import { formatNextDue } from '@/lib/review/format-due';
 // Ensure KaTeX styles are loaded for flashcard math rendering
 import 'katex/dist/katex.min.css';
 
-const RATINGS = ['again', 'hard', 'good', 'easy'] as const;
+type Rating = 'again' | 'hard' | 'good' | 'easy';
 
 export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: boolean }) {
   const t = useTranslations('review');
@@ -36,7 +36,10 @@ export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: bo
   const [queue, setQueue] = useState<ReviewQueueItem[]>([]);
   const [phase, setPhase] = useState<'front' | 'back' | 'grading' | 'learning' | 'complete'>('front');
   const [showingBack, setShowingBack] = useState(false);
-  const [gradingInFlight, setGradingInFlight] = useState(false);
+  // The rating being submitted in the background. Drives the GradingRow ring
+  // so the highlight follows the actual choice (previously hardcoded to
+  // 'again', which always lit up the first button). Null when idle.
+  const [pendingRating, setPendingRating] = useState<Rating | null>(null);
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
   const [inlineEditOpen, setInlineEditOpen] = useState(false);
   const [inlineEditCard, setInlineEditCard] = useState<ReviewQueueItem | null>(null);
@@ -65,15 +68,41 @@ useEffect(() => {
 
 useActiveScope('review');
 
+  // Cards already seen this session (initial load + prefetched batches).
+  // Guards the prefetch append against duplicates when the server window
+  // still contains cards we already hold locally.
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const prefetchInFlightRef = useRef(false);
+
   // Load (or reload) the queue. Extracted so grading can refetch when the
   // local window drains while the server still has due cards (SESSION_CAP
   // truncates the initial fetch — the queue is a rolling window).
-  const load = useCallback(async () => {
-    const res = await getReviewQueue(deckId);
-    if (res.ok) {
-      setQueue(res.value.queue);
-      setTotalCount((prev) => prev + res.value.queue.length);
-      setNextDueAt(res.value.nextDueAt);
+  // initial=true replaces (first paint); otherwise appends unique cards so a
+  // background prefetch never duplicates or reorders the current card.
+  const load = useCallback(async (initial = false) => {
+    if (!initial) {
+      if (prefetchInFlightRef.current) return;
+      prefetchInFlightRef.current = true;
+    }
+    try {
+      const res = await getReviewQueue(deckId);
+      if (res.ok) {
+        const fresh = res.value.queue.filter((c) => !seenIdsRef.current.has(c.card.id));
+        fresh.forEach((c) => seenIdsRef.current.add(c.card.id));
+        if (initial) {
+          res.value.queue.forEach((c) => seenIdsRef.current.add(c.card.id));
+          setQueue(res.value.queue);
+          setTotalCount(res.value.queue.length);
+        } else if (fresh.length > 0) {
+          setQueue((q) => [...q, ...fresh]);
+          setTotalCount((prev) => prev + fresh.length);
+        }
+        setNextDueAt(res.value.nextDueAt);
+        return res.value;
+      }
+      return null;
+    } finally {
+      if (!initial) prefetchInFlightRef.current = false;
     }
   }, [deckId]);
 
@@ -81,8 +110,7 @@ useActiveScope('review');
   // the await — not the synchronous setState-in-effect the rule targets, but
   // the rule cannot see that through the useCallback boundary.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
+    load(true);
   }, [load]);
 
   // Changed-card dialog: when the front card carries a pending content change
@@ -112,40 +140,53 @@ useActiveScope('review');
     }
   }, []);
 
-  // Grade handler
-  const handleGrade = useCallback((rating: typeof RATINGS[number]) => {
-    if (phaseRef.current !== 'grading' || gradingInFlight) return;
+  // Grade handler — optimistic: advance to the next (already cached) card
+  // immediately, then persist in the background. The next card is local, so
+  // perceived latency is ~0ms even when the server takes 1-2s.
+  // Note: no gradingInFlight gate — the phase flip already prevents double
+  // submits on the same card, and the next card must stay gradable while a
+  // previous submit is still in flight.
+  const handleGrade = useCallback((rating: Rating) => {
+    if (phaseRef.current !== 'grading') return;
     const current = queue[0];
     if (!current) return;
-    // setGradingInFlight must come AFTER the !current guard: an empty queue
-    // would otherwise leave the grading row permanently locked (phase-03b
-    // defect 1).
-    setGradingInFlight(true);
+    setPendingRating(rating);
+
+    const responseTimeMs = Date.now() - revealTimestamp;
+    const wasEdited = editedDuringReview;
+    const nextLength = queue.length - 1;
+
+    // Advance instantly from the local window.
+    setUndoStack((s) => [...s, current]);
+    setQueue((q) => q.slice(1));
+    setShowingBack(false);
+    setPhase('front');
+    setEditedDuringReview(false);
+    setReviewedCount((n) => n + 1);
+
+    // Prefetch the next window before we run dry (was: only at length <= 1,
+    // which showed a gap). Appends unique cards in the background.
+    if (nextLength <= 10) {
+      load(false);
+    }
 
     (async () => {
       const res = await submitReview({
         deckId,
         cardId: current.card.id,
         rating,
-        responseTimeMs: Date.now() - revealTimestamp,
-        editedDuringReview,
+        responseTimeMs,
+        editedDuringReview: wasEdited,
       });
+      setPendingRating(null);
       if (!res.ok) {
+        // Persist failed — restore the card to the front so no review is lost.
+        setQueue((q) => [current, ...q]);
+        setUndoStack((s) => s.slice(0, -1));
+        setReviewedCount((n) => Math.max(0, n - 1));
         setError(res.errors?.form ?? 'error.unexpected');
-        setGradingInFlight(false);
         return;
       }
-
-      // Push current card to undo stack
-      setUndoStack((s) => [...s, current]);
-
-      // Advance
-      setQueue((q) => q.slice(1));
-      setShowingBack(false);
-      setPhase('front');
-      setGradingInFlight(false);
-      setEditedDuringReview(false);
-      setReviewedCount((n) => n + 1);
 
       if (res.value?.learning) {
         // Learning card: short pause then re-show until graduated
@@ -153,21 +194,22 @@ useActiveScope('review');
         setTimeout(() => setPhase('front'), 800);
       }
 
-      const remaining = res.value?.remainingCount ?? 0;
-      if (remaining === 0) {
-        setSummary({
-          reviewed: reviewedCount + 1,
-          streak: res.value?.streak ?? { current: 0, longest: 0, lastActiveDate: null },
-          nextDueAt: res.value?.nextDueAt ?? null,
-        });
-        setSessionComplete(true);
-      } else if (queue.length <= 1) {
-        // Local window drained but the server still has due cards — refetch
-        // the next batch instead of ending the session.
-        load();
+      // Session end is decided locally: the queue drained AND the server has
+      // nothing more (prefetch already ran above). Check explicitly so an
+      // 'again' re-queue on the server doesn't get missed.
+      if (nextLength <= 0) {
+        const fresh = await load(false);
+        if (fresh && fresh.queue.length === 0) {
+          setSummary({
+            reviewed: reviewedCount + 1,
+            streak: res.value?.streak ?? { current: 0, longest: 0, lastActiveDate: null },
+            nextDueAt: res.value?.nextDueAt ?? fresh.nextDueAt ?? null,
+          });
+          setSessionComplete(true);
+        }
       }
     })();
-  }, [deckId, gradingInFlight, queue, revealTimestamp, editedDuringReview, reviewedCount, load]);
+  }, [deckId, queue, revealTimestamp, editedDuringReview, reviewedCount, load]);
 
   // Undo last review
   useShortcut('review', 'u', () => {
@@ -321,8 +363,8 @@ useActiveScope('review');
           <GradingRow
             previews={previews}
             onGrade={handleGrade}
-            disabled={gradingInFlight || (phase !== 'grading' && phase !== 'learning')}
-            loadingRating={gradingInFlight ? RATINGS[0] : null}
+            disabled={phase !== 'grading' && phase !== 'learning'}
+            loadingRating={pendingRating}
           />
         </div>
       </div>

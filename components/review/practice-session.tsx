@@ -2,9 +2,9 @@
 //
 // Differences from ReviewSession, stated in the UI banner and not just here:
 //   - Queue is every card in the deck (no due filter, no daily new-card cap).
-//   - Grades are logged to practice_logs only; card_states/review_logs are
-//     never touched, so intervals and due dates cannot change.
-//   - The grading row shows "—" instead of interval previews.
+//   - Next logs to practice_logs with rating 'good' only; card_states /
+//     review_logs are never touched, so intervals and due dates cannot change.
+//   - Single "Next card" button instead of confidence grades (grade is moot).
 //   - No undo / inline-edit / changed-card dialog (nothing scheduled to fix).
 //   - Streak still counts via the practice_logs_bump_streak trigger.
 
@@ -16,16 +16,11 @@ import { useTranslations } from 'next-intl';
 import { useActiveScope } from '@/lib/shortcuts/use-scope';
 import { useShortcut } from '@/lib/shortcuts/use-shortcut';
 import { FlashcardCard } from './flashcard-card';
-import { GradingRow } from './grading-row';
 import { Button } from '@/components/ui/button';
 import { getPracticeQueue, submitPractice } from '@/app/(review)/actions';
 import type { NoteDoc } from '@neoformuflash/contracts';
 
-const RATINGS = ['again', 'hard', 'good', 'easy'] as const;
-type Rating = (typeof RATINGS)[number];
 type Confidence = 'again' | 'hard' | 'good' | 'easy' | null;
-
-const NO_PREVIEW = { again: '—', hard: '—', good: '—', easy: '—' } as const;
 
 export type PracticeListItem = {
   id: string;
@@ -60,7 +55,6 @@ export function PracticeSession({
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [phase, setPhase] = useState<'front' | 'grading'>('front');
   const [showingBack, setShowingBack] = useState(false);
-  const [gradingInFlight, setGradingInFlight] = useState(false);
   const [practicedCount, setPracticedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [streak, setStreak] = useState<{ current: number; longest: number; lastActiveDate: string | null } | null>(null);
@@ -133,33 +127,35 @@ export function PracticeSession({
     }
   }, []);
 
-  const handleGrade = useCallback(
-    (rating: Rating) => {
-      if (phaseRef.current !== 'grading' || gradingInFlight) return;
+  // Advance instantly (queue is fully cached upfront); log in the background
+  // as 'good' so the streak still counts without blocking the next card.
+  // No in-flight gate: the phase flip prevents double-advance on the same
+  // card, and the next card must stay available while a log is pending.
+  const handleNext = useCallback(
+    () => {
+      if (phaseRef.current !== 'grading') return;
       const current = queue[0];
       if (!current) return;
-      setGradingInFlight(true);
+
+      const done = practicedCount + 1;
+      setPracticedCount(done);
+      // Endless mode cycles the card to the back of the queue instead of
+      // dropping it, so the selected set repeats until the user ends it.
+      setQueue((q) => (endless ? [...q.slice(1), current] : q.slice(1)));
+      setShowingBack(false);
+      setPhase('front');
+      if (!endless && queue.length <= 1) setStage('complete');
 
       (async () => {
-        const res = await submitPractice({ cardId: current.id, rating });
+        const res = await submitPractice({ cardId: current.id, rating: 'good' });
         if (!res.ok) {
           setError(res.errors?.form ?? 'error.unexpected');
-          setGradingInFlight(false);
           return;
         }
         if (res.value?.streak) setStreak(res.value.streak);
-        const done = practicedCount + 1;
-        setPracticedCount(done);
-        // Endless mode cycles the card to the back of the queue instead of
-        // dropping it, so the selected set repeats until the user ends it.
-        setQueue((q) => (endless ? [...q.slice(1), current] : q.slice(1)));
-        setShowingBack(false);
-        setPhase('front');
-        setGradingInFlight(false);
-        if (!endless && queue.length <= 1) setStage('complete');
       })();
     },
-    [gradingInFlight, queue, practicedCount, endless],
+    [queue, practicedCount, endless],
   );
 
   useShortcut(
@@ -168,17 +164,11 @@ export function PracticeSession({
     () => {
       if (stage !== 'session') return;
       if (phaseRef.current === 'front') handleReveal();
-      else if (phaseRef.current === 'grading') {
-        setShowingBack(false);
-        setPhase('front');
-      }
+      else if (phaseRef.current === 'grading') handleNext();
     },
     { label: 'shortcuts.review.revealOrGood' },
   );
-  useShortcut('review', '1', () => handleGrade('again'), { label: 'shortcuts.review.gradeAgain' });
-  useShortcut('review', '2', () => handleGrade('hard'), { label: 'shortcuts.review.gradeHard' });
-  useShortcut('review', '3', () => handleGrade('good'), { label: 'shortcuts.review.gradeGood' });
-  useShortcut('review', '4', () => handleGrade('easy'), { label: 'shortcuts.review.gradeEasy' });
+  useShortcut('review', 'Enter', () => { if (stage === 'session' && phaseRef.current === 'grading') handleNext(); }, { label: 'shortcuts.review.revealOrGood' });
   useShortcut('review', 'Escape', () => { if (stage === 'session') handleEnd(); }, { label: 'shortcuts.review.endSession' });
 
   if (stage === 'setup') {
@@ -326,8 +316,8 @@ export function PracticeSession({
 
       {/*
         Always rendered: before reveal an invisible placeholder of identical
-        height keeps the card fixed instead of shifting up when the row appears.
-        Sticky to the viewport bottom so the buttons can never scroll off-screen
+        height keeps the card fixed instead of shifting up when the button appears.
+        Sticky to the viewport bottom so it can never scroll off-screen
         inside the shelled practice page (the app top bar owns part of the dvh).
       */}
       <div className="sticky bottom-0 shrink-0 border-t border-subtle bg-base p-4 pb-safe">
@@ -336,7 +326,9 @@ export function PracticeSession({
           aria-hidden={phase === 'grading' ? undefined : true}
           inert={phase === 'grading' ? undefined : true}
         >
-          <GradingRow previews={{ ...NO_PREVIEW }} onGrade={handleGrade} disabled={gradingInFlight || phase !== 'grading'} loadingRating={gradingInFlight ? RATINGS[0] : null} />
+          <Button variant="primary" onClick={handleNext} className="w-full">
+            {t('next')}
+          </Button>
         </div>
       </div>
 
