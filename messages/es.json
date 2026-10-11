@@ -408,6 +408,15 @@
       "deleteBody": "Las personas suscritas con progreso conservan su propia copia; los mazos y tarjetas de la asignatura se eliminan. Esta acción no se puede deshacer.",
       "subscribed": "Suscrito"
     },
+    "study": {
+      "title": "Estudiar esta asignatura",
+      "whole": "Estudiar toda la asignatura",
+      "practiceWhole": "Practicar toda la asignatura",
+      "pickDecks": "O elige mazos",
+      "selected": "Estudiar selección ({count})",
+      "practiceSelected": "Practicar selección ({count})",
+      "openDeck": "Abrir"
+    },
     "list": {
       "subscribed": "Suscrito"
     }
@@ -425,6 +434,13 @@
     "dueStudy": "Estudiar",
     "dueCount": "{count} pendientes",
     "newCount": "{count} nuevos",
+    "seeAll": "Ver todo",
+    "ungrouped": "Sin asignatura",
+    "myCourses": "Mis asignaturas",
+    "subscribedTitle": "Creadores suscritos",
+    "subscribedEmpty": "Las asignaturas y mazos a los que te suscribas aparecen aquí, agrupados por creador.",
+    "subscribedCourses": "Asignaturas",
+    "subscribedDecks": "Mazos",
     "stats": {
       "streak": "Racha",
       "best": "Mejor {count, plural, one {# día} other {# días}}",
@@ -439,6 +455,7 @@
   },
   "review": {
     "sessionTitle": "Repaso: {deck}",
+    "fetchingCards": "Cargando tarjetas…",
     "noDue": "Sin tarjetas pendientes",
     "backToDeck": "Volver al mazo",
     "grade": {
@@ -799,6 +816,7 @@
     "bannerBody": "Tus calificaciones aquí nunca cambian los intervalos FSRS ni las fechas. Tu racha sí cuenta y nada se escribe en tu historial.",
     "backToDeck": "Volver al mazo",
     "start": "Empezar práctica",
+    "starting": "Cargando tarjetas…",
     "emptyDeck": "Este mazo aún no tiene tarjetas.",
     "noMatch": "Ninguna tarjeta coincide con estos filtros.",
     "filters": {

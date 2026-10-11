@@ -12,12 +12,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { useTranslations } from 'next-intl';
 import { useActiveScope } from '@/lib/shortcuts/use-scope';
 import { useShortcut } from '@/lib/shortcuts/use-shortcut';
 import { FlashcardCard } from './flashcard-card';
 import { Button } from '@/components/ui/button';
-import { getPracticeQueue, submitPractice } from '@/app/(review)/actions';
+import { getPracticeQueue, getPracticeQueueForDecks, submitPractice } from '@/app/(review)/actions';
 import type { NoteDoc } from '@neoformuflash/contracts';
 
 type Confidence = 'again' | 'hard' | 'good' | 'easy' | null;
@@ -38,10 +39,16 @@ export function PracticeSession({
   deckId,
   deckTitle,
   initialCards,
+  deckIds,
+  backHref,
 }: {
   deckId: string;
   deckTitle: string;
   initialCards: PracticeListItem[];
+  /** Multi-deck (course) session: queue spans these decks. Defaults to [deckId]. */
+  deckIds?: string[];
+  /** Where Back/Done navigates. Defaults to the home page. */
+  backHref?: Route;
 }) {
   const t = useTranslations('practice');
   const router = useRouter();
@@ -59,6 +66,13 @@ export function PracticeSession({
   const [totalCount, setTotalCount] = useState(0);
   const [streak, setStreak] = useState<{ current: number; longest: number; lastActiveDate: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+
+  const sessionDeckIds = useMemo(
+    () => (deckIds && deckIds.length > 0 ? [...new Set(deckIds)] : [deckId]),
+    [deckIds, deckId],
+  );
+  const backHrefResolved = (backHref ?? `/app`) as Route;
 
   const phaseRef = useRef(phase);
   useEffect(() => {
@@ -92,29 +106,42 @@ export function PracticeSession({
 
   const handleStart = useCallback(async () => {
     const confidences = selected.map((s) => (s === 'unset' ? null : (s as Confidence)));
-    const res = await getPracticeQueue(deckId, {
-      confidences,
-      excludeIds: [...excluded],
-      shuffle,
-    });
-    if (!res.ok) {
-      setError(res.code);
-      return;
+    setIsStarting(true);
+    setError(null);
+    try {
+      const res =
+        sessionDeckIds.length > 1
+          ? await getPracticeQueueForDecks(sessionDeckIds, {
+              confidences,
+              excludeIds: [...excluded],
+              shuffle,
+            })
+          : await getPracticeQueue(sessionDeckIds[0]!, {
+              confidences,
+              excludeIds: [...excluded],
+              shuffle,
+            });
+      if (!res.ok) {
+        setError(res.code);
+        return;
+      }
+      setQueue(
+        res.value.queue.map((q) => ({
+          id: q.id,
+          frontJson: q.frontJson as unknown as NoteDoc,
+          backJson: q.backJson as unknown as NoteDoc,
+        })),
+      );
+      setTotalCount(res.value.queue.length);
+      setStreak(res.value.streak);
+      setPracticedCount(0);
+      setPhase('front');
+      setShowingBack(false);
+      setStage('session');
+    } finally {
+      setIsStarting(false);
     }
-    setQueue(
-      res.value.queue.map((q) => ({
-        id: q.id,
-        frontJson: q.frontJson as unknown as NoteDoc,
-        backJson: q.backJson as unknown as NoteDoc,
-      })),
-    );
-    setTotalCount(res.value.queue.length);
-    setStreak(res.value.streak);
-    setPracticedCount(0);
-    setPhase('front');
-    setShowingBack(false);
-    setStage('session');
-  }, [deckId, selected, excluded, shuffle]);
+  }, [sessionDeckIds, selected, excluded, shuffle]);
 
   const handleEnd = useCallback(() => {
     setStage('complete');
@@ -248,11 +275,11 @@ export function PracticeSession({
 
             {error && <p className="mt-4 text-ui-sm text-danger">{error}</p>}
             <div className="sticky bottom-0 mt-6 flex justify-end gap-2 border-t border-subtle bg-base py-4">
-              <Button variant="secondary" onClick={() => router.push(`/app/decks/${deckId}`)}>
+              <Button variant="secondary" onClick={() => router.push(backHrefResolved)}>
                 {t('backToDeck')}
               </Button>
-              <Button variant="primary" onClick={handleStart} disabled={visibleCards.length === 0}>
-                {t('start')}
+              <Button variant="primary" onClick={handleStart} disabled={visibleCards.length === 0 || isStarting}>
+                {isStarting ? t('starting') : t('start')}
               </Button>
             </div>
           </>
@@ -272,7 +299,7 @@ export function PracticeSession({
             {t('sessionComplete.streak', { current: streak.current, longest: streak.longest })}
           </p>
         ) : null}
-        <Button variant="primary" onClick={() => router.push(`/app/decks/${deckId}`)}>
+        <Button variant="primary" onClick={() => router.push(backHrefResolved)}>
           {t('sessionComplete.done')}
         </Button>
       </div>
@@ -284,7 +311,7 @@ export function PracticeSession({
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
         <p className="text-ui-base text-secondary">{t('noMatch')}</p>
-        <Button variant="primary" onClick={() => router.push(`/app/decks/${deckId}`)}>
+        <Button variant="primary" onClick={() => router.push(backHrefResolved)}>
           {t('backToDeck')}
         </Button>
       </div>

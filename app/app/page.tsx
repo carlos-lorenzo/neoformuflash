@@ -1,11 +1,9 @@
 // Server Component: the dashboard is the merged home + courses surface.
 //
-// Top to bottom: the decks with outstanding cards to review and every course
-// (side by side on wide screens so the "today" view fits one screen), a slim
-// stats band (streak with a 7-day heat strip, cards reviewed today, time
-// studied, cards due), then the shareable profile link. Courses used to be a
-// second top-level page that re-listed this same data; /app/courses now
-// redirects here.
+// Top to bottom: your own due decks grouped by course and your own courses,
+// then one tab per subscribed creator, a slim stats band, then the shareable
+// profile link. Courses used to be a second top-level page that re-listed
+// this same data; /app/courses now redirects here.
 
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -13,12 +11,13 @@ import { cn } from '@/lib/cn';
 import { getSessionUser } from '@/lib/supabase/session';
 import { listCoursesWithSubscription } from '@/lib/db/courses';
 import { getStreak, listDecks } from '@/lib/db/decks';
-import { getProfile } from '@/lib/db/profiles';
+import { getOwnerLabels, getProfile } from '@/lib/db/profiles';
 import { getRecentDayCounts, getTodayReviewStats } from '@/lib/db/stats';
 import { CourseCard } from '@/components/courses/course-card';
 import { CreateCourseButton } from '@/components/courses/create-course-button';
 import { DashboardStats } from '@/components/dashboard/dashboard-stats';
 import { DueDecksList } from '@/components/dashboard/due-decks-list';
+import { SubscribedCreators } from '@/components/dashboard/subscribed-creators';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PublicHandleCard } from '@/components/dashboard/public-handle-card';
 
@@ -46,8 +45,14 @@ export default async function DashboardPage() {
   const today = todayResult.ok ? todayResult.value : { reviewedToday: 0, msToday: 0 };
   const activity = activityResult.ok ? activityResult.value : [];
 
+  const ownCourses = courses.filter((c) => c.isOwner);
+  const subscribedCourses = courses.filter((c) => c.isSubscribed);
+  const ownDecks = decks.filter((d) => !d.isSubscribed);
+  const subscribedDecks = decks.filter((d) => d.isSubscribed);
+
   // Due counts per course (for the cards' pills) and a deck-level view of what
-  // is outstanding right now.
+  // is outstanding right now. Subscribed decks are excluded here — they live
+  // under their creator's tab instead of masquerading as your own decks.
   const dueByCourse = new Map<string, number>();
   let totalDue = 0;
   for (const deck of decks) {
@@ -57,16 +62,26 @@ export default async function DashboardPage() {
     }
   }
 
-  const dueDecks = decks.filter((deck) => deck.dueCount > 0 || deck.newCount > 0);
+  const dueDecks = ownDecks.filter((deck) => deck.dueCount > 0 || deck.newCount > 0);
   const hasDue = dueDecks.length > 0;
-  const hasCourses = courses.length > 0;
+  const hasOwnContent = ownCourses.length > 0 || dueDecks.length > 0;
+  const hasSubscribed = subscribedCourses.length > 0 || subscribedDecks.length > 0;
 
   const courseNameById: Record<string, string> = {};
   for (const course of courses) courseNameById[course.id] = course.name;
 
+  const subscribedOwnerIds = [
+    ...new Set([
+      ...subscribedCourses.map((c) => c.ownerId),
+      ...subscribedDecks.map((d) => d.ownerId),
+    ]),
+  ];
+  const ownerLabelsResult = await getOwnerLabels(subscribedOwnerIds);
+  const ownerLabels = ownerLabelsResult.ok ? ownerLabelsResult.value : {};
+
   return (
     <div className="flex flex-col gap-6">
-      {!hasCourses && !hasDue ? (
+      {!hasOwnContent && !hasSubscribed ? (
         /* No section heading here: the empty state's own heading is the one
            level-2 heading on the page, so screen readers and the AC 8 check
            both land on what actually names this region. */
@@ -81,7 +96,7 @@ export default async function DashboardPage() {
             'grid items-start gap-6',
             // Continue studying beside Courses on wide screens — one row for the
             // whole "what is outstanding" view; below tablet it stacks taller.
-            hasDue && hasCourses && 'xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]'
+            hasDue && ownCourses.length > 0 && 'xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]'
           )}
         >
           {hasDue ? (
@@ -93,7 +108,7 @@ export default async function DashboardPage() {
             </section>
           ) : null}
 
-          {hasCourses ? (
+          {ownCourses.length > 0 ? (
             <section aria-labelledby="courses-heading" className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-3">
                 <h2 id="courses-heading" className="text-ui-lg font-semibold text-primary">
@@ -111,26 +126,42 @@ export default async function DashboardPage() {
                   hasDue ? 'xl:grid-cols-2' : 'lg:grid-cols-3 xl:grid-cols-4'
                 )}
               >
-                {courses.map((course) => (
+                {ownCourses.map((course) => (
                   <CourseCard
                     key={course.id}
                     course={course}
                     dueCount={dueByCourse.get(course.id) ?? 0}
-                    isSubscribed={course.isSubscribed}
+                    isSubscribed={false}
                   />
                 ))}
               </div>
             </section>
           ) : (
             // Rare: decks but no course yet — keep the create invite reachable.
-            <EmptyState
-              title={t('emptyTitle')}
-              body={t('emptyBody')}
-              action={<CreateCourseButton />}
-            />
+            !hasDue && (
+              <EmptyState
+                title={t('emptyTitle')}
+                body={t('emptyBody')}
+                action={<CreateCourseButton />}
+              />
+            )
           )}
         </div>
       )}
+
+      {hasSubscribed ? (
+        <SubscribedCreators
+          courses={subscribedCourses.map((c) => ({
+            id: c.id,
+            name: c.name,
+            code: c.code,
+            ownerId: c.ownerId,
+            dueCount: dueByCourse.get(c.id) ?? 0,
+          }))}
+          decks={subscribedDecks}
+          ownerLabels={ownerLabels}
+        />
+      ) : null}
 
       <DashboardStats streak={streak} today={today} activity={activity} totalDue={totalDue} />
 

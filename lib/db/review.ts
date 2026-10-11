@@ -32,6 +32,8 @@ import type { Streak } from './decks';
 export type ReviewQueueCard = {
   card: {
     id: string;
+    /** Owning deck — present for multi-deck (course) sessions. */
+    deckId: string;
     frontJson: NoteDoc;
     backJson: NoteDoc;
     contentVersion: number;
@@ -48,6 +50,8 @@ export type ReviewQueueItem = ReviewQueueCard;
 
 export type StartReviewResult = {
   deck: { id: string; title: string; desiredRetention: number };
+  /** All decks in the session (length 1 for single-deck). */
+  decks: { id: string; title: string }[];
   cards: ReviewQueueCard[];
   streak: Streak | null;
   /**
@@ -137,28 +141,56 @@ export async function startReview(
   userId: string,
   deckId: string,
 ): Promise<Result<StartReviewResult>> {
+  return startReviewDecks(userId, [deckId]);
+}
+
+/**
+ * Build the review queue across multiple decks (whole course or a subset).
+ *
+ * Same lazy union as single-deck, generalized:
+ *   1. Due states across deckIds (due_at <= now(), ordered by due_at)
+ *   2. New cards per deck (no card_states row, position order), each deck
+ *      capped at its own new_cards_per_day − today's new-phase reviews
+ *
+ * Session cap: 100 cards total. Due cards are prioritised.
+ */
+export async function startReviewDecks(
+  userId: string,
+  deckIds: string[],
+): Promise<Result<StartReviewResult>> {
   const supabase = await createSupabaseServerClient();
   const now = new Date();
+  const uniqueDeckIds = [...new Set(deckIds)].slice(0, 50);
+  if (uniqueDeckIds.length === 0) return err('deck.notFound');
 
-  // 1. Load deck (RLS enforces visibility)
-  const { data: deck, error: deckErr } = await supabase
+  // 1. Load decks (RLS enforces visibility)
+  const { data: deckRows, error: deckErr } = await supabase
     .from('decks')
     .select('id, title, desired_retention, new_cards_per_day, owner_id')
-    .eq('id', deckId)
-    .maybeSingle();
+    .in('id', uniqueDeckIds);
 
   if (deckErr) return err('error.unexpected', deckErr);
-  if (!deck) return err('deck.notFound');
+  if (!deckRows || deckRows.length !== uniqueDeckIds.length) return err('deck.notFound');
 
-  const desiredRetention = await resolveRetention(supabase, deck.desired_retention, userId);
-  const settings: SchedulingSettings = { desiredRetention };
+  const deckById = new Map(deckRows.map((d) => [d.id, d]));
+  // Preserve caller order (course order); fall back to fetched order.
+  const decks = uniqueDeckIds.map((id) => deckById.get(id)!);
+
+  const settingsByDeck = new Map<string, SchedulingSettings>();
+  for (const d of decks) {
+    settingsByDeck.set(d.id, {
+      desiredRetention: await resolveRetention(supabase, d.desired_retention, userId),
+    });
+  }
+  const firstDeck = decks[0]!;
+  const firstSettings = settingsByDeck.get(firstDeck.id)!;
 
   // 2. Due states (first branch of the lazy union)
   const { data: dueRows } = await supabase
     .from('card_states')
-    .select('card_id, stability, difficulty, phase, learning_steps, reps, lapses, due_at, last_reviewed_at, seen_version')
+    .select('card_id, deck_id, stability, difficulty, phase, learning_steps, reps, lapses, due_at, last_reviewed_at, seen_version')
     .eq('user_id', userId)
-    .eq('deck_id', deckId)
+    .in('deck_id', uniqueDeckIds)
     .lte('due_at', now.toISOString())
     .order('due_at', { ascending: true })
     .limit(SESSION_CAP);
@@ -172,7 +204,7 @@ export async function startReview(
       .from('card_states')
       .select('due_at')
       .eq('user_id', userId)
-      .eq('deck_id', deckId)
+      .in('deck_id', uniqueDeckIds)
       .gt('due_at', now.toISOString())
       .order('due_at', { ascending: true })
       .limit(1)
@@ -180,11 +212,12 @@ export async function startReview(
     return (data as { due_at: string } | null)?.due_at ?? null;
   }
 
-  // 3. New cards (second branch), capped by daily allowance
-  let newCards: typeof dueEntries = [];
+  // 3. New cards (second branch), capped by each deck's daily allowance
+  type NewEntry = Omit<(typeof dueEntries)[number], 'deck_id'> & { deck_id: string };
+  const newCards: NewEntry[] = [];
   if (remainingSlots > 0) {
-    // Count today's reviews that started as 'new' IN THIS DECK (to compute
-    // the daily cap). review_logs carries no deck_id, so resolve via cards.
+    // Count today's reviews that started as 'new' PER DECK (to compute
+    // each daily cap). review_logs carries no deck_id, so resolve via cards.
     // A global count blocked deck B after studying deck A — the "whichever
     // deck I try says no cards due" report.
     const todayStart = new Date(now);
@@ -198,7 +231,7 @@ export async function startReview(
       .gte('reviewed_at', todayStart.toISOString())
       .limit(500);
 
-    let newReviewsTodayInDeck = 0;
+    const newReviewsByDeck = new Map<string, number>();
     if (todaysNew && todaysNew.length > 0) {
       const { data: cardDecks } = await supabase
         .from('cards')
@@ -207,53 +240,67 @@ export async function startReview(
           'id',
           todaysNew.map((r) => r.card_id),
         );
-      newReviewsTodayInDeck = (cardDecks ?? []).filter((c) => c.deck_id === deckId).length;
+      for (const c of cardDecks ?? []) {
+        newReviewsByDeck.set(c.deck_id, (newReviewsByDeck.get(c.deck_id) ?? 0) + 1);
+      }
     }
 
-    const dailyCap = deck.new_cards_per_day - newReviewsTodayInDeck;
-    const newCardSlots = Math.max(0, Math.min(remainingSlots, dailyCap));
+    // New cards = cards in these decks with no card_states row for this user.
+    const { data: allStates } = await supabase
+      .from('card_states')
+      .select('card_id, deck_id')
+      .eq('user_id', userId)
+      .in('deck_id', uniqueDeckIds);
 
-    if (newCardSlots > 0) {
-      // New cards = cards in this deck with no card_states row for this user.
-      // We get all cards in the deck, then filter out those with states in TS.
-      const { data: allStates } = await supabase
-        .from('card_states')
-        .select('card_id')
-        .eq('user_id', userId)
-        .eq('deck_id', deckId);
+    const stateCardIds = new Set((allStates ?? []).map((r) => r.card_id));
 
-      const stateCardIds = new Set((allStates ?? []).map((r) => r.card_id));
+    const { data: allCards } = await supabase
+      .from('cards')
+      .select('id, deck_id, front_json, back_json, content_version, confidence')
+      .in('deck_id', uniqueDeckIds)
+      .order('position', { ascending: true });
 
-      const { data: allCards } = await supabase
-        .from('cards')
-        .select('id, front_json, back_json, content_version, confidence')
-        .eq('deck_id', deckId)
-        .order('position', { ascending: true });
+    const cardsByDeck = new Map<string, typeof allCards>();
+    for (const c of allCards ?? []) {
+      if (stateCardIds.has(c.id)) continue;
+      const list = cardsByDeck.get(c.deck_id) ?? [];
+      list.push(c);
+      cardsByDeck.set(c.deck_id, list);
+    }
 
-      // Cards without a state row, in position order, capped
-      const newCardsRaw = (allCards ?? []).filter((c) => !stateCardIds.has(c.id));
-      newCards = newCardsRaw.slice(0, newCardSlots).map((c) => ({
-        card_id: c.id,
-        stability: 0,
-        difficulty: 5.0,
-        phase: 'new' as DbCardPhase,
-        learning_steps: 0,
-        reps: 0,
-        lapses: 0,
-        due_at: now.toISOString(),
-        last_reviewed_at: null,
-        /*
-         * The version this student is about to see for the FIRST time — not 1.
-         *
-         * Hardcoding 1 meant any card whose author had edited it before anyone
-         * reviewed it arrived with content_version > seen_version, so the
-         * "this card changed while you were reviewing" dialog fired on a card
-         * the student had never laid eyes on. Editing is now the normal way to
-         * build a deck (every autosave can bump content_version), so an owner
-         * reviewing their own new deck hit it on essentially every card.
-         */
-        seen_version: c.content_version,
-      }));
+    let slotsLeft = remainingSlots;
+    for (const d of decks) {
+      if (slotsLeft <= 0) break;
+      const dailyCap = d.new_cards_per_day - (newReviewsByDeck.get(d.id) ?? 0);
+      const deckSlots = Math.max(0, Math.min(slotsLeft, dailyCap));
+      if (deckSlots <= 0) continue;
+      const raw = (cardsByDeck.get(d.id) ?? []).slice(0, deckSlots);
+      for (const c of raw) {
+        newCards.push({
+          card_id: c.id,
+          deck_id: d.id,
+          stability: 0,
+          difficulty: 5.0,
+          phase: 'new' as DbCardPhase,
+          learning_steps: 0,
+          reps: 0,
+          lapses: 0,
+          due_at: now.toISOString(),
+          last_reviewed_at: null,
+          /*
+           * The version this student is about to see for the FIRST time — not 1.
+           *
+           * Hardcoding 1 meant any card whose author had edited it before anyone
+           * reviewed it arrived with content_version > seen_version, so the
+           * "this card changed while you were reviewing" dialog fired on a card
+           * the student had never laid eyes on. Editing is now the normal way to
+           * build a deck (every autosave can bump content_version), so an owner
+           * reviewing their own new deck hit it on essentially every card.
+           */
+          seen_version: c.content_version,
+        });
+      }
+      slotsLeft -= raw.length;
     }
   }
 
@@ -262,13 +309,19 @@ export async function startReview(
   if (mergedIds.length === 0) {
     const streak = await getStreak(userId);
     const nextDueAt = await fetchNextDueAt();
-    return ok({ deck: { id: deck.id, title: deck.title, desiredRetention }, cards: [], streak: streak.ok ? streak.value : null, nextDueAt });
+    return ok({
+      deck: { id: firstDeck.id, title: firstDeck.title, desiredRetention: firstSettings.desiredRetention },
+      decks: decks.map((d) => ({ id: d.id, title: d.title })),
+      cards: [],
+      streak: streak.ok ? streak.value : null,
+      nextDueAt,
+    });
   }
 
   // Fetch card content in one query
   const { data: cardsContent } = await supabase
     .from('cards')
-    .select('id, front_json, back_json, content_version, confidence')
+    .select('id, deck_id, front_json, back_json, content_version, confidence')
     .in('id', mergedIds);
 
   const contentMap = new Map((cardsContent ?? []).map((c) => [c.id, c]));
@@ -292,9 +345,12 @@ export async function startReview(
      * with no prior review state cannot have "changed" either — there is no
      * earlier version this student saw.
      */
-    const isOwnDeck = deck.owner_id === userId;
+    const cardDeck = deckById.get((row as { deck_id?: string }).deck_id ?? content.deck_id);
+    const isOwnDeck = cardDeck?.owner_id === userId;
     const changed = !isOwnDeck && state !== null && content.content_version > (row.seen_version ?? 1);
 
+    // Previews use the owning deck's retention.
+    const settings = (cardDeck && settingsByDeck.get(cardDeck.id)) ?? firstSettings;
     // Compute previews for the four ratings
     const previews: Record<Rating, string> = {
       again: '',
@@ -311,6 +367,7 @@ export async function startReview(
     return {
       card: {
         id: content.id,
+        deckId: content.deck_id,
         frontJson: content.front_json as unknown as NoteDoc,
         backJson: content.back_json as unknown as NoteDoc,
         contentVersion: content.content_version,
@@ -324,7 +381,8 @@ export async function startReview(
 
   const streak = await getStreak(userId);
   return ok({
-    deck: { id: deck.id, title: deck.title, desiredRetention },
+    deck: { id: firstDeck.id, title: firstDeck.title, desiredRetention: firstSettings.desiredRetention },
+    decks: decks.map((d) => ({ id: d.id, title: d.title })),
     cards,
     streak: streak.ok ? streak.value : null,
     nextDueAt: null,

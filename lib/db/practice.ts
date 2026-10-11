@@ -33,6 +33,7 @@ export type PracticeFilter = {
 
 export type PracticeCard = {
   id: string;
+  deckId: string;
   frontJson: NoteDoc;
   backJson: NoteDoc;
   contentVersion: number;
@@ -41,6 +42,7 @@ export type PracticeCard = {
 
 export type StartPracticeResult = {
   deck: { id: string; title: string };
+  decks: { id: string; title: string }[];
   cards: PracticeCard[];
   totalInDeck: number;
   streak: Streak | null;
@@ -62,21 +64,30 @@ export async function startPractice(
   deckId: string,
   filter: PracticeFilter = {},
 ): Promise<Result<StartPracticeResult>> {
-  const supabase = await createSupabaseServerClient();
+  return startPracticeDecks(userId, [deckId], filter);
+}
 
-  const { data: deck, error: deckErr } = await supabase
+export async function startPracticeDecks(
+  userId: string,
+  deckIds: string[],
+  filter: PracticeFilter = {},
+): Promise<Result<StartPracticeResult>> {
+  const supabase = await createSupabaseServerClient();
+  const uniqueDeckIds = [...new Set(deckIds)].slice(0, 50);
+  if (uniqueDeckIds.length === 0) return err('deck.notFound');
+
+  const { data: deckRows, error: deckErr } = await supabase
     .from('decks')
     .select('id, title')
-    .eq('id', deckId)
-    .maybeSingle();
+    .in('id', uniqueDeckIds);
 
   if (deckErr) return err('error.unexpected', deckErr);
-  if (!deck) return err('deck.notFound');
+  if (!deckRows || deckRows.length !== uniqueDeckIds.length) return err('deck.notFound');
 
   const { data: rows, error: cardsErr } = await supabase
     .from('cards')
-    .select('id, front_json, back_json, content_version, confidence')
-    .eq('deck_id', deckId)
+    .select('id, deck_id, front_json, back_json, content_version, confidence')
+    .in('deck_id', uniqueDeckIds)
     .order('position', { ascending: true })
     .order('created_at', { ascending: true })
     .limit(2000);
@@ -99,6 +110,7 @@ export async function startPractice(
     )
     .map((r) => ({
       id: r.id,
+      deckId: r.deck_id,
       frontJson: r.front_json as unknown as NoteDoc,
       backJson: r.back_json as unknown as NoteDoc,
       contentVersion: r.content_version,
@@ -111,8 +123,10 @@ export async function startPractice(
   cards = cards.slice(0, limit);
 
   const streak = await getStreak(userId);
+  const first = deckRows[0]!;
   return ok({
-    deck: { id: deck.id, title: deck.title },
+    deck: { id: first.id, title: deckRows.length === 1 ? first.title : `${deckRows.length} decks` },
+    decks: deckRows.map((d) => ({ id: d.id, title: d.title })),
     cards,
     totalInDeck,
     streak: streak.ok ? streak.value : null,

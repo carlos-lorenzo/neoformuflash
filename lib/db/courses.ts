@@ -220,7 +220,7 @@ export async function listCourses(userId: string): Promise<Result<CourseSummary[
  * Ordered by most recent first; a fresh course lands at the top.
  * Returns CourseSummary with isOwner/isSubscribed flags for UI indicators.
  */
-export async function listCoursesWithSubscription(userId: string): Promise<Result<(CourseSummary & { isOwner: boolean; isSubscribed: boolean })[]>> {
+export async function listCoursesWithSubscription(userId: string): Promise<Result<(CourseSummary & { ownerId: string; isOwner: boolean; isSubscribed: boolean })[]>> {
   const supabase = await createSupabaseServerClient();
 
   // 1. Owned courses
@@ -278,6 +278,7 @@ export async function listCoursesWithSubscription(userId: string): Promise<Resul
         language: full.language,
         visibility: full.visibility,
         createdAt: full.createdAt,
+        ownerId: full.ownerId,
         isOwner,
         isSubscribed,
       };

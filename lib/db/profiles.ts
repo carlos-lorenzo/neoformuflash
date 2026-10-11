@@ -64,6 +64,30 @@ export async function hasProfile(userId: string): Promise<boolean> {
 }
 
 /**
+ * Minimal owner labels for grouping subscribed content by creator.
+ * Returns id → { handle, displayName } for dashboard creator tabs.
+ */
+export async function getOwnerLabels(
+  ownerIds: string[],
+): Promise<Result<Record<string, { handle: string; displayName: string }>>> {
+  if (ownerIds.length === 0) return ok({});
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, handle, display_name')
+    .in('id', [...new Set(ownerIds)]);
+  if (error) return err('error.unexpected', error);
+  const map: Record<string, { handle: string; displayName: string }> = {};
+  for (const row of data ?? []) {
+    map[row.id as string] = {
+      handle: row.handle as string,
+      displayName: (row.display_name as string) ?? (row.handle as string),
+    };
+  }
+  return ok(map);
+}
+
+/**
  * Create the profile row at the end of onboarding.
  *
  * Everything happens inside `create_profile`, which retries the INSERT itself

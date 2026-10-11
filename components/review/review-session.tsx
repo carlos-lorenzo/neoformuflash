@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import { useTranslations } from 'next-intl';
 import { useActiveScope } from '@/lib/shortcuts/use-scope';
 import { useShortcut } from '@/lib/shortcuts/use-shortcut';
@@ -18,7 +19,7 @@ import { InlineEditOverlay } from './inline-edit-overlay';
 import { ChangedCardDialog } from './changed-card-dialog';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { getReviewQueue, submitReview, undoLastReview, acknowledgeChangedCard } from '@/app/(review)/actions';
+import { getReviewQueue, getReviewQueueForDecks, submitReview, undoLastReview, acknowledgeChangedCard } from '@/app/(review)/actions';
 import type { ReviewQueueItem } from '@/lib/db/review';
 import { formatNextDue } from '@/lib/review/format-due';
 
@@ -27,7 +28,19 @@ import 'katex/dist/katex.min.css';
 
 type Rating = 'again' | 'hard' | 'good' | 'easy';
 
-export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: boolean }) {
+export function ReviewSession({
+  deckId,
+  deckIds,
+  backHref,
+  isOwner,
+}: {
+  deckId: string;
+  /** Multi-deck (course) session: queue spans these decks. Defaults to [deckId]. */
+  deckIds?: string[];
+  /** Where Back/Done/Leave navigates. Defaults to the home page. */
+  backHref?: Route;
+  isOwner: boolean;
+}) {
   const t = useTranslations('review');
   // Root-scoped hook for shared chrome copy (cancel/close).
   const tc = useTranslations('common');
@@ -49,6 +62,7 @@ export function ReviewSession({ deckId, isOwner }: { deckId: string; isOwner: bo
   const [summary, setSummary] = useState<{ reviewed: number; streak: { current: number; longest: number; lastActiveDate: string | null }; nextDueAt: string | null } | null>(null);
   const [nextDueAt, setNextDueAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [revealTimestamp, setRevealTimestamp] = useState(0);
   const [reviewedCount, setReviewedCount] = useState(0);
@@ -73,6 +87,13 @@ useActiveScope('review');
   // still contains cards we already hold locally.
   const seenIdsRef = useRef<Set<string>>(new Set());
   const prefetchInFlightRef = useRef(false);
+  const sessionDeckIds = useMemo(
+    () => (deckIds && deckIds.length > 0 ? [...new Set(deckIds)] : [deckId]),
+    [deckIds, deckId],
+  );
+  const backHrefResolved = (backHref ?? `/app`) as Route;
+  // Inline edit only makes sense single-deck-owner; multi-deck sessions hide it.
+  const canEdit = isOwner && sessionDeckIds.length === 1;
 
   // Load (or reload) the queue. Extracted so grading can refetch when the
   // local window drains while the server still has due cards (SESSION_CAP
@@ -80,12 +101,16 @@ useActiveScope('review');
   // initial=true replaces (first paint); otherwise appends unique cards so a
   // background prefetch never duplicates or reorders the current card.
   const load = useCallback(async (initial = false) => {
+    if (initial) setIsLoading(true);
     if (!initial) {
       if (prefetchInFlightRef.current) return;
       prefetchInFlightRef.current = true;
     }
     try {
-      const res = await getReviewQueue(deckId);
+      const res =
+        sessionDeckIds.length > 1
+          ? await getReviewQueueForDecks(sessionDeckIds)
+          : await getReviewQueue(sessionDeckIds[0]!);
       if (res.ok) {
         const fresh = res.value.queue.filter((c) => !seenIdsRef.current.has(c.card.id));
         fresh.forEach((c) => seenIdsRef.current.add(c.card.id));
@@ -100,16 +125,19 @@ useActiveScope('review');
         setNextDueAt(res.value.nextDueAt);
         return res.value;
       }
+      if (initial) setError(res.code);
       return null;
     } finally {
-      if (!initial) prefetchInFlightRef.current = false;
+      if (initial) setIsLoading(false);
+      else prefetchInFlightRef.current = false;
     }
-  }, [deckId]);
+  }, [sessionDeckIds]);
 
   // Load initial queue. load() is an async fetch whose setState happens after
   // the await — not the synchronous setState-in-effect the rule targets, but
   // the rule cannot see that through the useCallback boundary.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load(true);
   }, [load]);
 
@@ -125,11 +153,11 @@ useActiveScope('review');
   useEffect(() => {
     const current = queue[0];
     if (!current || !current.changed) return;
-    if (isOwner) return;
+    if (canEdit) return;
     if (promptedChangedRef.current.has(current.card.id)) return;
     promptedChangedRef.current.add(current.card.id);
     setChangedCardOpen(true);
-  }, [queue, isOwner]);
+  }, [queue, canEdit]);
 
   // Reveal handler: flips the card and moves to grading
   const handleReveal = useCallback(() => {
@@ -248,13 +276,13 @@ useActiveScope('review');
 
   // e: inline edit (owner only) — shared handler for shortcut + visible button
   const openInlineEdit = useCallback(() => {
-    if (!isOwner) return;
+    if (!canEdit) return;
     const current = queue[0];
     if (current && phaseRef.current === 'grading') {
       setInlineEditCard(current);
       setInlineEditOpen(true);
     }
-  }, [isOwner, queue]);
+  }, [canEdit, queue]);
 
   useShortcut('review', 'e', openInlineEdit, { label: 'shortcuts.review.inlineEdit' });
 
@@ -277,6 +305,20 @@ useActiveScope('review');
 
   const current = queue[0];
 
+  // Initial fetch in flight: show a fetching state instead of the "no cards
+  // due + back" empty state, which otherwise flashes before cards arrive.
+  if (isLoading) {
+    return (
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-4 p-6"
+        role="status"
+        aria-live="polite"
+      >
+        <p className="text-ui-lg font-semibold text-primary">{t('fetchingCards')}</p>
+      </div>
+    );
+  }
+
   if (sessionComplete && summary) {
     const next = summary.nextDueAt ? formatNextDue(summary.nextDueAt) : null;
     return (
@@ -293,7 +335,7 @@ useActiveScope('review');
             {t('sessionComplete.nextDue', { when: next.relative })}
           </p>
         ) : null}
-        <Button variant="primary" onClick={() => router.push(`/app/decks/${deckId}`)}>
+        <Button variant="primary" onClick={() => router.push(backHrefResolved)}>
           {t('sessionComplete.done')}
         </Button>
       </div>
@@ -310,7 +352,8 @@ useActiveScope('review');
             {t('noDueNext', { when: next.relative })}
           </p>
         ) : null}
-        <Button variant="primary" onClick={() => router.push(`/app/decks/${deckId}`)}>
+        {error && <p className="text-ui-sm text-danger">{error}</p>}
+        <Button variant="primary" onClick={() => router.push(backHrefResolved)}>
           {t('backToDeck')}
         </Button>
       </div>
@@ -348,7 +391,7 @@ useActiveScope('review');
           aria-hidden={phase === 'grading' || phase === 'learning' ? undefined : true}
           inert={phase === 'grading' || phase === 'learning' ? undefined : true}
         >
-          {isOwner ? (
+          {canEdit ? (
             <div className="mb-2">
               <Button
                 variant="secondary"
@@ -416,7 +459,7 @@ useActiveScope('review');
             <Button variant="secondary" onClick={() => setEndConfirmOpen(false)}>
               {tc('cancel')}
             </Button>
-            <Button variant="primary" onClick={() => { router.push(`/app/decks/${deckId}`); }}>
+            <Button variant="primary" onClick={() => { router.push(backHrefResolved); }}>
               {t('endConfirm.leave')}
             </Button>
           </div>

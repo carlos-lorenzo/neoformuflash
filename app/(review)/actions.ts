@@ -7,8 +7,8 @@
  */
 
 import { getSessionUser } from '@/lib/supabase/session';
-import { startReview, gradeCard, undoGrade, saveInlineEdit as saveInlineEditDb, acknowledgeChange } from '@/lib/db/review';
-import { startPractice, logPractice, type PracticeFilter } from '@/lib/db/practice';
+import { startReview, startReviewDecks, gradeCard, undoGrade, saveInlineEdit as saveInlineEditDb, acknowledgeChange } from '@/lib/db/review';
+import { startPractice, startPracticeDecks, logPractice, type PracticeFilter } from '@/lib/db/practice';
 import { getStreak } from '@/lib/db/decks';
 import { extractText } from '@neoformuflash/contracts';
 import { proseToUnion } from '@/lib/editor/serialize';
@@ -27,6 +27,31 @@ export async function getReviewQueue(deckId: string): Promise<
   if (!user) return { ok: false, code: 'error.unexpected' };
 
   const res = await startReview(user.id, deckId);
+  if (!res.ok) return { ok: false, code: res.code };
+
+  return {
+    ok: true,
+    value: {
+      queue: res.value.cards,
+      streak: res.value.streak,
+      nextDueAt: res.value.nextDueAt,
+    }
+  };
+}
+
+/**
+ * Multi-deck review queue: whole course or a subset of its decks.
+ * deckIds are validated against the course by the caller route; RLS is the
+ * final gate inside startReviewDecks.
+ */
+export async function getReviewQueueForDecks(deckIds: string[]): Promise<
+  | { ok: true; value: { queue: ReviewQueueCard[]; streak: { current: number; longest: number; lastActiveDate: string | null } | null; nextDueAt: string | null } }
+  | { ok: false; code: string }
+> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, code: 'error.unexpected' };
+
+  const res = await startReviewDecks(user.id, deckIds);
   if (!res.ok) return { ok: false, code: res.code };
 
   return {
@@ -107,6 +132,43 @@ export async function getPracticeQueue(deckId: string, filter: PracticeFilter = 
   if (!user) return { ok: false, code: 'error.unexpected' };
 
   const res = await startPractice(user.id, deckId, filter);
+  if (!res.ok) return { ok: false, code: res.code };
+
+  return {
+    ok: true,
+    value: {
+      queue: res.value.cards.map((c) => ({
+        id: c.id,
+        frontJson: c.frontJson,
+        backJson: c.backJson,
+        contentVersion: c.contentVersion,
+        confidence: c.confidence,
+      })),
+      totalInDeck: res.value.totalInDeck,
+      streak: res.value.streak,
+    },
+  };
+}
+
+/**
+ * Multi-deck practice queue: whole course or a subset of its decks.
+ * No FSRS effect — same invariants as single-deck practice.
+ */
+export async function getPracticeQueueForDecks(deckIds: string[], filter: PracticeFilter = {}): Promise<
+  | {
+      ok: true;
+      value: {
+        queue: { id: string; frontJson: unknown; backJson: unknown; contentVersion: number; confidence: string | null }[];
+        totalInDeck: number;
+        streak: { current: number; longest: number; lastActiveDate: string | null } | null;
+      };
+    }
+  | { ok: false; code: string }
+> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, code: 'error.unexpected' };
+
+  const res = await startPracticeDecks(user.id, deckIds, filter);
   if (!res.ok) return { ok: false, code: res.code };
 
   return {

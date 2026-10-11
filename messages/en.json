@@ -408,6 +408,15 @@
       "deleteBody": "Subscribers with review progress keep their own copy; decks and cards in the course are deleted. This can't be undone.",
       "subscribed": "Subscribed"
     },
+    "study": {
+      "title": "Study this course",
+      "whole": "Study whole course",
+      "practiceWhole": "Practice whole course",
+      "pickDecks": "Or pick decks",
+      "selected": "Study selected ({count})",
+      "practiceSelected": "Practice selected ({count})",
+      "openDeck": "Open"
+    },
     "list": {
       "subscribed": "Subscribed"
     }
@@ -425,6 +434,13 @@
     "dueStudy": "Study",
     "dueCount": "{count} due",
     "newCount": "{count} new",
+    "seeAll": "See all",
+    "ungrouped": "No course",
+    "myCourses": "My courses",
+    "subscribedTitle": "Subscribed creators",
+    "subscribedEmpty": "Courses and decks you subscribe to appear here, grouped by creator.",
+    "subscribedCourses": "Courses",
+    "subscribedDecks": "Decks",
     "stats": {
       "streak": "Streak",
       "best": "Best {count, plural, one {# day} other {# days}}",
@@ -439,6 +455,7 @@
   },
   "review": {
     "sessionTitle": "Review: {deck}",
+    "fetchingCards": "Fetching cards…",
     "noDue": "No cards due",
     "backToDeck": "Back to deck",
     "grade": {
@@ -799,6 +816,7 @@
     "bannerBody": "Grades here never change FSRS intervals or due dates. Your streak still counts, and nothing is written to your review history.",
     "backToDeck": "Back to deck",
     "start": "Start practice",
+    "starting": "Fetching cards…",
     "emptyDeck": "This deck has no cards yet.",
     "noMatch": "No cards match these filters.",
     "filters": {

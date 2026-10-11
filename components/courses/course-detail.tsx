@@ -10,6 +10,7 @@ import type { NoteSummary } from '@/lib/db/notes';
 import { CourseForm } from './course-form';
 import { CreateDeckInCourse } from './create-deck-in-course';
 import { DeleteCourseButton } from './delete-course-button';
+import { CourseStudyPicker } from './course-study-picker';
 import { CreateNoteButton } from '@/components/editor/create-note-button';
 import { ShareActionsServer } from '@/components/share/share-actions-server';
 
@@ -55,6 +56,8 @@ export async function CourseDetail({
       {course.code ? (
         <p className="mb-6 text-ui-sm text-tertiary">{course.code}</p>
       ) : null}
+
+      <CourseStudyPicker courseId={course.id} decks={decks} />
 
       <h2 className="mb-2 text-ui-lg font-semibold text-primary">{t('detail.decks')}</h2>
       {decks.length === 0 ? (

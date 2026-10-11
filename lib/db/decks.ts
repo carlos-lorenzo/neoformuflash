@@ -29,6 +29,8 @@ export type DeckSummary = {
   desiredRetention: number | null;
   newCardsPerDay: number;
   courseId: string | null;
+  ownerId: string;
+  isSubscribed: boolean;
   createdAt: string;
   dueCount: number;
   newCount: number;
@@ -76,7 +78,7 @@ export async function listDecks(userId: string): Promise<Result<DeckSummary[]>> 
   // 1. Owned decks
   const { data: owned, error: ownedErr } = await supabase
     .from('decks')
-    .select('id, title, slug, visibility, desired_retention, new_cards_per_day, course_id, created_at')
+    .select('id, title, slug, visibility, desired_retention, new_cards_per_day, course_id, owner_id, created_at')
     .eq('owner_id', userId)
     .order('created_at', { ascending: false });
 
@@ -97,7 +99,7 @@ export async function listDecks(userId: string): Promise<Result<DeckSummary[]>> 
   if (subDeckIds.length > 0) {
     const { data, error } = await supabase
       .from('decks')
-      .select('id, title, slug, visibility, desired_retention, new_cards_per_day, course_id, created_at')
+      .select('id, title, slug, visibility, desired_retention, new_cards_per_day, course_id, owner_id, created_at')
       .in('id', subDeckIds)
       .order('created_at', { ascending: false });
     if (error) return err('error.unexpected', error);
@@ -143,7 +145,7 @@ export async function listDecks(userId: string): Promise<Result<DeckSummary[]>> 
     }
   }
 
-  const mapDeck = (d: NonNullable<typeof owned>[number]): DeckSummary => ({
+  const mapDeck = (d: NonNullable<typeof owned>[number], isSubscribed: boolean): DeckSummary => ({
     id: d.id,
     title: d.title,
     slug: d.slug,
@@ -151,14 +153,16 @@ export async function listDecks(userId: string): Promise<Result<DeckSummary[]>> 
     desiredRetention: d.desired_retention,
     newCardsPerDay: d.new_cards_per_day,
     courseId: d.course_id,
+    ownerId: d.owner_id,
+    isSubscribed,
     createdAt: d.created_at,
     dueCount: dueCounts.get(d.id) ?? 0,
     newCount: newCounts.get(d.id) ?? 0,
   });
 
   const result = [
-    ...(owned ?? []).map(mapDeck),
-    ...(subscribed ?? []).map(mapDeck),
+    ...(owned ?? []).map((d) => mapDeck(d, false)),
+    ...(subscribed ?? []).map((d) => mapDeck(d, d.owner_id !== userId)),
   ];
 
   return ok(result);
@@ -342,18 +346,19 @@ const MAX_SLUG_RETRIES = 3;
 
 /* ------------------------------------------------------------------ */
 /**
- * The owner's decks inside a single course. Lightweight — no due/new counts,
- * which is the course detail's job only at a glance. Course-first hierarchy
- * (phase-03b H); decks outside a course are still readable (H5).
+ * All decks inside a single course that are visible to the caller.
+ * RLS (decks_select_own + decks_select_public) enforces visibility, so
+ * subscribers see the course owner's decks read-only instead of an empty
+ * list. `userId` is kept as an optional second arg for backward
+ * compatibility with existing call sites and is otherwise ignored.
  */
-export async function listCourseDecks(courseId: string, userId: string): Promise<Result<DeckSummary[]>> {
+export async function listCourseDecks(courseId: string, _userId?: string): Promise<Result<DeckSummary[]>> {
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from('decks')
-    .select('id, title, slug, visibility, desired_retention, new_cards_per_day, course_id, created_at')
+    .select('id, title, slug, visibility, desired_retention, new_cards_per_day, course_id, owner_id, created_at')
     .eq('course_id', courseId)
-    .eq('owner_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) return err('error.unexpected', error);
@@ -366,6 +371,8 @@ export async function listCourseDecks(courseId: string, userId: string): Promise
     desiredRetention: row.desired_retention,
     newCardsPerDay: row.new_cards_per_day,
     courseId: row.course_id,
+    ownerId: row.owner_id,
+    isSubscribed: _userId ? row.owner_id !== _userId : false,
     createdAt: row.created_at,
     dueCount: 0,
     newCount: 0,
