@@ -78,6 +78,11 @@ function nextClientId(): string {
 function isBlank(doc: NoteDoc | undefined): boolean {
   if (!doc?.content || doc.content.length === 0) return true;
   return doc.content.every((block) => {
+    // Image / display-math blocks carry no `content` array but are real
+    // content — without this an image-only card was treated as a blank draft
+    // and never sent to the server.
+    if (block.type === 'image') return false;
+    if (block.type === 'displayMath' && block.latex.trim().length > 0) return false;
     const inline = (block as { content?: unknown[] }).content;
     return !inline || inline.length === 0;
   });

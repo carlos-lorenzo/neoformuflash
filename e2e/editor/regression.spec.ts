@@ -88,9 +88,15 @@ test.describe('editor regressions', () => {
     await expect(page.getByRole('listbox')).toBeHidden();
 
     // Equation hands focus to the MathInput dialog (display mode).
-    await page.getByRole('dialog').locator('input').waitFor();
-    await expect(page.getByRole('dialog').locator('input')).toBeFocused();
-    await page.getByRole('dialog').locator('input').fill('E=mc^2');
+    await page.getByRole('dialog').locator('math-field, input').waitFor();
+    await expect(page.getByRole('dialog').locator('math-field, input')).toBeFocused();
+    if (await page.getByRole('dialog').locator('math-field').count() > 0) {
+      await page.getByRole('dialog').locator('math-field').evaluate((mf: unknown, v: string) => {
+        (mf as { setValue: (s: string) => void }).setValue(v);
+      }, 'E=mc^2');
+    } else {
+      await page.getByRole('dialog').locator('input').fill('E=mc^2');
+    }
     await page.keyboard.press('Enter');
     // The blockMath nodeview uses .katex (not .katex-display) — match the
     // existing editor-display-math test which asserts either class.

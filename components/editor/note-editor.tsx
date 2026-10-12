@@ -28,8 +28,7 @@ import Link from 'next/link';
 import { SlashMenu } from './slash-menu';
 import { CopilotMenu } from '@/components/ai/copilot-menu';
 import { SelectionToolbar } from './selection-toolbar';
-import { SeoForm } from './seo-form';
-import { PublishForm } from './publish-form';
+import { NoteSettingsDialog } from './note-settings-dialog';
 import './katex-client';
 
 /*
@@ -60,11 +59,13 @@ type MathPanel = {
 
 type OutlineItem = { level: number; text: string; pos: number };
 
+type SiblingNote = { id: string; title: string; updatedAt: string };
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow; courseName?: string | null; isOwner?: boolean }) {
+export function NoteEditor({ note, courseName, isOwner = true, siblings = [] }: { note: NoteRow; courseName?: string | null; isOwner?: boolean; siblings?: SiblingNote[] }) {
   const t = useTranslations('editor');
   const tn = useTranslations('notes');
   const isTablet = useIsTablet();
@@ -77,6 +78,14 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
   const [slashPosition, setSlashPosition] = useState<PanelPosition>({ top: 0, left: 0 });
   const [slashInline, setSlashInline] = useState(false);
   const [outline, setOutline] = useState<OutlineItem[]>([]);
+  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [navFilter, setNavFilter] = useState('');
+
+  const visibleSiblings = useMemo(() => {
+    const q = navFilter.trim().toLowerCase();
+    if (!q) return siblings;
+    return siblings.filter((s) => s.title.toLowerCase().includes(q));
+  }, [siblings, navFilter]);
 
   // Copilot state
   const [hasAiKey, setHasAiKey] = useState(false);
@@ -541,8 +550,8 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
 
   return (
     <div className="flex min-h-dvh flex-col bg-base">
-      {/* Breadcrumb + save status. Inline (not fixed) so the indicator never
-          overlaps the app-shell header's settings menu at the top right. */}
+      {/* Breadcrumb + save status + note settings. Inline (not fixed) so the
+          indicator never overlaps the app-shell header's settings menu. */}
       <div className="mx-auto flex w-full max-w-measure items-center justify-between gap-2 px-4 py-2">
         {courseName ? (
           <nav
@@ -561,12 +570,21 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
         ) : (
           <span />
         )}
-        <SaveIndicator status={saveStatus} className="shrink-0" />
+        <div className="flex shrink-0 items-center gap-2">
+          <SaveIndicator status={saveStatus} />
+          {isOwner && (
+            <NoteSettingsDialog
+              noteId={note.id}
+              isPublished={note.publishedAt !== null}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Editor canvas - borderless, seamless with page background */}
-      <div className="flex-1 overflow-auto p-4">
-        <div className="mx-auto w-full max-w-measure">
+      <div className="mx-auto w-full max-w-measure flex-1 px-4 pb-4">
+        {/* Editor canvas - borderless, seamless with page background */}
+        <div className="min-w-0 overflow-auto">
+          <div className="mx-auto w-full max-w-measure">
           {/* Copilot trigger — inside the editor column, not a fixed overlay,
               so it never sits on top of the app-shell's left sidebar. */}
           {isOwner && hasAiKey && (
@@ -589,7 +607,81 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
             />
           </div>
         </div>
+        </div>
       </div>
+
+      {/*
+       * Course notes rail — fixed to the left margin, outside the measure
+       * flow, so it never compresses the reading column. Desktop-only (≥1440,
+       * the "sidebar + outline rail" breakpoint): below that the margins are
+       * narrower than the rail and it would overlap the editor.
+       */}
+      {siblings.length > 0 && (
+        <nav
+          aria-label={tn('settings.notesNav')}
+          className={navCollapsed
+            ? 'fixed left-4 top-24 z-20 hidden w-12 desktop:block'
+            : 'fixed left-4 top-24 z-20 hidden max-h-[70vh] w-outline overflow-auto desktop:block'}
+        >
+          <div className="rounded-lg border border-subtle bg-raised p-2 shadow-dialog">
+              <div className="flex items-center justify-between gap-1">
+                {!navCollapsed && (
+                  <p className="truncate text-ui-xs font-medium tracking-ui text-tertiary uppercase">
+                    {tn('settings.notesNav')}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setNavCollapsed((v) => !v)}
+                  className="flex size-8 shrink-0 items-center justify-center rounded-sm text-tertiary transition-colors hover:bg-inset hover:text-primary"
+                  aria-label={navCollapsed ? '→' : '←'}
+                  aria-expanded={!navCollapsed}
+                  title={navCollapsed ? '→' : '←'}
+                >
+                  <span aria-hidden="true" className="text-ui-sm">{navCollapsed ? '→' : '←'}</span>
+                </button>
+              </div>
+              {!navCollapsed && siblings.length > 5 && (
+                <input
+                  type="search"
+                  value={navFilter}
+                  onChange={(e) => setNavFilter(e.target.value)}
+                  placeholder={tn('settings.searchPlaceholder')}
+                  className="mt-2 w-full rounded-md border border-subtle bg-base px-2 py-2 text-ui-sm text-primary outline-none placeholder:text-tertiary focus:border-strong"
+                  aria-label={tn('settings.searchPlaceholder')}
+                />
+              )}
+              {!navCollapsed && (
+                <ul className="mt-2 flex max-h-[50vh] flex-col gap-1 overflow-auto">
+                  {visibleSiblings.map((s) => {
+                    const active = s.id === note.id;
+                    return (
+                      <li key={s.id}>
+                        <Link
+                          href={`/app/notes/${s.id}`}
+                          aria-current={active ? 'page' : undefined}
+                          className={
+                            active
+                              ? 'block truncate rounded-md bg-inset px-2 py-2 text-ui-sm font-medium text-primary'
+                              : 'block truncate rounded-md px-2 py-2 text-ui-sm text-secondary transition-colors hover:bg-inset hover:text-primary'
+                          }
+                          title={s.title}
+                        >
+                          {s.title || t('titlePlaceholder')}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                  {visibleSiblings.length === 0 && (
+                    <li className="px-2 py-2 text-ui-sm text-tertiary">
+                      {tn('settings.notesNavEmpty')}
+                    </li>
+                  )}
+                </ul>
+              )}
+          </div>
+        </nav>
+      )}
 
       {/* Slash menu */}
       {slashOpen && editor && (
@@ -630,45 +722,23 @@ export function NoteEditor({ note, courseName, isOwner = true }: { note: NoteRow
         />
       )}
 
-      {/* Sidebar: outline + SEO (tablet+) */}
-      <aside className="fixed right-4 bottom-4 z-20 w-outline max-h-outline overflow-auto rounded-lg border border-subtle bg-raised p-2 shadow-dialog animate-dialog">
-        {outline.length > 0 && (
-          <div className="mb-4">
-            <p className="text-ui-xs font-medium tracking-ui text-tertiary uppercase mb-2">{t('outline')}</p>
-            <ul className="flex flex-col gap-1">
-              {outline.map((item) => (
-                <li
-                  key={item.pos}
-                  className="text-ui-sm text-secondary hover:text-primary cursor-pointer pl-2"
-                  onClick={() => editorRef.current?.commands.scrollIntoView()}
-                >
-                  {'  '.repeat(item.level - 1)}{item.text}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {isOwner && (
-          <>
-            {/* SEO form - only on tablet+ where editor is editable */}
-            <SeoForm
-              noteId={note.id}
-              initial={{
-                ogTitle: '',
-                ogDescription: '',
-                ogImageUrl: '',
-              }}
-            />
-
-            {/* Publish form - only on tablet+ where editor is editable */}
-            <PublishForm
-              noteId={note.id}
-              isPublished={note.publishedAt !== null}
-            />
-          </>
-        )}
-      </aside>
+      {/* Outline rail (tablet+) — settings now live in the header dialog. */}
+      {outline.length > 0 && (
+        <aside className="fixed right-4 bottom-4 z-20 w-outline max-h-outline overflow-auto rounded-lg border border-subtle bg-raised p-2 shadow-dialog animate-dialog">
+          <p className="text-ui-xs font-medium tracking-ui text-tertiary uppercase mb-2">{t('outline')}</p>
+          <ul className="flex flex-col gap-1">
+            {outline.map((item) => (
+              <li
+                key={item.pos}
+                className="text-ui-sm text-secondary hover:text-primary cursor-pointer pl-2"
+                onClick={() => editorRef.current?.commands.scrollIntoView()}
+              >
+                {'  '.repeat(item.level - 1)}{item.text}
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
 
       {/* Copilot menu */}
       {copilotOpen && copilotAction && editor && (

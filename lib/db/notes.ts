@@ -260,9 +260,9 @@ const MAX_SLUG_RETRIES = 3;
  * no slug field — the DB requires one). On a slug collision the suffix is
  * regenerated, mirroring the `create_profile` retry discipline.
  *
- * Draft safety: visibility is 'public' and published_at is never set, so
- * notes_select_public does not expose the note (it requires
- * published_at IS NOT NULL).
+ * Published by default: visibility is 'public' and published_at is set
+ * immediately, so the note is visible on public pages from creation. The
+ * per-note settings dialog offers Unpublish (toggle back to Publish).
  */
 export async function createNoteRow(
   userId: string,
@@ -346,6 +346,22 @@ async function createNoteRowInternal(
       return err('error.unexpected', error);
     }
 
+    /*
+     * Published by default: a new public note is immediately visible on the
+     * public profile / course page. The INSERT column grant omits published_at
+     * (0007), so this is a second UPDATE (grant allows published_at) rather
+     * than part of the insert — no migration needed. Private notes stay
+     * unpublished (published_at is meaningless for visibility='private').
+     */
+    if (input.visibility === 'public') {
+      const { error: pubError } = await supabase
+        .from('notes')
+        .update({ published_at: new Date().toISOString() } as unknown as Database['public']['Tables']['notes']['Update'])
+        .eq('id', data.id)
+        .eq('owner_id', userId);
+      if (pubError) return err('error.unexpected', pubError);
+    }
+
     return ok({ id: data.id });
   }
 
@@ -406,6 +422,27 @@ export async function setNotePublished(
   publishedAt: string | null
 ): Promise<Result<{ savedAt: string }>> {
   return updateNoteRow(userId, { id: noteId, publishedAt });
+}
+
+/**
+ * Delete a note owned by the user. RLS `notes_delete_own` scopes this to the
+ * owner; decks/cards referencing the note are `on delete set null`, and
+ * `source_note_id` forks are detached — nothing cascades destructively.
+ */
+export async function deleteNoteRow(
+  userId: string,
+  noteId: string,
+): Promise<Result<void>> {
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase
+    .from('notes')
+    .delete()
+    .eq('id', noteId)
+    .eq('owner_id', userId);
+
+  if (error) return err('error.unexpected', error);
+  return ok(undefined);
 }
 
 /* ------------------------------------------------------------------ */

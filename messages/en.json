@@ -248,6 +248,18 @@
     "error": "Something went wrong loading this note.",
     "newNote": "New note",
     "breadcrumb": "Note",
+    "settings": {
+      "openLabel": "Note settings",
+      "title": "Note settings",
+      "description": "Visibility, metadata and danger zone for this note.",
+      "deleteTitle": "Delete note",
+      "deleteBody": "This permanently deletes the note. Decks and cards stay, but lose their link. This can't be undone.",
+      "deleteButton": "Delete note",
+      "deleteConfirm": "Yes, delete",
+      "notesNav": "Notes in this course",
+      "notesNavEmpty": "No other notes in this course.",
+      "searchPlaceholder": "Filter notes…"
+    },
     "reader": {
       "breadcrumb": "Note",
       "badge": "Read-only",

@@ -275,8 +275,23 @@ function blockToUnion(node: unknown): Result<BlockNode> {
       return ok({ type: 'displayMath', latex });
     }
     case 'image': {
-      const src = typeof attrs.src === 'string' ? attrs.src : '';
-      const alt = typeof attrs.alt === 'string' ? attrs.alt : '';
+      /*
+       * Dual-read like inlineMath/displayMath: the notes path sends raw PM
+       * JSON (attrs.src), but the card path converts twice —
+       * MathEditorField.getDoc() returns a union ({src top-level}) and the
+       * server action re-validates it. Reading only attrs rejected every card
+       * image on save while notes worked fine.
+       */
+      const attrsSrc = typeof attrs.src === 'string' ? attrs.src : undefined;
+      const topSrc = typeof (n as { src?: unknown }).src === 'string'
+        ? ((n as { src: string }).src)
+        : undefined;
+      const src = attrsSrc ?? topSrc ?? '';
+      const attrsAlt = typeof attrs.alt === 'string' ? attrs.alt : undefined;
+      const topAlt = typeof (n as { alt?: unknown }).alt === 'string'
+        ? ((n as { alt: string }).alt)
+        : undefined;
+      const alt = attrsAlt ?? topAlt ?? '';
       // Trust boundary: reject non-http(s) image sources outright rather than
       // persisting a javascript:/data: src in the doc.
       if (!/^https?:\/\//i.test(src)) return err('editor.unsupportedBlock');

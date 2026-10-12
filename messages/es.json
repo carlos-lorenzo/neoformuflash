@@ -248,6 +248,18 @@
     "error": "Algo salió mal al cargar este apunte.",
     "newNote": "Nuevo apunte",
     "breadcrumb": "Apunte",
+    "settings": {
+      "openLabel": "Ajustes del apunte",
+      "title": "Ajustes del apunte",
+      "description": "Visibilidad, metadatos y zona de peligro de este apunte.",
+      "deleteTitle": "Eliminar apunte",
+      "deleteBody": "Esto elimina el apunte permanentemente. Los mazos y tarjetas se conservan, pero pierden su enlace. No se puede deshacer.",
+      "deleteButton": "Eliminar apunte",
+      "deleteConfirm": "Sí, eliminar",
+      "notesNav": "Apuntes de esta asignatura",
+      "notesNavEmpty": "No hay otros apuntes en esta asignatura.",
+      "searchPlaceholder": "Filtrar apuntes…"
+    },
     "reader": {
       "breadcrumb": "Apunte",
       "badge": "Solo lectura",

@@ -39,6 +39,7 @@ const KNOWN_BLOCK_TYPES = [
   'codeBlock',
   'blockquote',
   'displayMath',
+  'image',
 ] as const;
 
 const KNOWN_INLINE_TYPES = ['text', 'inlineMath'] as const;
@@ -53,6 +54,8 @@ const NodeSchema: z.ZodType<unknown> = z.lazy(() =>
       level: z.number().int().min(1).max(3).optional(),
       language: z.string().nullable().optional(),
       marks: z.record(z.string(), z.boolean()).optional(),
+      src: z.string().optional(),
+      alt: z.string().optional(),
     })
     .refine(
       (n) =>
@@ -120,6 +123,10 @@ function hasRenderableContent(node: unknown): boolean {
   // A text node renders whenever it carries non-blank text.
   if (node.type === 'text') {
     return typeof node.text === 'string' && node.text.trim().length > 0;
+  }
+  // An image renders whenever it carries an http(s) source.
+  if (node.type === 'image') {
+    return typeof node.src === 'string' && /^https?:\/\//i.test(node.src);
   }
   // Any other block renders if some descendant does.
   return Array.isArray(node.content) && node.content.some(hasRenderableContent);
@@ -223,7 +230,7 @@ function normalizeNode(raw: unknown): unknown {
   else delete node.marks;
 
   // Strip unknown top-level properties to avoid validation failures
-  const KNOWN_TOP_LEVEL = ['type', 'content', 'text', 'latex', 'level', 'language', 'marks'];
+  const KNOWN_TOP_LEVEL = ['type', 'content', 'text', 'latex', 'level', 'language', 'marks', 'src', 'alt'];
   for (const key of Object.keys(node)) {
     if (!KNOWN_TOP_LEVEL.includes(key)) {
       delete node[key];

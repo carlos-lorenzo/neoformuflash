@@ -114,7 +114,7 @@ test.describe('editor', () => {
     await page.keyboard.type('\\');
     // Wait for the MathInput input to have focus before typing the body — fast
     // keystrokes otherwise land in the editor instead of the dialog.
-    await expect(page.getByRole('dialog').locator('input')).toBeFocused();
+    await expect(page.getByRole('dialog').locator('math-field, input')).toBeFocused();
     await page.keyboard.type('alpha');
     // Live KaTeX preview renders as the student types (AC3).
     await expect(page.locator('.katex')).toBeVisible();
@@ -137,7 +137,7 @@ test.describe('editor', () => {
 
     // `$$` on an empty line opens display mode (AC4).
     await page.keyboard.type('$$');
-    await expect(page.getByRole('dialog').locator('input')).toBeFocused();
+    await expect(page.getByRole('dialog').locator('math-field, input')).toBeFocused();
     await page.keyboard.type('E=mc^2');
     await page.keyboard.press('Enter');
 
@@ -158,7 +158,7 @@ test.describe('editor', () => {
     // Invalid LaTeX shows the error and never commits (AC5).
     await page.keyboard.type('$');
     await page.keyboard.type('\\');
-    await expect(page.getByRole('dialog').locator('input')).toBeFocused();
+    await expect(page.getByRole('dialog').locator('math-field, input')).toBeFocused();
     await page.keyboard.type('notaCommand{');
     await expect(page.getByText("This formula can't be previewed")).toBeVisible();
     // The surrounding paragraph is untouched and still editable.
@@ -185,7 +185,7 @@ test.describe('editor', () => {
     // AC7: math nodes survive a reload too.
     await page.keyboard.type('$');
     await page.keyboard.type('\\');
-    await expect(page.getByRole('dialog').locator('input')).toBeFocused();
+    await expect(page.getByRole('dialog').locator('math-field, input')).toBeFocused();
     await page.keyboard.type('sqrt{2}');
     await page.keyboard.press('Enter');
 

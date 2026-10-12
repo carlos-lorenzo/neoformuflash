@@ -10,6 +10,19 @@ import { test } from '@playwright/test';
 import { seedUserWithProfile, signIn } from '../fixtures/auth';
 import { editorLocator, seedNote } from './helpers';
 
+/** Fill the math dialog whether it renders MathLive's <math-field> or the fallback input. */
+async function fillMathDialog(page: import('@playwright/test').Page, latex: string) {
+  const dialog = page.getByRole('dialog');
+  await dialog.locator('math-field, input').waitFor();
+  if (await dialog.locator('math-field').count() > 0) {
+    await dialog.locator('math-field').evaluate((mf: unknown, v: string) => {
+      (mf as { setValue: (s: string) => void }).setValue(v);
+    }, latex);
+  } else {
+    await dialog.locator('input').fill(latex);
+  }
+}
+
 async function capture(page: import('@playwright/test').Page, state: string, theme: string, width: number) {
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({
@@ -43,8 +56,7 @@ function setup(state: string) {
       await page.keyboard.press('Enter');
       await page.keyboard.type('$');
       await page.keyboard.type('\\');
-      await page.getByRole('dialog').locator('input').waitFor();
-      await page.getByRole('dialog').locator('input').fill('\\int_a^b f(x)\\,dx');
+      await fillMathDialog(page, '\\int_a^b f(x)\\,dx');
       await page.keyboard.press('Enter');
       await page.keyboard.type(' follows by linearity.');
     }
@@ -53,8 +65,7 @@ function setup(state: string) {
       await editor.click();
       for (const latex of ['E=mc^2', '\\nabla \\cdot \\mathbf{B} = 0', '\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}']) {
         await page.keyboard.type('$$');
-        await page.getByRole('dialog').locator('input').waitFor();
-        await page.getByRole('dialog').locator('input').fill(latex);
+        await fillMathDialog(page, latex);
         await page.keyboard.press('Enter');
         await page.keyboard.press('Enter');
       }

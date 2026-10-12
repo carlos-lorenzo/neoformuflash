@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getSessionUser } from '@/lib/supabase/session';
-import { getNoteForUser } from '@/lib/db/notes';
+import { getNoteForUser, listCourseNotes } from '@/lib/db/notes';
 import { getCourse } from '@/lib/db/courses';
 import { NoteEditor } from '@/components/editor/note-editor';
 import { NoteReader } from '@/components/note/note-reader';
@@ -46,12 +46,23 @@ export default async function NotePage({
 
   // Fetch course name for breadcrumb if note has a course
   let courseName: string | null = null;
+  let siblings: Array<{ id: string; title: string; updatedAt: string }> = [];
   if (result.value.courseId) {
-    const courseResult = await getCourse(result.value.courseId);
+    const [courseResult, siblingsResult] = await Promise.all([
+      getCourse(result.value.courseId),
+      listCourseNotes(result.value.courseId),
+    ]);
     if (courseResult.ok && courseResult.value) {
       courseName = courseResult.value.name;
     }
+    if (siblingsResult.ok) {
+      siblings = siblingsResult.value.map((n) => ({
+        id: n.id,
+        title: n.title,
+        updatedAt: n.updatedAt,
+      }));
+    }
   }
 
-  return <NoteEditor note={result.value} courseName={courseName} isOwner={isOwner} />;
+  return <NoteEditor note={result.value} courseName={courseName} isOwner={isOwner} siblings={siblings} />;
 }

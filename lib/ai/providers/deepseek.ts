@@ -2,7 +2,8 @@
  * DeepSeek provider using OpenAI-compatible API with JSON mode.
  *
  * DeepSeek API is OpenAI-compatible at https://api.deepseek.com
- * Uses deepseek-chat model which supports JSON mode (response_format: { type: "json_object" })
+ * Uses deepseek-flash (V4.1 Flash, native multimodal) which supports JSON
+ * mode (response_format: { type: "json_object" })
  * but NOT the OpenAI beta structured output (json_schema) feature.
  */
 
@@ -26,7 +27,7 @@ export async function callDeepSeek<T>(
 
   // Use standard JSON mode (not json_schema which DeepSeek doesn't support)
   const completion = await client.chat.completions.create({
-    model: 'deepseek-chat',
+    model: 'deepseek-flash',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },

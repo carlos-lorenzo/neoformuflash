@@ -14,7 +14,7 @@ import { CreateNoteInput, UpdateNoteInput, type NoteDoc } from '@neoformuflash/c
 import { extractText } from '@neoformuflash/contracts';
 import type { Route } from 'next';
 import { redirect } from 'next/navigation';
-import { createNoteRow, updateNoteRow } from '@/lib/db/notes';
+import { createNoteRow, updateNoteRow, deleteNoteRow } from '@/lib/db/notes';
 import { proseToUnion } from '@/lib/editor/serialize';
 import { deriveTitle } from '@/lib/editor/derive-title';
 import { getSessionUser } from '@/lib/supabase/session';
@@ -138,4 +138,28 @@ export async function saveNote(input: {
   if (!result.ok) return { errors: { form: result.code } };
 
   return { savedAt: result.value.savedAt };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Delete note                                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Delete a note owned by the caller. Returns the note's courseId (when set)
+ * so the client can route back to the course page, mirroring deleteDeck.
+ */
+export async function deleteNote(input: {
+  id: string;
+}): Promise<{ courseId?: string; errors?: Record<string, string> }> {
+  const user = await getSessionUser();
+  if (!user) return { errors: { form: 'error.unexpected' } };
+
+  const { getNote } = await import('@/lib/db/notes');
+  const noteResult = await getNote(user.id, input.id);
+  if (!noteResult.ok || !noteResult.value) return { errors: { form: 'error.unexpected' } };
+  const courseId = noteResult.value.courseId;
+
+  const result = await deleteNoteRow(user.id, input.id);
+  if (!result.ok) return { errors: { form: result.code } };
+  return { courseId: courseId ?? undefined };
 }

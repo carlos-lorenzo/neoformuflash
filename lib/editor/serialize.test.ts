@@ -136,6 +136,29 @@ describe('serialize', () => {
       }
     });
 
+    it('accepts a union-shaped image (card double-convert path)', () => {
+      // MathEditorField.getDoc() returns a union ({src top-level}) and the
+      // card server action re-validates it via proseToUnion — which used to
+      // read only attrs.src and reject every card image on save.
+      const unionShaped = {
+        type: 'doc',
+        content: [{ type: 'image', src: 'https://example.com/x.png', alt: 'fig' }],
+      };
+      const back = proseToUnion(unionShaped);
+      expect(back.ok).toBe(true);
+      if (back.ok) {
+        expect(back.value.content[0]).toEqual({ type: 'image', src: 'https://example.com/x.png', alt: 'fig' });
+      }
+    });
+
+    it('rejects a union-shaped image with a non-http source', () => {
+      const unionShaped = {
+        type: 'doc',
+        content: [{ type: 'image', src: 'javascript:alert(1)', alt: 'x' }],
+      };
+      expect(proseToUnion(unionShaped).ok).toBe(false);
+    });
+
     it('degrades a non-http image source to an empty paragraph (union → PM)', () => {
       const doc: NoteDoc = {
         type: 'doc',
